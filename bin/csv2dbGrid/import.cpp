@@ -211,6 +211,7 @@ int Import::loadEnsembleValues()
     int posPerturbationNumber = 3;
     int idListIndex = 0;
     int prev_perturbation = 0;
+    int nFields = 4;
     std::string id;
     QString valueStr;
     if ( !myFile.open(QFile::ReadOnly | QFile::Text) )
@@ -228,6 +229,11 @@ int Import::loadEnsembleValues()
             line = in.readLine();
             QStringList items = line.split(" ");
             items.removeAll({});
+            if (items.size()<nFields)
+            {
+                logger.writeError ("is not ensemble, missing field required");
+                return ERROR_BAD_REQUEST;
+            }
             int perturbation = items[posPerturbationNumber].toInt();
             if (perturbation != prev_perturbation)
             {

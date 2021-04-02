@@ -83,11 +83,6 @@ int main(int argc, char *argv[])
             return result;
         }
     }
-//    result = import.loadValues();
-//    if (result!=CSV2DBGRID_OK)
-//    {
-//        return result;
-//    }
 
     return CSV2DBGRID_OK;
 }
