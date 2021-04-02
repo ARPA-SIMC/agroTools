@@ -213,7 +213,7 @@ int Import::loadEnsembleValues()
     int prev_perturbation = 0;
     int nFields = 4;
     std::string id;
-    QString valueStr;
+
     if ( !myFile.open(QFile::ReadOnly | QFile::Text) )
     {
         logger.writeError ("csvFileName file does not exist");
@@ -254,7 +254,6 @@ int Import::loadEnsembleValues()
             }
             if (IDList[idListIndex] != "-9999")
             {
-                valueStr = items[posValue].toFloat();
                 valuesMap.insert(IDList[idListIndex], items[posValue].toFloat());
             }
             idListIndex ++;
