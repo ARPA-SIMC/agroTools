@@ -131,6 +131,15 @@ int Import::readSettings()
         isEnsemble = projectSettings->value("isEnsemble","").toBool();
     }
 
+    if (projectSettings->value("precipitationIsProgressive","").toString().isEmpty())
+    {
+        logger.writeError ("missing precipitationIsProgressive");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        precIsProgressive = projectSettings->value("precipitationIsProgressive","").toBool();
+    }
 
     projectSettings->endGroup();
 

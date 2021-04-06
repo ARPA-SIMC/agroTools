@@ -39,6 +39,7 @@ private:
     QList<QString> meteoVar;
     bool isDaily;
     bool isEnsemble;
+    bool precIsProgressive;
     bool isFirstCsv;
     QList<QString> IDList;
     QMultiMap<QString, float> valuesMap;
