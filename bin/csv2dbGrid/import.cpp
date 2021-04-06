@@ -243,7 +243,13 @@ int Import::loadEnsembleValues()
 
 int Import::writeEnsembleValues()
 {
-
+    QString errorString;
+    if (! grid.openDatabase(&errorString))
+    {
+        logger.writeError (errorString);
+        return ERROR_DBGRID;
+    }
+    // TO DO
 }
 
 QString Import::getCsvFilePath() const
