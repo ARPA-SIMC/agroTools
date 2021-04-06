@@ -88,18 +88,7 @@ int Import::readSettings()
     {
         csvFilePath = path + QDir::cleanPath(csvFilePath);
     }
-/*
-    gridIdList = projectSettings->value("gridIdList","").toString();
-    if (gridIdList.isEmpty())
-    {
-        logger.writeError ("missing ID list");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    if (gridIdList.left(1) == ".")
-    {
-        gridIdList = path + QDir::cleanPath(gridIdList);
-    }
-*/
+
     QString tempVar = projectSettings->value("var","").toString();
     if (tempVar.isEmpty())
     {
@@ -145,32 +134,6 @@ int Import::readSettings()
 
     return CSV2DBGRID_OK;
 }
-
-/*
-int Import::loadIDList()
-{
-    QFile myFile(gridIdList);
-    int IDSIZE = 5;
-    if ( !myFile.open(QFile::ReadOnly | QFile::Text) )
-    {
-        logger.writeError ("gridIdList file does not exist");
-        return ERROR_MISSINGFILE;
-    }
-    else
-    {
-        QTextStream in(&myFile);
-        //skip header
-        QString line = in.readLine();
-        while (!in.atEnd())
-        {
-            line = in.readLine();
-            IDList<<line.rightJustified(IDSIZE, '0');
-        }
-    }
-    myFile.close();
-    return CSV2DBGRID_OK;
-}
-*/
 
 /*
 int Import::loadValues()
@@ -278,6 +241,11 @@ int Import::loadEnsembleValues()
     return CSV2DBGRID_OK;
 }
 
+int Import::writeEnsembleValues()
+{
+
+}
+
 QString Import::getCsvFilePath() const
 {
     return csvFilePath;
@@ -286,6 +254,11 @@ QString Import::getCsvFilePath() const
 void Import::setIsFirstCsv(bool value)
 {
     isFirstCsv = value;
+}
+
+QList<QString> Import::getMeteoVar() const
+{
+    return meteoVar;
 }
 
 void Import::setSettingsFileName(const QString &value)

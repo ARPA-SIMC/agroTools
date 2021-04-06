@@ -19,8 +19,7 @@ void usage()
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
-    QString appPath = myApp.applicationDirPath() + "/";
-    QString settingsFileName, csvFileName;
+    QString settingsFileName;
     Import import;
 
     if (argc <= 1)
@@ -55,23 +54,34 @@ int main(int argc, char *argv[])
     {
         return result;
     }
-    /*
-    // import ID list.csv
-    result = import.loadIDList();
-    if (result!=CSV2DBGRID_OK)
-    {
-        return result;
-    }
-    */
+
     // import value from csv file
     QDir csvDir(import.getCsvFilePath());
     QStringList listOfCsv= csvDir.entryList(QStringList() << "*.csv",QDir::Files);;// get a list of file
+    QString fileName;
+    QList<QString> varList = import.getMeteoVar();
+    bool isFirst = false;
     for(int i=0; i<listOfCsv.count(); i++)
     {
-        import.setCsvFileName(import.getCsvFilePath()+"/"+listOfCsv.at(i));
-        if (i==0)
+        fileName = listOfCsv.at(i);
+        bool interest = false;
+        for (int j= 0; j<varList.size(); j++)
+        {
+            if(fileName.contains(varList[j]))
+            {
+                interest = true;
+                break;
+            }
+        }
+        if (interest == false)
+        {
+            continue;
+        }
+        import.setCsvFileName(import.getCsvFilePath()+"/"+fileName);
+        if (!isFirst)
         {
             import.setIsFirstCsv(true);
+            isFirst = true;
         }
         else
         {

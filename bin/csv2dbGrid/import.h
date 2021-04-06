@@ -22,11 +22,12 @@ public:
     int readSettings();
     void setSettingsFileName(const QString &value);
     void setCsvFileName(const QString &value);
-    //int loadIDList();
     //int loadValues();
     int loadEnsembleValues();
+    int writeEnsembleValues();
     QString getCsvFilePath() const;
     void setIsFirstCsv(bool value);
+    QList<QString> getMeteoVar() const;
 
 private:
     QString settingsFileName;
@@ -39,7 +40,7 @@ private:
     QList<QString> meteoVar;
     bool isDaily;
     bool isEnsemble;
-    bool precIsProgressive;
+    bool precIsProgressive;  // TO DO gestire caso particolare percIsProgressive = true
     bool isFirstCsv;
     QList<QString> IDList;
     QMultiMap<QString, float> valuesMap;
