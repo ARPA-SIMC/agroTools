@@ -222,6 +222,7 @@ int Import::loadEnsembleValues()
     int prev_perturbation = 0;
     int nFields = 4;
     std::string id;
+    bool ok;
 
     if ( !myFile.open(QFile::ReadOnly | QFile::Text) )
     {
@@ -243,7 +244,12 @@ int Import::loadEnsembleValues()
                 logger.writeError ("is not ensemble, missing field required");
                 return ERROR_BAD_REQUEST;
             }
-            int perturbation = items[posPerturbationNumber].toInt();
+            int perturbation = items[posPerturbationNumber].toInt(&ok,10);
+            if(!ok)
+            {
+                // repeated header lat lon value perturbation number
+                continue;
+            }
             if (perturbation != prev_perturbation)
             {
                 // new ensemble, reset idListIndex
