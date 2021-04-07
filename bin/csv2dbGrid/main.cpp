@@ -67,9 +67,11 @@ int main(int argc, char *argv[])
         bool interest = false;
         for (int j= 0; j<varList.size(); j++)
         {
+            // check file of interest
             if(fileName.contains(varList[j]))
             {
                 interest = true;
+                import.setMeteoVar(varList[j]);
                 break;
             }
         }
@@ -87,11 +89,20 @@ int main(int argc, char *argv[])
         {
             import.setIsFirstCsv(false);
         }
-        result = import.loadEnsembleValues();
+        result = import.loadEnsembleDailyValues();
         if (result!=CSV2DBGRID_OK)
         {
             return result;
         }
+        else
+        {
+            result = import.writeEnsembleDailyValues();
+            if (result!=CSV2DBGRID_OK)
+            {
+                return result;
+            }
+        }
+
     }
 
     return CSV2DBGRID_OK;

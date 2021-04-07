@@ -15,7 +15,7 @@ void Import::initialize()
     settingsFileName = "";
     csvFileName = "";
     xmlDbGrid = "";
-    meteoVar.clear();
+    meteoVarList.clear();
     isDaily = false;;
     isEnsemble = false;
 }
@@ -97,7 +97,7 @@ int Import::readSettings()
     }
     else
     {
-        meteoVar = tempVar.split(",");
+        meteoVarList = tempVar.split(",");
     }
 
     if (projectSettings->value("isDaily","").toString().isEmpty())
@@ -169,7 +169,7 @@ int Import::loadValues()
     return CSV2DBGRID_OK;
 }
 */
-int Import::loadEnsembleValues()
+int Import::loadEnsembleDailyValues()
 {
     if (!isEnsemble)
     {
@@ -241,7 +241,7 @@ int Import::loadEnsembleValues()
     return CSV2DBGRID_OK;
 }
 
-int Import::writeEnsembleValues()
+int Import::writeEnsembleDailyValues()
 {
     QString errorString;
     if (! grid.openDatabase(&errorString))
@@ -249,7 +249,30 @@ int Import::writeEnsembleValues()
         logger.writeError (errorString);
         return ERROR_DBGRID;
     }
-    // TO DO
+    if (meteoVar == noMeteoVar)
+    {
+        logger.writeError ("invalid MeteoVar");
+        return ERROR_BAD_REQUEST;
+    }
+
+    QStringList nameParts = csvFileName.split("_");
+    int nDay = nameParts[nameParts.size()-1].toInt();
+    QString dateStr = nameParts[nameParts.size()-2];
+    QDate date = QDate::fromString(dateStr,"yyyyMMdd");
+    date = date.addDays(nDay);
+    QList<float> valueList;
+
+    QMultiMap<QString, float>::iterator i;
+    for (i = valuesMap.begin(); i != valuesMap.end(); ++i)
+    {
+        valueList = valuesMap.values(i.key());
+        if (!grid.saveListDailyDataEnsemble(&errorString, i.key(), date, meteoVar, valueList))
+        {
+            return ERROR_WRITING_DATA;
+        }
+    }
+    return CSV2DBGRID_OK;
+    // TO DO check che gli ID compaiano una sola volta per cella
 }
 
 QString Import::getCsvFilePath() const
@@ -264,7 +287,19 @@ void Import::setIsFirstCsv(bool value)
 
 QList<QString> Import::getMeteoVar() const
 {
-    return meteoVar;
+    return meteoVarList;
+}
+
+void Import::setMeteoVar(const QString &value)
+{
+    if (isDaily)
+    {
+        meteoVar = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, value.toStdString());
+    }
+    else
+    {
+        meteoVar = getKeyMeteoVarMeteoMap(MapHourlyMeteoVarToString, value.toStdString());
+    }
 }
 
 void Import::setSettingsFileName(const QString &value)
