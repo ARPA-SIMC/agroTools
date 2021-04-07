@@ -3,6 +3,8 @@
 #include <QDir>
 #include <QTextStream>
 
+#include <qdebug.h>
+
 Import::Import()
 {
 
@@ -171,6 +173,7 @@ int Import::loadValues()
 */
 int Import::loadEnsembleDailyValues()
 {
+    valuesMap.clear();
     if (!isEnsemble)
     {
         logger.writeError ("is not ensemble");
@@ -261,16 +264,21 @@ int Import::writeEnsembleDailyValues()
     QDate date = QDate::fromString(dateStr,"yyyyMMdd");
     date = date.addDays(nDay);
     QList<float> valueList;
+    QString key;
 
-    QMultiMap<QString, float>::iterator i;
-    for (i = valuesMap.begin(); i != valuesMap.end(); ++i)
+    for (int i=0; i<IDList.size(); i++)
     {
-        valueList = valuesMap.values(i.key());
-        if (!grid.saveListDailyDataEnsemble(&errorString, i.key(), date, meteoVar, valueList))
+        key = IDList[i];
+        if ( key != "-9999")
         {
-            return ERROR_WRITING_DATA;
+            valueList = valuesMap.values(key);
+            if (!grid.saveListDailyDataEnsemble(&errorString, key, date, meteoVar, valueList))
+            {
+                return ERROR_WRITING_DATA;
+            }
         }
     }
+    grid.closeDatabase();
     return CSV2DBGRID_OK;
     // TO DO check che gli ID compaiano una sola volta per cella
 }
