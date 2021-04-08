@@ -80,10 +80,10 @@ int Import::readSettings()
     }
     grid.closeDatabase();
 
-    csvFilePath = projectSettings->value("inputData","").toString();
+    csvFilePath = projectSettings->value("csvPath","").toString();
     if (csvFilePath.isEmpty())
     {
-        logger.writeError ("missing input data path");
+        logger.writeError ("missing csvPath");
         return ERROR_MISSINGPARAMETERS;
     }
     if (csvFilePath.left(1) == ".")
@@ -122,14 +122,14 @@ int Import::readSettings()
         isEnsemble = projectSettings->value("isEnsemble","").toBool();
     }
 
-    if (projectSettings->value("precipitationIsProgressive","").toString().isEmpty())
+    if (projectSettings->value("isPrecipitationProgressive","").toString().isEmpty())
     {
-        logger.writeError ("missing precipitationIsProgressive");
+        logger.writeError ("missing isPrecipitationProgressive");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        precIsProgressive = projectSettings->value("precipitationIsProgressive","").toBool();
+        isPrecProgressive = projectSettings->value("isPrecipitationProgressive","").toBool();
     }
 
     projectSettings->endGroup();

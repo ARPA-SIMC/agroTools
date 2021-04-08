@@ -1,19 +1,16 @@
-#include <QCoreApplication>
-#include <QFile>
-#include <QDir>
-#include "dbMeteoGrid.h"
 #include "utilities.h"
 #include "import.h"
+#include <QCoreApplication>
+#include <QDir>
 #include <iostream>
-#include <stdio.h>
-#include <random>
-#include <QRandomGenerator>
+
+// uncomment to execute test
 #define TEST
 
 void usage()
 {
     std::cout << "csv2dbGrid" << std::endl
-              << "Usage: csv2dbGrid project.ini" << std::endl;
+              << "Usage: csv2dbGrid <project.ini>" << std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -57,7 +54,7 @@ int main(int argc, char *argv[])
 
     // import value from csv file
     QDir csvDir(import.getCsvFilePath());
-    QStringList listOfCsv= csvDir.entryList(QStringList() << "*.csv",QDir::Files);;// get a list of file
+    QStringList listOfCsv = csvDir.entryList(QStringList() << "*.csv", QDir::Files); // get a list of file
     QString fileName;
     QList<QString> varList = import.getMeteoVar();
     bool isFirst = false;

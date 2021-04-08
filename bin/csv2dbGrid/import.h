@@ -46,7 +46,7 @@ private:
     meteoVariable meteoVar;
     bool isDaily;
     bool isEnsemble;
-    bool precIsProgressive;  // TO DO gestire caso particolare percIsProgressive = true
+    bool isPrecProgressive;  // TO DO gestire caso particolare isPrecProgressive = true
     bool isFirstCsv;
     QList<QString> IDList;
     QMultiMap<QString, float> valuesMap;
