@@ -31,6 +31,8 @@ public:
     void setIsFirstCsv(bool value);
     QList<QString> getMeteoVar() const;
     void setMeteoVar(const QString &value);
+    bool getIsDaily() const;
+    bool getIsEnsemble() const;
 
 private:
     QString settingsFileName;

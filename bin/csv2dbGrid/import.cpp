@@ -258,8 +258,9 @@ int Import::writeEnsembleDailyValues()
         return ERROR_BAD_REQUEST;
     }
 
-    QStringList nameParts = csvFileName.split("_");
+    QStringList nameParts = QFileInfo(csvFileName).baseName().split("_");
     int nDay = nameParts[nameParts.size()-1].toInt();
+    nDay = nDay/24-1;
     QString dateStr = nameParts[nameParts.size()-2];
     QDate date = QDate::fromString(dateStr,"yyyyMMdd");
     date = date.addDays(nDay);
@@ -308,6 +309,16 @@ void Import::setMeteoVar(const QString &value)
     {
         meteoVar = getKeyMeteoVarMeteoMap(MapHourlyMeteoVarToString, value.toStdString());
     }
+}
+
+bool Import::getIsDaily() const
+{
+    return isDaily;
+}
+
+bool Import::getIsEnsemble() const
+{
+    return isEnsemble;
 }
 
 void Import::setSettingsFileName(const QString &value)

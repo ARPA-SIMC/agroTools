@@ -89,9 +89,9 @@ int main(int argc, char *argv[])
         {
             import.setIsFirstCsv(false);
         }
-        if (import.isDaily)
+        if (import.getIsDaily())
         {
-            if (import.isEnsemble)
+            if (import.getIsEnsemble())
             {
                 result = import.loadEnsembleDailyValues();
                 if (result!=CSV2DBGRID_OK)
