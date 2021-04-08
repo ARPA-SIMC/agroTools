@@ -267,6 +267,9 @@ int Import::writeEnsembleDailyValues()
     QList<float> valueList;
     QString key;
 
+    QString varname = QString::fromStdString(getMeteoVarName(meteoVar));
+    logger.writeInfo("write data: " + varname + "  " + date.toString("yyyy-MM-dd"));
+
     for (int i=0; i<IDList.size(); i++)
     {
         key = IDList[i];

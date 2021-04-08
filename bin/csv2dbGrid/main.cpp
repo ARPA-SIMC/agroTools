@@ -76,7 +76,10 @@ int main(int argc, char *argv[])
         {
             continue;
         }
+
         import.setCsvFileName(import.getCsvFilePath()+"/"+fileName);
+        import.logger.writeInfo("read file: " + fileName);
+
         if (!isFirst)
         {
             import.setIsFirstCsv(true);
@@ -105,6 +108,10 @@ int main(int argc, char *argv[])
                         return result;
                     }
                 }
+            }
+            else
+            {
+                // TO DO not ensemble
             }
         }
         else
