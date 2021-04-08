@@ -89,18 +89,30 @@ int main(int argc, char *argv[])
         {
             import.setIsFirstCsv(false);
         }
-        result = import.loadEnsembleDailyValues();
-        if (result!=CSV2DBGRID_OK)
+        if (import.isDaily)
         {
-            return result;
+            if (import.isEnsemble)
+            {
+                result = import.loadEnsembleDailyValues();
+                if (result!=CSV2DBGRID_OK)
+                {
+                    import.logger.writeError("Loading daily data ERROR");
+                    return result;
+                }
+                else
+                {
+                    result = import.writeEnsembleDailyValues();
+                    if (result!=CSV2DBGRID_OK)
+                    {
+                        import.logger.writeError("Writing daily data ERROR");
+                        return result;
+                    }
+                }
+            }
         }
         else
         {
-            result = import.writeEnsembleDailyValues();
-            if (result!=CSV2DBGRID_OK)
-            {
-                return result;
-            }
+            // TO DO hourly
         }
 
     }
