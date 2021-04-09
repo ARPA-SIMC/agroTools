@@ -266,7 +266,7 @@ int Import::writeEnsembleDailyValues()
     int nDay = nameParts[nameParts.size()-1].toInt();
     nDay = nDay/24-1;
     QString dateStr = nameParts[nameParts.size()-2];
-    QDate date = QDate::fromString(dateStr,"yyyyMMdd");
+    QDate date = QDateTime::fromString(dateStr,"yyyyMMddhh").date();
     date = date.addDays(nDay);
     QList<float> valueList;
     QString key;
