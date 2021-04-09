@@ -231,6 +231,10 @@ int Import::loadEnsembleDailyValues()
                 {
                     return ERROR_DBGRID;
                 }
+                if (!grid.meteoGrid()->isActiveMeteoPointFromId(id))
+                {
+                    id = "-9999";
+                }
                 IDList<<QString::fromStdString(id);
             }
             if (IDList[idListIndex] != "-9999")
