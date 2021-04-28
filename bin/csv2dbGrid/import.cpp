@@ -137,13 +137,25 @@ int Import::readSettings()
     return CSV2DBGRID_OK;
 }
 
-/*
-int Import::loadValues()
+int Import::loadMultiTimeValues()
 {
+    valuesMap.clear();
+    if (isEnsemble)
+    {
+        logger.writeError ("is ensemble");
+        return ERROR_BAD_REQUEST;
+    }
     QFile myFile(csvFileName);
-    int posValue = 2; // csv header Lat Lon Val MODIFICARE NEL CASO ENSEMBLE CON TUTTI I VALORI NELLO STESSO CSV
+    int posLat = 0;
+    int posLon = 1;
+    int posValue = 2;
+    int posHourlyStep = 3;
     int idListIndex = 0;
-    QString valueStr;
+    int prev_hour = 0;
+    int nFields = 4;
+    std::string id;
+    bool ok;
+
     if ( !myFile.open(QFile::ReadOnly | QFile::Text) )
     {
         logger.writeError ("csvFileName file does not exist");
@@ -159,9 +171,45 @@ int Import::loadValues()
             line = in.readLine();
             QStringList items = line.split(" ");
             items.removeAll({});
+            if (items.size()<nFields)
+            {
+                logger.writeError ("missing field required");
+                return ERROR_BAD_REQUEST;
+            }
+            int hour = items[posHourlyStep].toInt(&ok,10);
+            if(!ok)
+            {
+                // repeated header lat lon value perturbation number
+                continue;
+            }
+            if (!hoursList.contains(hour))
+            {
+                // save hourly step
+                hoursList<<hour;
+            }
+            if (hour != prev_hour)
+            {
+                // new hourly-set, reset idListIndex
+                prev_hour = hour;
+                idListIndex = 0;
+            }
+            if (isFirstCsv && hour==0)
+            {
+                // make IDList
+                double lat = items[posLat].toDouble();
+                double lon = items[posLon].toDouble();
+                if (!grid.meteoGrid()->getIdFromLatLon(lat,lon,&id))
+                {
+                    return ERROR_DBGRID;
+                }
+                if (!grid.meteoGrid()->isActiveMeteoPointFromId(id))
+                {
+                    id = "-9999";
+                }
+                IDList<<QString::fromStdString(id);
+            }
             if (IDList[idListIndex] != "-9999")
             {
-                valueStr = items[posValue].toFloat();
                 valuesMap.insert(IDList[idListIndex], items[posValue].toFloat());
             }
             idListIndex ++;
@@ -170,7 +218,87 @@ int Import::loadValues()
     myFile.close();
     return CSV2DBGRID_OK;
 }
-*/
+
+int Import::writeMultiTimeValues()
+{
+    QString errorString;
+    if (! grid.openDatabase(&errorString))
+    {
+        logger.writeError (errorString);
+        return ERROR_DBGRID;
+    }
+    if (meteoVar == noMeteoVar)
+    {
+        logger.writeError ("invalid MeteoVar");
+        return ERROR_BAD_REQUEST;
+    }
+
+    QStringList nameParts = QFileInfo(csvFileName).baseName().split("_");
+    QString dateStr = nameParts[nameParts.size()-1];
+    QDate date = QDateTime::fromString(dateStr,"yyyyMMddhh").date();
+
+    QList<float> valueList;
+    QList<float> interpolatedValueList;
+    QString key;
+
+    QString varname = QString::fromStdString(getMeteoVarName(meteoVar));
+    logger.writeInfo("write data: " + varname + "  " + date.toString("yyyy-MM-dd"));
+
+    int DEFAULT_NHOURS = 3;
+    for (int i=0; i<IDList.size(); i++)
+    {
+        key = IDList[i];
+        if ( key != "-9999")
+        {
+            valueList = valuesMap.values(key);
+            if(meteoVar == globalIrradiance || meteoVar == netIrradiance)
+            {
+                // Conversion J/m2 to Watt/m2
+                for (int n=0; n<valueList.size(); n++)
+                {
+                    if (n==0)
+                    {
+                        valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600*DEFAULT_NHOURS);
+                    }
+                    else
+                    {
+                        valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600*(hoursList[n]-hoursList[n-1]));
+                    }
+                }
+            }
+            // time interpolation
+            for(int j=0; j<hoursList.size(); j++)
+            {
+                int myHour = hoursList[j];
+                float myValue = valueList[valueList.size()-1-j]; //revers order
+                if (j==0)
+                {
+                    // first data
+                    interpolatedValueList << myValue;
+
+                }
+                else
+                {
+                    int myPrevHour = hoursList[j-1];
+                    float myPrevValue = valueList[valueList.size()-1-j-1]; //revers order
+                    int nHours = myHour - myPrevHour;
+                    for (int h = (myPrevHour + 1); h < (myHour - 1); h++)
+                    {
+                        interpolatedValueList << (myPrevValue + ((myValue - myPrevValue) / nHours) * (h - myPrevHour));
+                    }
+                }
+            }
+            if (!grid.saveListHourlyData(&errorString, key, date, meteoVar, interpolatedValueList))
+            {
+                return ERROR_WRITING_DATA;
+            }
+        }
+    }
+    grid.closeDatabase();
+    return CSV2DBGRID_OK;
+    // TO DO check che gli ID compaiano una sola volta per cella
+}
+
 int Import::loadEnsembleDailyValues()
 {
     valuesMap.clear();

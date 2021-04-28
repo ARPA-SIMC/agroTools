@@ -5,7 +5,7 @@
 #include <iostream>
 
 // uncomment to execute test
-// #define TEST
+#define TEST
 
 void usage()
 {
@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "PROJECT/testImportCSV/testImportSettings.ini";
+            //settingsFileName = dataPath + "PROJECT/testImportCSV/testImportSettings.ini";
+            settingsFileName = dataPath + "PROJECT/testHRESimportCSV/testHRESImportSettings.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -65,6 +66,7 @@ int main(int argc, char *argv[])
         for (int j= 0; j<varList.size(); j++)
         {
             // check file of interest
+            // LC DA FIXARE fileName NET_RAD_XXXXX.csv contiene sia RAD che NET_RAD
             if(fileName.contains(varList[j]))
             {
                 interest = true;
@@ -116,7 +118,28 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // TO DO hourly
+            if (import.getIsEnsemble())
+            {
+                // TO DO
+            }
+            else
+            {
+                result = import.loadMultiTimeValues();
+                if (result!=CSV2DBGRID_OK)
+                {
+                    import.logger.writeError("Loading hourly data ERROR");
+                    return result;
+                }
+                else
+                {
+                    result = import.writeMultiTimeValues();
+                    if (result!=CSV2DBGRID_OK)
+                    {
+                        import.logger.writeError("Writing daily data ERROR");
+                        return result;
+                    }
+                }
+            }
         }
 
     }

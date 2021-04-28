@@ -13,6 +13,7 @@
 #define ERROR_DBGRID -3
 #define ERROR_BAD_REQUEST -4
 #define ERROR_WRITING_DATA -5
+#define ERROR_TIME_INTERPOLATION -6
 
 class Import
 {
@@ -24,7 +25,8 @@ public:
     int readSettings();
     void setSettingsFileName(const QString &value);
     void setCsvFileName(const QString &value);
-    //int loadValues();
+    int loadMultiTimeValues();
+    int writeMultiTimeValues();
     int loadEnsembleDailyValues();
     int writeEnsembleDailyValues();
     QString getCsvFilePath() const;
@@ -49,6 +51,7 @@ private:
     bool isPrecProgressive;  // TO DO gestire caso particolare isPrecProgressive = true
     bool isFirstCsv;
     QList<QString> IDList;
+    QList<int> hoursList;
     QMultiMap<QString, float> valuesMap;
     Crit3DMeteoGridDbHandler grid;
 
