@@ -66,8 +66,7 @@ int main(int argc, char *argv[])
         for (int j= 0; j<varList.size(); j++)
         {
             // check file of interest
-            // LC DA FIXARE fileName NET_RAD_XXXXX.csv contiene sia RAD che NET_RAD
-            if(fileName.contains(varList[j]))
+            if(fileName.left(varList[j].size()) == varList[j])
             {
                 interest = true;
                 import.setMeteoVar(varList[j]);
