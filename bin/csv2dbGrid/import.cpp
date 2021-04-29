@@ -247,6 +247,7 @@ int Import::writeMultiTimeValues()
     int DEFAULT_NHOURS = 3;
     for (int i=0; i<IDList.size(); i++)
     {
+        interpolatedValueList.clear();
         key = IDList[i];
         if ( key != "-9999")
         {
