@@ -271,6 +271,7 @@ int Import::writeMultiTimeValues()
             {
                 int myHour = hoursList[j];
                 float myValue = valueList[valueList.size()-1-j]; //revers order
+
                 if (j==0)
                 {
                     // first data
@@ -280,12 +281,13 @@ int Import::writeMultiTimeValues()
                 else
                 {
                     int myPrevHour = hoursList[j-1];
-                    float myPrevValue = valueList[valueList.size()-1-j-1]; //revers order
+                    float myPrevValue = valueList[valueList.size()-j]; //revers order
                     int nHours = myHour - myPrevHour;
-                    for (int h = (myPrevHour + 1); h < (myHour - 1); h++)
+                    for (int h = (myPrevHour + 1); h < myHour; h++)
                     {
                         interpolatedValueList << (myPrevValue + ((myValue - myPrevValue) / nHours) * (h - myPrevHour));
                     }
+                    interpolatedValueList << myValue;
                 }
             }
             if (!grid.saveListHourlyData(&errorString, key, date, meteoVar, interpolatedValueList))
