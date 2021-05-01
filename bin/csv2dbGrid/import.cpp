@@ -255,7 +255,6 @@ int Import::writeMultiTimeValues()
     QString varname = QString::fromStdString(getMeteoVarName(meteoVar));
     logger.writeInfo("write data: " + varname + "  " + date.toString("yyyy-MM-dd"));
 
-    int DEFAULT_NHOURS = 3;
     for (int i=0; i<IDList.size(); i++)
     {
         interpolatedValueList.clear();
@@ -268,11 +267,11 @@ int Import::writeMultiTimeValues()
                 if (radConversion)
                 {
                     // Conversion J/m2 to Watt/m2
-                    for (int n=0; n<valueList.size(); n++)
+                    for (int n=1; n<valueList.size(); n++)
                     {
                         if (n==0)
                         {
-                            valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600*DEFAULT_NHOURS);
+                            valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600);
                         }
                         else
                         {
