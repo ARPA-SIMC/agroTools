@@ -20,6 +20,8 @@ void Import::initialize()
     meteoVarList.clear();
     isDaily = false;;
     isEnsemble = false;
+    isPrecProgressive = false;
+    radConversion = false;
 }
 
 int Import::readSettings()
@@ -130,6 +132,15 @@ int Import::readSettings()
     else
     {
         isPrecProgressive = projectSettings->value("isPrecipitationProgressive","").toBool();
+    }
+
+    if (projectSettings->value("radConversion","").toString().isEmpty())
+    {
+        radConversion = false;
+    }
+    else
+    {
+        radConversion = projectSettings->value("radConversion","").toBool();
     }
 
     projectSettings->endGroup();
@@ -254,16 +265,19 @@ int Import::writeMultiTimeValues()
             valueList = valuesMap.values(key);
             if(meteoVar == globalIrradiance || meteoVar == netIrradiance)
             {
-                // Conversion J/m2 to Watt/m2
-                for (int n=0; n<valueList.size(); n++)
+                if (radConversion)
                 {
-                    if (n==0)
+                    // Conversion J/m2 to Watt/m2
+                    for (int n=0; n<valueList.size(); n++)
                     {
-                        valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600*DEFAULT_NHOURS);
-                    }
-                    else
-                    {
-                        valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600*(hoursList[n]-hoursList[n-1]));
+                        if (n==0)
+                        {
+                            valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600*DEFAULT_NHOURS);
+                        }
+                        else
+                        {
+                            valueList[valueList.size()-1-n] = valueList[valueList.size()-1-n] / (3600*(hoursList[n]-hoursList[n-1]));
+                        }
                     }
                 }
             }

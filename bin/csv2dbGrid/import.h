@@ -49,6 +49,7 @@ private:
     bool isDaily;
     bool isEnsemble;
     bool isPrecProgressive;  // TO DO gestire caso particolare isPrecProgressive = true
+    bool radConversion;
     bool isFirstCsv;
     QList<QString> IDList;
     QList<int> hoursList;
