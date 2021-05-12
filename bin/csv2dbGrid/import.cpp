@@ -150,6 +150,7 @@ int Import::readSettings()
 
 int Import::loadMultiTimeValues()
 {
+    hoursList.clear();
     valuesMap.clear();
     if (isEnsemble)
     {
@@ -204,7 +205,7 @@ int Import::loadMultiTimeValues()
                 prev_hour = hour;
                 idListIndex = 0;
             }
-            if (isFirstCsv && hour==0)
+            if (isFirstCsv && hour==hoursList[0])
             {
                 // make IDList
                 double lat = items[posLat].toDouble();
