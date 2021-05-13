@@ -2,7 +2,7 @@
 %{!?srcarchivename: %global srcarchivename agroTools-%{version}}
 
 Name:           agroTools
-Version:        1.0.0
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        One-dimensional soil water balance
 
@@ -58,5 +58,8 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Thu May 13 2021 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.1.0-1
+- Release 1.1.0
+
 * Tue Apr 20 2021 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.0.0-1
 - Release 1.0.0
