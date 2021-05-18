@@ -281,28 +281,57 @@ int Import::writeMultiTimeValues()
                     }
                 }
             }
-            // time interpolation
-            for(int j=0; j<hoursList.size(); j++)
+            if(meteoVar == precipitation)
             {
-                int myHour = hoursList[j];
-                float myValue = valueList[valueList.size()-1-j]; //revers order
-
-                if (j==0)
+                // time interpolation (linear)
+                for(int j=0; j<hoursList.size(); j++)
                 {
-                    // first data
-                    interpolatedValueList << myValue;
+                    int myHour = hoursList[j];
+                    float myValue = valueList[valueList.size()-1-j]; //revers order
 
-                }
-                else
-                {
-                    int myPrevHour = hoursList[j-1];
-                    float myPrevValue = valueList[valueList.size()-j]; //revers order
-                    int nHours = myHour - myPrevHour;
-                    for (int h = (myPrevHour + 1); h < myHour; h++)
+                    if (j==0)
                     {
-                        interpolatedValueList << (myPrevValue + ((myValue - myPrevValue) / nHours) * (h - myPrevHour));
+                        // first data
+                        interpolatedValueList << myValue;
+
                     }
-                    interpolatedValueList << myValue;
+                    else
+                    {
+                        int myPrevHour = hoursList[j-1];
+                        int nHours = myHour - myPrevHour;
+                        for (int h = (myPrevHour + 1); h <= myHour; h++)
+                        {
+                            interpolatedValueList << myValue / nHours;
+                        }
+                        interpolatedValueList << myValue;
+                    }
+                }
+            }
+            else
+            {
+                // time interpolation (linear)
+                for(int j=0; j<hoursList.size(); j++)
+                {
+                    int myHour = hoursList[j];
+                    float myValue = valueList[valueList.size()-1-j]; //revers order
+
+                    if (j==0)
+                    {
+                        // first data
+                        interpolatedValueList << myValue;
+
+                    }
+                    else
+                    {
+                        int myPrevHour = hoursList[j-1];
+                        float myPrevValue = valueList[valueList.size()-j]; //revers order
+                        int nHours = myHour - myPrevHour;
+                        for (int h = (myPrevHour + 1); h < myHour; h++)
+                        {
+                            interpolatedValueList << (myPrevValue + ((myValue - myPrevValue) / nHours) * (h - myPrevHour));
+                        }
+                        interpolatedValueList << myValue;
+                    }
                 }
             }
             if (!grid.saveListHourlyData(&errorString, key, date, meteoVar, interpolatedValueList))
