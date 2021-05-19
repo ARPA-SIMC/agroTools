@@ -250,7 +250,8 @@ int Import::writeMultiTimeValues()
 
     QStringList nameParts = QFileInfo(csvFileName).baseName().split("_");
     QString dateStr = nameParts[nameParts.size()-1];
-    QDate date = QDateTime::fromString(dateStr,"yyyyMMddhh").date();
+    QDateTime dateTime = QDateTime::fromString(dateStr,"yyyyMMddhh");
+    QDate date = dateTime.date();
 
     QList<float> valueList;
     QList<float> interpolatedValueList;
@@ -283,34 +284,53 @@ int Import::writeMultiTimeValues()
                         }
                     }
                 }
-                double x;
-                double y;
-                double z;
-                grid.meteoGrid()->getXYZFromId(key.toStdString(), &x, &y, &z);
-                TsunPosition mySunPosition;
-                TradPoint myRadPoint;
-                Crit3DRadiationSettings radSettings;
-                gis::Crit3DRasterGrid myDEM;
-                gis::Crit3DPoint myPoint;
-                radSettings.initialize();
-                /*! assign topographic height and coordinates */
-                myRadPoint.x = x;
-                myRadPoint.y = y;
-                myRadPoint.height = z;
-                myPoint.utm.x = x;
-                myPoint.utm.y = y;
-                myPoint.z = z;
-                /*! suppose radiometers are horizontal */
-                myRadPoint.aspect = 0.;
-                myRadPoint.slope = 0.;
-/*
-                float myLinke = radiation::readLinke(radSettings, myPoint);
-                float myAlbedo = radiation::readAlbedo(radSettings, myPoint);
-                float myClearSkyTransmissivity = radSettings.getClearSky();
+                if(meteoVar == globalIrradiance)
+                {
+                    double x;
+                    double y;
+                    double z;
+                    double lat; double lon;
+                    grid.meteoGrid()->getXYZFromId(key.toStdString(), &x, &y, &z);
+                    grid.meteoGrid()->getLatLonFromId(key.toStdString(), &lat, &lon);
+                    TsunPosition mySunPosition;
+                    TradPoint myRadPoint;
+                    Crit3DRadiationSettings radSettings;
+                    gis::Crit3DRasterGrid myDEM;
+                    gis::Crit3DPoint myPoint;
+                    radSettings.initialize();
+                    /*! assign topographic height and coordinates */
+                    myRadPoint.x = x;
+                    myRadPoint.y = y;
+                    myRadPoint.height = z;
+                    myRadPoint.lat = lat;
+                    myRadPoint.lon = lon;
+                    myPoint.utm.x = x;
+                    myPoint.utm.y = y;
+                    myPoint.z = z;
+                    /*! suppose radiometers are horizontal */
+                    myRadPoint.aspect = 0.;
+                    myRadPoint.slope = 0.;
 
-                computeRadiationPointRsun(radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
-                                                myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
-                                                */
+                    float myLinke = radiation::readLinke(&radSettings, myPoint);
+                    float myAlbedo = radiation::readAlbedo(&radSettings, myPoint);
+                    float myClearSkyTransmissivity = radSettings.getClearSky();
+
+                    Crit3DTime myTime;
+                    myTime.date.day = dateTime.date().day();
+                    myTime.date.month = dateTime.date().month();
+                    myTime.date.year = dateTime.date().year();
+                    myTime.time = dateTime.time().hour();
+                    for (int n=0; n<valueList.size(); n++)
+                    {
+                        myTime = myTime.addSeconds(hoursList[n]);
+                        radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
+                                                        myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
+                        if (myRadPoint.global == 0)
+                        {
+                            valueList[valueList.size()-1-n] = 0;
+                        }
+                    }
+                }
 
             }
             if(meteoVar == precipitation)
