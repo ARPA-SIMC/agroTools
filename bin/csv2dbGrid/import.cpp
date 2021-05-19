@@ -313,62 +313,96 @@ int Import::writeMultiTimeValues()
             else
             {
                 // time interpolation (linear)
-                for(int j=0; j<hoursList.size(); j++)
+                if(meteoVar != globalIrradiance)
                 {
-                    int myHour = hoursList[j];
-                    float myValue = valueList[valueList.size()-1-j]; //revers order
+                    for(int j=0; j<hoursList.size(); j++)
+                    {
+                        int myHour = hoursList[j];
+                        float myValue = valueList[valueList.size()-1-j]; //revers order
 
-                    if (j==0)
-                    {
-                        // first data
-                        interpolatedValueList << myValue;
-                    }
-                    else
-                    {
-                        int myPrevHour = hoursList[j-1];
-                        float myPrevValue = valueList[valueList.size()-j]; //revers order
-                        int nHours = myHour - myPrevHour;
-                        if(meteoVar != globalIrradiance)
+                        if (j==0)
                         {
+                            // first data
+                            interpolatedValueList << myValue;
+                        }
+                        else
+                        {
+                            int myPrevHour = hoursList[j-1];
+                            float myPrevValue = valueList[valueList.size()-j]; //revers order
+                            int nHours = myHour - myPrevHour;
                             for (int h = (myPrevHour + 1); h < myHour; h++)
                             {
                                 interpolatedValueList << (myPrevValue + ((myValue - myPrevValue) / nHours) * (h - myPrevHour));
                             }
                             interpolatedValueList << myValue;
                         }
+                    }
+                }
+                else
+                {
+                    // time interpolation (linear) check rad potent
+                    for(int j=0; j<hoursList.size(); j++)
+                    {
+                        /* * */
+                        double x;
+                        double y;
+                        double z;
+                        double lat; double lon;
+                        grid.meteoGrid()->getXYZFromId(key.toStdString(), &x, &y, &z);
+                        grid.meteoGrid()->getLatLonFromId(key.toStdString(), &lat, &lon);
+                        TsunPosition mySunPosition;
+                        TradPoint myRadPoint;
+                        Crit3DRadiationSettings radSettings;
+                        gis::Crit3DRasterGrid myDEM;
+                        gis::Crit3DPoint myPoint;
+                        radSettings.initialize();
+                        /*! assign topographic height and coordinates */
+                        myRadPoint.x = x;
+                        myRadPoint.y = y;
+                        myRadPoint.height = z;
+                        myRadPoint.lat = lat;
+                        myRadPoint.lon = lon;
+                        myPoint.utm.x = x;
+                        myPoint.utm.y = y;
+                        myPoint.z = z;
+                        /*! suppose radiometers are horizontal */
+                        myRadPoint.aspect = 0.;
+                        myRadPoint.slope = 0.;
+
+                        float myLinke = radiation::readLinke(&radSettings, myPoint);
+                        float myAlbedo = radiation::readAlbedo(&radSettings, myPoint);
+                        float myClearSkyTransmissivity = radSettings.getClearSky();
+                        Crit3DTime myTime;
+
+                        int myHour = hoursList[j];
+                        float myValue = valueList[valueList.size()-1-j]; //revers order
+
+                        if (j==0)
+                        {
+                            // first data
+                            myTime.date.day = dateTime.date().day();
+                            myTime.date.month = dateTime.date().month();
+                            myTime.date.year = dateTime.date().year();
+                            myTime.time = (dateTime.time().hour()*3600);
+                            radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
+                                                            myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
+                            // global rad check
+                            if (myRadPoint.global == 0)
+                            {
+                                interpolatedValueList << 0;
+                            }
+                            else
+                            {
+                                interpolatedValueList << myValue;
+                            }
+                        }
                         else
                         {
-                            // global rad check
-                            double x;
-                            double y;
-                            double z;
-                            double lat; double lon;
-                            grid.meteoGrid()->getXYZFromId(key.toStdString(), &x, &y, &z);
-                            grid.meteoGrid()->getLatLonFromId(key.toStdString(), &lat, &lon);
-                            TsunPosition mySunPosition;
-                            TradPoint myRadPoint;
-                            Crit3DRadiationSettings radSettings;
-                            gis::Crit3DRasterGrid myDEM;
-                            gis::Crit3DPoint myPoint;
-                            radSettings.initialize();
-                            /*! assign topographic height and coordinates */
-                            myRadPoint.x = x;
-                            myRadPoint.y = y;
-                            myRadPoint.height = z;
-                            myRadPoint.lat = lat;
-                            myRadPoint.lon = lon;
-                            myPoint.utm.x = x;
-                            myPoint.utm.y = y;
-                            myPoint.z = z;
-                            /*! suppose radiometers are horizontal */
-                            myRadPoint.aspect = 0.;
-                            myRadPoint.slope = 0.;
+                            int myPrevHour = hoursList[j-1];
+                            float myPrevValue = valueList[valueList.size()-j]; //revers order
+                            int nHours = myHour - myPrevHour;
 
-                            float myLinke = radiation::readLinke(&radSettings, myPoint);
-                            float myAlbedo = radiation::readAlbedo(&radSettings, myPoint);
-                            float myClearSkyTransmissivity = radSettings.getClearSky();
-
-                            Crit3DTime myTime;
+                            // interpolation data
                             for (int h = (myPrevHour + 1); h < myHour; h++)
                             {
                                 QDateTime tmp = dateTime.addSecs(h*3600);
@@ -379,7 +413,7 @@ int Import::writeMultiTimeValues()
 
                                 radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                                 myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
-
+                                // global rad check
                                 if (myRadPoint.global == 0)
                                 {
                                     interpolatedValueList << 0;
@@ -389,7 +423,23 @@ int Import::writeMultiTimeValues()
                                     interpolatedValueList << (myPrevValue + ((myValue - myPrevValue) / nHours) * (h - myPrevHour));
                                 }
                             }
-                            interpolatedValueList << myValue;
+                            QDateTime tmp = dateTime.addSecs(myHour*3600);
+                            myTime.date.day = tmp.date().day();
+                            myTime.date.month = tmp.date().month();
+                            myTime.date.year = tmp.date().year();
+                            myTime.time = (tmp.time().hour()*3600);
+
+                            radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
+                                                            myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
+
+                            if (myRadPoint.global == 0)
+                            {
+                                interpolatedValueList << 0;
+                            }
+                            else
+                            {
+                                interpolatedValueList << myValue;
+                            }
                         }
                     }
                 }
