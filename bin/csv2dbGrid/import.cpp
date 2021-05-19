@@ -1,4 +1,7 @@
 #include "import.h"
+#include "radiationDefinitions.h"
+#include "radiationSettings.h"
+#include "solarRadiation.h"
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
@@ -280,7 +283,35 @@ int Import::writeMultiTimeValues()
                         }
                     }
                 }
-                grid.meteoGrid()->getLatFromId()
+                double x;
+                double y;
+                double z;
+                grid.meteoGrid()->getXYZFromId(key.toStdString(), &x, &y, &z);
+                TsunPosition mySunPosition;
+                TradPoint myRadPoint;
+                Crit3DRadiationSettings radSettings;
+                gis::Crit3DRasterGrid myDEM;
+                gis::Crit3DPoint myPoint;
+                radSettings.initialize();
+                /*! assign topographic height and coordinates */
+                myRadPoint.x = x;
+                myRadPoint.y = y;
+                myRadPoint.height = z;
+                myPoint.utm.x = x;
+                myPoint.utm.y = y;
+                myPoint.z = z;
+                /*! suppose radiometers are horizontal */
+                myRadPoint.aspect = 0.;
+                myRadPoint.slope = 0.;
+/*
+                float myLinke = radiation::readLinke(radSettings, myPoint);
+                float myAlbedo = radiation::readAlbedo(radSettings, myPoint);
+                float myClearSkyTransmissivity = radSettings.getClearSky();
+
+                computeRadiationPointRsun(radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
+                                                myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
+                                                */
+
             }
             if(meteoVar == precipitation)
             {
