@@ -280,6 +280,7 @@ int Import::writeMultiTimeValues()
                         }
                     }
                 }
+                grid.meteoGrid()->getLatFromId()
             }
             if(meteoVar == precipitation)
             {
@@ -293,7 +294,6 @@ int Import::writeMultiTimeValues()
                     {
                         // first data
                         interpolatedValueList << myValue;
-
                     }
                     else
                     {
@@ -319,7 +319,6 @@ int Import::writeMultiTimeValues()
                     {
                         // first data
                         interpolatedValueList << myValue;
-
                     }
                     else
                     {
