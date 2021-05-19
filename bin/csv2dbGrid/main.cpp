@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath)) return -1;
 
             //settingsFileName = dataPath + "PROJECT/testImportCSV/testImportSettings.ini";
-            settingsFileName = dataPath + "PROJECT/testCOSMOimportCSV/testCOSMOImportSettings.ini";
+            settingsFileName = dataPath + "PROJECT/testHRESimportCSV/testHRESImportSettings.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
