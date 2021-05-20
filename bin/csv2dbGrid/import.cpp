@@ -391,7 +391,7 @@ int Import::writeMultiTimeValues()
                             myTime.date.day = tmp.date().day();
                             myTime.date.month = tmp.date().month();
                             myTime.date.year = tmp.date().year();
-                            myTime.time = (tmp.time().hour()*3600);
+                            myTime.time = (tmp.time().hour()*3600-1800);
                             radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                             myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
                             // global rad check
@@ -417,7 +417,7 @@ int Import::writeMultiTimeValues()
                                 myTime.date.day = tmp.date().day();
                                 myTime.date.month = tmp.date().month();
                                 myTime.date.year = tmp.date().year();
-                                myTime.time = (tmp.time().hour()*3600);
+                                myTime.time = (tmp.time().hour()*3600-1800);
 
                                 radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                                 myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
@@ -435,7 +435,7 @@ int Import::writeMultiTimeValues()
                             myTime.date.day = tmp.date().day();
                             myTime.date.month = tmp.date().month();
                             myTime.date.year = tmp.date().year();
-                            myTime.time = (tmp.time().hour()*3600);
+                            myTime.time = (tmp.time().hour()*3600-1800);
 
                             radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                             myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
