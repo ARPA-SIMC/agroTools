@@ -306,7 +306,6 @@ int Import::writeMultiTimeValues()
                         {
                             interpolatedValueList << myValue / nHours;
                         }
-                        interpolatedValueList << myValue;
                     }
                 }
             }
