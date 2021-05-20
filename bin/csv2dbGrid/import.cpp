@@ -47,6 +47,14 @@ int Import::readSettings()
         path = fileInfo.path() + "/";
     }
     projectSettings = new QSettings(settingsFileName, QSettings::IniFormat);
+    // LOCATION
+    projectSettings->beginGroup("location");
+    projectSettings->setValue("lat", gisSettings.startLocation.latitude);
+    projectSettings->setValue("lon", gisSettings.startLocation.longitude);
+    projectSettings->setValue("utm_zone", gisSettings.utmZone);
+    projectSettings->setValue("time_zone", gisSettings.timeZone);
+    projectSettings->setValue("is_utc", gisSettings.isUTC);
+    projectSettings->endGroup();
 
     // PROJECT
     projectSettings->beginGroup("project");
@@ -354,7 +362,7 @@ int Import::writeMultiTimeValues()
                         Crit3DRadiationSettings radSettings;
                         gis::Crit3DRasterGrid myDEM;
                         gis::Crit3DPoint myPoint;
-                        radSettings.initialize();
+                        radSettings.gisSettings = &gisSettings;
                         /*! assign topographic height and coordinates */
                         myRadPoint.x = x;
                         myRadPoint.y = y;

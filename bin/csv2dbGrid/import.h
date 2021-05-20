@@ -37,6 +37,7 @@ public:
     bool getIsEnsemble() const;
 
 private:
+    gis::Crit3DGisSettings gisSettings;
     QString settingsFileName;
     QString csvFilePath;
     QString csvFileName;
