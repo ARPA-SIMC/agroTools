@@ -452,7 +452,7 @@ int Import::writeMultiTimeValues()
                     }
                 }
             }
-            if (!grid.saveListHourlyData(&errorString, key, date, meteoVar, interpolatedValueList))
+            if (!grid.saveListHourlyData(&errorString, key, dateTime.addSecs(hoursList[0]*3600), meteoVar, interpolatedValueList))
             {
                 return ERROR_WRITING_DATA;
             }
