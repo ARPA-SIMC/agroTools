@@ -387,10 +387,11 @@ int Import::writeMultiTimeValues()
                         if (j==0)
                         {
                             // first data
-                            myTime.date.day = dateTime.date().day();
-                            myTime.date.month = dateTime.date().month();
-                            myTime.date.year = dateTime.date().year();
-                            myTime.time = (dateTime.time().hour()*3600);
+                            QDateTime tmp = dateTime.addSecs(myHour*3600);
+                            myTime.date.day = tmp.date().day();
+                            myTime.date.month = tmp.date().month();
+                            myTime.date.year = tmp.date().year();
+                            myTime.time = (tmp.time().hour()*3600);
                             radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                             myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
                             // global rad check
