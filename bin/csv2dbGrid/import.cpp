@@ -466,27 +466,7 @@ int Import::writeMultiTimeValues()
             }
         }
     }
-    // compute derived variables
-    /*
-    QDateTime first = dateTime.addSecs(hoursList[0]*3600);
-    QDateTime last = dateTime.addSecs(hoursList[hoursList.size()-1]*3600);
-    for(; first < last; first.addSecs(3600))
-    {
-        grid.meteoGrid()->computeHourlyDerivedVariables(first);
-    }
-    // save derived variables
-    loadMeteoGridHourlyData(QDateTime(dateIni, QTime(1,0)), QDateTime(dateFin.addDays(1), QTime(0,0)), false);
 
-    foreach (meteoVariable myVar, variables)
-    {
-        if (! timeAggregateGridVarHourlyInDaily(myVar, getCrit3DDate(dateIni), getCrit3DDate(dateFin))) return false;
-    }
-
-    // saving hourly and daily meteo grid data to DB
-    QString myError;
-    QList <meteoVariable> variables;
-    if (! grid->saveGridData(&myError, QDateTime(dateIni, QTime(1,0,0)), QDateTime(dateFin.addDays(1), QTime(0,0,0)), variables)) return false;
-    */
     grid.closeDatabase();
     return CSV2DBGRID_OK;
     // TO DO check che gli ID compaiano una sola volta per cella
