@@ -5,7 +5,7 @@
 #include <iostream>
 
 // uncomment to execute test
-#define TEST
+//#define TEST
 
 void usage()
 {
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath)) return -1;
 
             //settingsFileName = dataPath + "PROJECT/testImportCSV/testImportSettings.ini";
-            settingsFileName = dataPath + "PROJECT/testCOSMOimportCSV/testCOSMOImportSettings.ini";
+            settingsFileName = dataPath + "PROJECT/testIFSimportCSV/testIFSImportSettings.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
