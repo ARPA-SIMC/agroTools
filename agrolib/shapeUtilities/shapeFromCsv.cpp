@@ -171,24 +171,41 @@ bool shapeFromCsv(Crit3DShapeHandler &refShapeFile, QString csvFileName,
             }
             else
             {
-                type = FTDouble;
-                if (valuesList[2].isEmpty())
+                if (valuesList[1] == "INTEGER")
                 {
-                    nWidth = defaultDoubleLenght;
+                    type = FTInteger;
+                    if (valuesList[2].isEmpty())
+                    {
+                        nWidth = defaultDoubleLenght;
+                    }
+                    else
+                    {
+                        nWidth = valuesList[2].toInt();
+                    }
+                    nDecimals = 0;
                 }
                 else
                 {
-                    nWidth = valuesList[2].toInt();
-                }
-                if (valuesList[3].isEmpty())
-                {
-                    nDecimals = defaultDoubleDecimals;
-                }
-                else
-                {
-                    nDecimals = valuesList[3].toInt();
+                    type = FTDouble;
+                    if (valuesList[2].isEmpty())
+                    {
+                        nWidth = defaultDoubleLenght;
+                    }
+                    else
+                    {
+                        nWidth = valuesList[2].toInt();
+                    }
+                    if (valuesList[3].isEmpty())
+                    {
+                        nDecimals = defaultDoubleDecimals;
+                    }
+                    else
+                    {
+                        nDecimals = valuesList[3].toInt();
+                    }
                 }
             }
+
             outputShapeFile.addField(field.toStdString().c_str(), type, nWidth, nDecimals);
             myPosMap.insert(i,outputShapeFile.getFieldPos(field.toStdString()));
         }
