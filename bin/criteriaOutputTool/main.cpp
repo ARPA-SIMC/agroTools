@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "PROJECT/INCOLTO/deficit_macroaree.ini";
+            settingsFileName = "C:/GITHUB/CRITERIA1D/DATA/PROJECT/C5/C5_monthly.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operation = "AGGREGATION";
+            operation = "SHAPE";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     {
         myResult = myProject.createCsvFile();
     }
-    else if (operation == "SHAPEFILE")
+    else if (operation == "SHAPE" || operation == "SHAPEFILE")
     {
         myResult = myProject.createShapeFile();
     }
