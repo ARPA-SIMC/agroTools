@@ -2,7 +2,7 @@
 %{!?srcarchivename: %global srcarchivename agroTools-%{version}}
 
 Name:           agroTools
-Version:        1.1.0
+Version:        1.1.1
 Release:        1%{?dist}
 Summary:        One-dimensional soil water balance
 
