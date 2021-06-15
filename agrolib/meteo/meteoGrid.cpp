@@ -295,11 +295,11 @@ void Crit3DMeteoGrid::fillMeteoPoint(unsigned int row, unsigned int col, const s
     }
 }
 
-void Crit3DMeteoGrid::fillCurrentDailyValue(Crit3DDate date, meteoVariable variable)
+void Crit3DMeteoGrid::fillCurrentDailyValue(Crit3DDate date, meteoVariable variable, Crit3DMeteoSettings* meteoSettings)
 {
     for (unsigned row = 0; row < unsigned(_gridStructure.header().nrRows); row++)
         for (unsigned col = 0; col < unsigned(_gridStructure.header().nrCols); col++)
-            _meteoPoints[row][col]->currentValue = _meteoPoints[row][col]->getMeteoPointValueD(date, variable);
+            _meteoPoints[row][col]->currentValue = _meteoPoints[row][col]->getMeteoPointValueD(date, variable, meteoSettings);
 }
 
 void Crit3DMeteoGrid::fillCurrentHourlyValue(Crit3DDate date, int hour, int minute, meteoVariable variable)
@@ -427,6 +427,23 @@ bool Crit3DMeteoGrid::findMeteoPointFromId(unsigned* row, unsigned* col, const s
             {
                 *row = i;
                 *col = j;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Crit3DMeteoGrid::existsMeteoPointFromId(const std::string& id)
+{
+    unsigned i,j;
+
+    for (i = 0; i < unsigned(_gridStructure.header().nrRows); i++)
+    {
+        for (j = 0; j < unsigned(_gridStructure.header().nrCols); j++)
+        {
+            if (_meteoPoints[i][j]->id == id)
+            {
                 return true;
             }
         }

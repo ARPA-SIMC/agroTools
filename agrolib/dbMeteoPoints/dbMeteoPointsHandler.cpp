@@ -789,6 +789,33 @@ bool Crit3DMeteoPointsDbHandler::loadVariableProperties()
     return true;
 }
 
+bool Crit3DMeteoPointsDbHandler::getNameColumn(QString tableName, QList<QString>* columnList)
+{
+    QSqlQuery qry(_db);
+
+    int id_variable;
+    QString variable;
+    std::string varStdString;
+    meteoVariable meteoVar;
+    std::pair<std::map<int, meteoVariable>::iterator,bool> ret;
+
+    QString statement = QString( "PRAGMA table_info('%1')").arg(tableName);
+    if( !qry.exec(statement) )
+    {
+        error = qry.lastError().text();
+        return false;
+    }
+    else
+    {
+        QString name;
+        while (qry.next())
+        {
+            getValue(qry.value("name"), &name);
+            *columnList << name;
+        }
+    }
+    return true;
+}
 
 int Crit3DMeteoPointsDbHandler::getIdfromMeteoVar(meteoVariable meteoVar)
 {
@@ -828,7 +855,8 @@ bool Crit3DMeteoPointsDbHandler::createTable(const QString& tableName, bool dele
         _db.exec(queryStr);
     }
 
-    queryStr = "CREATE TABLE IF NOT EXISTS " + tableName + " (date_time TEXT(20), id_variable INTEGER, value REAL, PRIMARY KEY(date_time, id_variable))";
+    queryStr = QString("CREATE TABLE IF NOT EXISTS `%1`"
+                                "(date_time TEXT(20), id_variable INTEGER, value REAL, PRIMARY KEY(date_time, id_variable))").arg(tableName);
     QSqlQuery qry(_db);
     qry.prepare(queryStr);
 
@@ -997,3 +1025,35 @@ bool Crit3DMeteoPointsDbHandler::importHourlyMeteoData(QString csvFileName, bool
     return true;
 }
 
+bool Crit3DMeteoPointsDbHandler::writeDailyData(QString pointCode, QDate date, meteoVariable var, float value, QString* log)
+{
+    if (!existIdPoint(pointCode))
+    {
+        *log += "\nID " + pointCode + " is not present in the point properties table.";
+        return false;
+    }
+    // create table
+    bool deletePreviousData = false;
+    QString tableName = pointCode + "_D";
+    if (! createTable(tableName, deletePreviousData))
+    {
+        *log += "\nError in create table: " + tableName + _db.lastError().text();
+        return false;
+    }
+    QString id = QString::number(getIdfromMeteoVar(var));
+    QString queryStr = QString(("INSERT OR REPLACE INTO `%1`"
+                                " VALUES ('%2','%3',%4)")).arg(tableName).arg(date.toString("yyyy-MM-dd")).arg(id).arg(value);
+
+    // exec query
+    QSqlQuery qry(_db);
+    qry.prepare(queryStr);
+    if (! qry.exec())
+    {
+        *log += "\nError in execute query: " + qry.lastError().text();
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
