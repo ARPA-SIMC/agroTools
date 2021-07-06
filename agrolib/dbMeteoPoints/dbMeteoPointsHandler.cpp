@@ -19,7 +19,7 @@ Crit3DMeteoPointsDbHandler::Crit3DMeteoPointsDbHandler(QString provider_, QStrin
         _db.close();
     }
 
-    _db = QSqlDatabase::addDatabase(provider_, QUuid::createUuid().toString());
+    _db = QSqlDatabase::addDatabase(provider_, "MeteoPoints");
     _db.setDatabaseName(dbname_);
 
     if (provider_ != "QSQLITE")
@@ -46,7 +46,7 @@ Crit3DMeteoPointsDbHandler::Crit3DMeteoPointsDbHandler(QString dbname_)
         _db.close();
     }
 
-    _db = QSqlDatabase::addDatabase("QSQLITE", QUuid::createUuid().toString());
+    _db = QSqlDatabase::addDatabase("QSQLITE", "MeteoPoints");
     _db.setDatabaseName(dbname_);
 
     if (!_db.open())
@@ -96,9 +96,9 @@ QString Crit3DMeteoPointsDbHandler::getDatasetURL(QString dataset)
 }
 
 
-QStringList Crit3DMeteoPointsDbHandler::getDatasetsActive()
+QList<QString> Crit3DMeteoPointsDbHandler::getDatasetsActive()
 {
-    QStringList activeList;
+    QList<QString> activeList;
     QSqlQuery qry(_db);
 
     qry.prepare( "SELECT dataset FROM datasets WHERE active = 1" );
@@ -132,9 +132,9 @@ void Crit3DMeteoPointsDbHandler::setDatasetsActive(QString active)
 }
 
 
-QStringList Crit3DMeteoPointsDbHandler::getDatasetsList()
+QList<QString> Crit3DMeteoPointsDbHandler::getDatasetsList()
 {
-    QStringList datasetList;
+    QList<QString> datasetList;
     QSqlQuery qry(_db);
 
     qry.prepare( "SELECT * FROM datasets" );
@@ -159,7 +159,7 @@ QStringList Crit3DMeteoPointsDbHandler::getDatasetsList()
 QDateTime Crit3DMeteoPointsDbHandler::getFirstDate(frequencyType frequency)
 {
     QSqlQuery qry(_db);
-    QStringList tables;
+    QList<QString> tables;
     QDateTime firstDate;
     QDate myDate;
     QTime myTime;
@@ -225,7 +225,7 @@ QDateTime Crit3DMeteoPointsDbHandler::getFirstDate(frequencyType frequency)
 QDateTime Crit3DMeteoPointsDbHandler::getLastDate(frequencyType frequency)
 {
     QSqlQuery qry(_db);
-    QStringList tables;
+    QList<QString> tables;
     QDateTime lastDate;
 
     QString dayHour;
@@ -743,6 +743,59 @@ bool Crit3DMeteoPointsDbHandler::writePointProperties(Crit3DMeteoPoint *myPoint)
 
 }
 
+bool Crit3DMeteoPointsDbHandler::updatePointProperties(QList<QString> columnList, QList<QString> valueList)
+{
+
+    if (columnList.size() != valueList.size())
+    {
+        qDebug() << "invalid input";
+        return false;
+    }
+    QSqlQuery qry(_db);
+
+    QString queryStr = QString("CREATE TABLE IF NOT EXISTS `%1`"
+                               "(id_point TEXT(20), name TEXT(20), dataset TEXT(20), latitude NUMERIC, longitude REAL, latInt INTEGER, lonInt INTEGER, utm_x NUMERIC, utm_y NUMERIC,"
+                               " altitude REAL, state TEXT(20), region TEXT(20), province TEXT(20), municipality TEXT(20), is_active INTEGER DEFAULT 1, is_utc INTEGER DEFAULT 1, "
+                               "orog_code TEXT(20), PRIMARY KEY(id_point))").arg("point_properties");
+
+    qry.prepare(queryStr);
+    if( !qry.exec() )
+    {
+        qDebug() << qry.lastError();
+        return false;
+    }
+
+    queryStr = "INSERT OR REPLACE INTO point_properties (";
+    for (int i = 0; i<columnList.size(); i++)
+    {
+        queryStr += columnList[i]+",";
+    }
+    queryStr.chop(1); // remove last ,
+    queryStr += ") VALUES (";
+    for (int i = 0; i<columnList.size(); i++)
+    {
+        queryStr += ":"+columnList[i]+",";
+    }
+    queryStr.chop(1); // remove last ,
+    queryStr += ")";
+
+    qry.prepare(queryStr);
+
+    for (int i = 0; i<valueList.size(); i++)
+    {
+        qry.bindValue(":"+columnList[i], valueList[i]);
+    }
+
+    if( !qry.exec() )
+    {
+        qDebug() << qry.lastError();
+        return false;
+    }
+    else
+        return true;
+
+}
+
 
 bool Crit3DMeteoPointsDbHandler::loadVariableProperties()
 {
@@ -864,7 +917,7 @@ bool Crit3DMeteoPointsDbHandler::createTable(const QString& tableName, bool dele
 }
 
 
-QString Crit3DMeteoPointsDbHandler::getNewDataEntry(int pos, const QStringList& dataStr, const QString& dateTimeStr,
+QString Crit3DMeteoPointsDbHandler::getNewDataEntry(int pos, const QList<QString>& dataStr, const QString& dateTimeStr,
                                                 const QString& idVarStr, meteoVariable myVar,
                                                 int* nrMissingData, int* nrWrongData, Crit3DQuality* dataQuality)
 {
@@ -924,7 +977,7 @@ bool Crit3DMeteoPointsDbHandler::importHourlyMeteoData(QString csvFileName, bool
     else
     {
         // skip first row (header)
-        QStringList header = myStream.readLine().split(',');
+        QList<QString> header = myStream.readLine().split(',');
     }
 
     // create table
@@ -943,7 +996,7 @@ bool Crit3DMeteoPointsDbHandler::importHourlyMeteoData(QString csvFileName, bool
     QString idWind = QString::number(getIdfromMeteoVar(windScalarIntensity));
 
     Crit3DQuality dataQuality;
-    QStringList line;
+    QList<QString> line;
     QDate currentDate, previousDate;
     int hour, previousHour = 0;
     QString dateTimeStr;
