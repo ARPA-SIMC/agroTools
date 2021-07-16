@@ -45,12 +45,12 @@ SOURCES += \
 
 
 INCLUDEPATH +=  ../../agrolib/crit3dDate ../../agrolib/mathFunctions ../../agrolib/gis ../../agrolib/crop  \
-                ../../agrolib/utilities ../../agrolib/shapeUtilities ../../agrolib/shapeHandler \
+                ../../agrolib/utilities ../../agrolib/shapeUtilities  \
+                ../../agrolib/shapeHandler ../../agrolib/netcdfHandler \
                 ../../agrolib/shapeHandler/shapelib ../../agrolib/criteriaOutput
 
-
 # comment to compile without GDAL library
-CONFIG += GDAL
+#CONFIG += GDAL
 
 CONFIG(debug, debug|release) {
 
@@ -62,6 +62,17 @@ GDAL {
     LIBS += -L../../agrolib/gdalHandler/debug -lgdalHandler
     include(../../agrolib/gdal.pri)
 }
+
+    LIBS += -L../../agrolib/netcdfHandler/debug -lnetcdfHandler
+    win32:{
+        LIBS += -L$$(NC4_INSTALL_DIR)/lib -lnetcdf
+    }
+    unix:{
+        LIBS += -lnetcdf
+    }
+    macx:{
+        LIBS += -L/usr/local/lib/ -lnetcdf
+    }
 
     LIBS += -L../../agrolib/shapeUtilities/debug -lshapeUtilities
     LIBS += -L../../agrolib/shapeHandler/debug -lshapeHandler
@@ -80,6 +91,18 @@ GDAL {
     LIBS += -L../../agrolib/gdalHandler/release -lgdalHandler
     include(../../agrolib/gdal.pri)
 }
+
+    LIBS += -L../../agrolib/netcdfHandler/release -lnetcdfHandler
+    win32:{
+        LIBS += -L$$(NC4_INSTALL_DIR)/lib -lnetcdf
+    }
+    unix:{
+        LIBS += -lnetcdf
+    }
+    macx:{
+        LIBS += -L/usr/local/lib/ -lnetcdf
+    }
+
     LIBS += -L../../agrolib/shapeUtilities/release -lshapeUtilities
     LIBS += -L../../agrolib/shapeHandler/release -lshapeHandler
     LIBS += -L../../agrolib/utilities/release -lutilities

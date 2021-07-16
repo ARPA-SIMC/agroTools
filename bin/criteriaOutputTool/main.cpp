@@ -12,7 +12,7 @@
 void usage()
 {
     std::cout << "CRITERIA1D post-processing" << std::endl
-              << "Usage: CriteriaOutput PRECOMPUTE_DTX|CSV|SHAPEFILE|MAPS|AGGREGATION project.ini [date]" << std::endl;
+              << "Usage: CriteriaOutput CSV|SHAPEFILE|MAPS|AGGREGATION|PRECOMPUTE_DTX project.ini [date]" << std::endl;
 }
 
 
