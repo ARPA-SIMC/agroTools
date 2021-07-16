@@ -11,8 +11,7 @@
 
 void usage()
 {
-    std::cout << "CRITERIA1D post-processing" << std::endl
-              << "Usage: CriteriaOutput CSV|SHAPEFILE|MAPS|AGGREGATION|PRECOMPUTE_DTX project.ini [date]" << std::endl;
+    std::cout << "\nUsage:\nCriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|PRECOMPUTE_DTX project.ini [date]\n" << std::endl;
 }
 
 
@@ -22,7 +21,7 @@ int main(int argc, char *argv[])
     CriteriaOutputProject myProject;
 
     QString appPath = myApp.applicationDirPath() + "/";
-    QString settingsFileName, dateComputationStr, operation;
+    QString settingsFileName, dateComputationStr;
 
     if (argc <= 2)
     {
@@ -30,9 +29,9 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = "C:/GITHUB/CRITERIA1D/DATA/PROJECT/C5/C5_monthly.ini";
-            dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operation = "SHAPE";
+            settingsFileName = dataPath + "/PROJECT/C5/C5_monthly.ini";
+            dateComputationStr = "2021-07-13";  //QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
+            myProject.operation = "NETCDF";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -40,16 +39,8 @@ int main(int argc, char *argv[])
     }
     else
     {
-        operation = argv[1];
-        operation = operation.toUpper();
-        if (operation != "PRECOMPUTE_DTX" && operation != "CSV"
-            && operation != "SHAPEFILE" && operation != "MAPS"
-            && operation != "AGGREGATION")
-        {
-            myProject.logger.writeError("Wrong parameter: " + operation);
-            usage();
-            return ERROR_WRONGPARAMETER;
-        }
+        myProject.operation = argv[1];
+        myProject.operation = myProject.operation.toUpper();
 
         settingsFileName = argv[2];
         if (settingsFileName.right(3) != "ini")
@@ -92,23 +83,27 @@ int main(int argc, char *argv[])
     }
     myProject.logger.writeInfo("computation date: " + dateComputationStr);
 
-    if (operation == "PRECOMPUTE_DTX")
+    if (myProject.operation == "PRECOMPUTE_DTX")
     {
         myResult = myProject.precomputeDtx();
     }
-    else if (operation == "CSV")
+    else if (myProject.operation == "CSV")
     {
         myResult = myProject.createCsvFile();
     }
-    else if (operation == "SHAPE" || operation == "SHAPEFILE")
+    else if (myProject.operation == "SHAPE" || myProject.operation == "SHAPEFILE")
     {
         myResult = myProject.createShapeFile();
     }
-    else if (operation == "AGGREGATION")
+    else if (myProject.operation == "NETCDF")
+    {
+        myResult = myProject.createNetcdf();
+    }
+    else if (myProject.operation == "AGGREGATION")
     {
         myResult = myProject.createAggregationFile();
     }
-    else if (operation == "MAPS")
+    else if (myProject.operation == "MAPS")
     {
         #ifdef GDAL
             myResult = myProject.createMaps();
@@ -119,7 +114,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        myProject.logger.writeError("Wrong parameter: " + operation);
+        myProject.logger.writeError("Wrong parameter: " + myProject.operation);
         usage();
         return ERROR_WRONGPARAMETER;
     }
