@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     }
 
     // initialize
-    int myResult = myProject.initializeProject(settingsFileName, dateComputation, true);
+    int myResult = myProject.initializeProject(settingsFileName, myProject.operation, dateComputation, true);
     if (myResult != CRIT1D_OK)
     {
         myProject.logger.writeError(myProject.projectError);
