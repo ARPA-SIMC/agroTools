@@ -31,6 +31,7 @@ void CriteriaOutputProject::initialize()
 
     path = "";
     projectName = "";
+    operation = "";
     dbUnitsName = "";
     dbDataName = "";
     dbDataHistoricalName = "";
