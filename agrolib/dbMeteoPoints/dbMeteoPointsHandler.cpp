@@ -381,6 +381,77 @@ bool Crit3DMeteoPointsDbHandler::existData(Crit3DMeteoPoint *meteoPoint, frequen
     return false;
 }
 
+bool Crit3DMeteoPointsDbHandler::deleteData(QString pointCode, frequencyType myFreq, QDate first, QDate last)
+{
+
+    QString tableName = pointCode + ((myFreq == daily) ?  "_D" : "_H");
+    QSqlQuery qry(_db);
+    QString statement;
+    if (myFreq == daily)
+    {
+        QString firstStr = first.toString("yyyy-MM-dd");
+        QString lastStr = last.toString("yyyy-MM-dd");
+        statement = QString( "DELETE FROM `%1` WHERE date_time BETWEEN DATE('%2') AND DATE('%3')")
+                                .arg(tableName).arg(firstStr).arg(lastStr);
+    }
+    else
+    {
+        QString firstStr = first.toString("yyyy-MM-dd");
+        QString lastStr = last.toString("yyyy-MM-dd");
+        statement = QString( "DELETE FROM `%1` WHERE date_time BETWEEN DATETIME('%2 00:00:00') AND DATETIME('%3 23:00:00')")
+                                .arg(tableName).arg(firstStr).arg(lastStr);
+    }
+
+    if( !qry.exec(statement) )
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+bool Crit3DMeteoPointsDbHandler::deleteAllData(frequencyType myFreq)
+{
+    QSqlQuery qry(_db);
+    QList<QString> tables;
+
+    QString dayHour;
+    if (myFreq == daily)
+        dayHour = "D";
+    else if (myFreq == hourly)
+        dayHour = "H";
+
+    qry.prepare( "SELECT name FROM sqlite_master WHERE type='table' AND name like :dayHour ESCAPE '^'");
+    qry.bindValue(":dayHour",  "%^" + dayHour  + "%");
+
+    if( !qry.exec() )
+    {
+        error = qry.lastError().text();
+    }
+    else
+    {
+        while (qry.next())
+        {
+            QString table = qry.value(0).toString();
+            tables << table;
+        }
+    }
+
+    QString statement;
+    foreach (QString table, tables)
+    {
+        statement = QString( "DELETE FROM `%1`").arg(table);
+        if( !qry.exec(statement) )
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool Crit3DMeteoPointsDbHandler::loadDailyData(Crit3DDate dateStart, Crit3DDate dateEnd, Crit3DMeteoPoint *meteoPoint)
 {
     QString dateStr;
@@ -672,20 +743,20 @@ QList<Crit3DMeteoPoint> Crit3DMeteoPointsDbHandler::getPropertiesFromDb(const gi
 
             // check position
             isPositionOk = false;
-            if ((meteoPoint.latitude != NODATA || meteoPoint.longitude != NODATA)
-                && (meteoPoint.point.utm.x != NODATA && meteoPoint.point.utm.y != NODATA))
+            if ((int(meteoPoint.latitude) != int(NODATA) || int(meteoPoint.longitude) != int(NODATA))
+                && (int(meteoPoint.point.utm.x) != int(NODATA) && int(meteoPoint.point.utm.y) != int(NODATA)))
             {
                 isPositionOk = true;
             }
-            else if ((meteoPoint.latitude == NODATA || meteoPoint.longitude == NODATA)
-                && (meteoPoint.point.utm.x != NODATA && meteoPoint.point.utm.y != NODATA))
+            else if ((int(meteoPoint.latitude) == int(NODATA) || int(meteoPoint.longitude) == int(NODATA))
+                && (int(meteoPoint.point.utm.x) != int(NODATA) && int(meteoPoint.point.utm.y) != int(NODATA)))
             {
                 gis::getLatLonFromUtm(gisSettings, meteoPoint.point.utm.x, meteoPoint.point.utm.y,
                                         &(meteoPoint.latitude), &(meteoPoint.longitude));
                 isPositionOk = true;
             }
-            else if ((meteoPoint.latitude != NODATA || meteoPoint.longitude != NODATA)
-                && (meteoPoint.point.utm.x == NODATA && meteoPoint.point.utm.y == NODATA))
+            else if ((int(meteoPoint.latitude) != int(NODATA) || int(meteoPoint.longitude) != int(NODATA))
+                     && (int(meteoPoint.point.utm.x) == int(NODATA) && int(meteoPoint.point.utm.y) == int(NODATA)))
             {
                 gis::latLonToUtmForceZone(gisSettings.utmZone, meteoPoint.latitude, meteoPoint.longitude,
                                           &(meteoPoint.point.utm.x), &(meteoPoint.point.utm.y));
@@ -846,10 +917,7 @@ bool Crit3DMeteoPointsDbHandler::getNameColumn(QString tableName, QList<QString>
 {
     QSqlQuery qry(_db);
 
-    int id_variable;
-    QString variable;
     std::string varStdString;
-    meteoVariable meteoVar;
     std::pair<std::map<int, meteoVariable>::iterator,bool> ret;
 
     QString statement = QString( "PRAGMA table_info('%1')").arg(tableName);
@@ -895,7 +963,7 @@ bool Crit3DMeteoPointsDbHandler::existIdPoint(const QString& idPoint)
 
     if (! qry.exec()) return false;
     qry.last();
-    return (qry.value(0) > 0);
+    return (qry.value(0).toInt() > 0);
 }
 
 
@@ -1032,7 +1100,7 @@ bool Crit3DMeteoPointsDbHandler::importHourlyMeteoData(QString csvFileName, bool
         }
 
         // don't use QDateTime because it has a bug at the end of March (vs2015 version)
-        char timeStr[9];
+        char timeStr[10];
         sprintf (timeStr, " %02d:00:00", hour);
         dateTimeStr = currentDate.toString("yyyy-MM-dd") + timeStr;
 
