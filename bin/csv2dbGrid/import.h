@@ -14,6 +14,7 @@
 #define ERROR_BAD_REQUEST -4
 #define ERROR_WRITING_DATA -5
 #define ERROR_TIME_INTERPOLATION -6
+#define DEFAULT_NR_STORED_DAYS 30
 
 class Import
 {
@@ -35,6 +36,10 @@ public:
     void setMeteoVar(const QString &value);
     bool getIsDaily() const;
     bool getIsEnsemble() const;
+    bool getIsDeleteOldData() const;
+    void setIsDeleteOldData(bool value);
+    int getNrStoredDays() const;
+    void setNrStoredDays(int value);
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -52,6 +57,8 @@ private:
     bool isPrecProgressive;  // TO DO gestire caso particolare isPrecProgressive = true
     bool radConversion;
     bool isFirstCsv;
+    bool isDeleteOldData;
+    int nrStoredDays;
     QList<QString> IDList;
     QList<int> hoursList;
     QMultiMap<QString, float> valuesMap;

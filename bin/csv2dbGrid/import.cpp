@@ -23,6 +23,8 @@ void Import::initialize()
     meteoVarList.clear();
     isDaily = false;;
     isEnsemble = false;
+    isDeleteOldData = false;
+    nrStoredDays = DEFAULT_NR_STORED_DAYS;
     isPrecProgressive = false;
     radConversion = false;
 }
@@ -143,6 +145,24 @@ int Import::readSettings()
     else
     {
         isPrecProgressive = projectSettings->value("isPrecipitationProgressive","").toBool();
+    }
+
+    if (projectSettings->value("isDeleteOldData","").toString().isEmpty())
+    {
+        isDeleteOldData = false;
+    }
+    else
+    {
+        isDeleteOldData = projectSettings->value("isDeleteOldData","").toBool();
+    }
+
+    if (projectSettings->value("nrStoredDays","").toString().isEmpty())
+    {
+        nrStoredDays = DEFAULT_NR_STORED_DAYS;
+    }
+    else
+    {
+        nrStoredDays = projectSettings->value("nrStoredDays","").toInt();
     }
 
     if (projectSettings->value("radConversion","").toString().isEmpty())
@@ -575,6 +595,13 @@ int Import::writeEnsembleDailyValues()
     QString varname = QString::fromStdString(getMeteoVarName(meteoVar));
     logger.writeInfo("write data: " + varname + "  " + date.toString("yyyy-MM-dd"));
 
+    if (nDay == 0 && isDeleteOldData)
+    {
+        QDate lastDateToKeep = date.addDays(-nrStoredDays);
+        logger.writeInfo("clean data before: " + lastDateToKeep.toString("yyyy-MM-dd"));
+        grid.cleanDailyOldData(&errorString, lastDateToKeep);
+    }
+
     for (int i=0; i<IDList.size(); i++)
     {
         key = IDList[i];
@@ -627,6 +654,26 @@ bool Import::getIsDaily() const
 bool Import::getIsEnsemble() const
 {
     return isEnsemble;
+}
+
+bool Import::getIsDeleteOldData() const
+{
+    return isDeleteOldData;
+}
+
+void Import::setIsDeleteOldData(bool value)
+{
+    isDeleteOldData = value;
+}
+
+int Import::getNrStoredDays() const
+{
+    return nrStoredDays;
+}
+
+void Import::setNrStoredDays(int value)
+{
+    nrStoredDays = value;
 }
 
 void Import::setSettingsFileName(const QString &value)
