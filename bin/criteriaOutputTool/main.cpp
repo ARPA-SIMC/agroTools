@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath)) return -1;
 
             settingsFileName = dataPath + "/PROJECT/C5/C5_monthly.ini";
-            dateComputationStr = "2021-07-13";  //QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
+            dateComputationStr = "2021-07-13";  // QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
             myProject.operation = "NETCDF";
         #else
             usage();
