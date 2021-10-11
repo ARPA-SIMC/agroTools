@@ -3252,18 +3252,22 @@ bool parseXMLElaboration(Crit3DElabList *listXMLElab, Crit3DAnomalyList *listXML
                 myTag = child.toElement().tagName().toUpper();
                 if (myTag == "INDEX")
                 {
-                    QString index = child.toElement().text();
+                    QString index = child.toElement().text().toUpper();
                     if (index == "SPI")
                     {
                         listXMLDrought->insertIndex(INDEX_SPI);
+                        listXMLDrought->insertVariable(noMeteoVar); // SPI has not variable
                     }
                     else if (index == "SPEI")
                     {
                         listXMLDrought->insertIndex(INDEX_SPEI);
+                        listXMLDrought->insertVariable(noMeteoVar); // SPEI has not variable
                     }
                     else if (index == "DECILES")
                     {
                         listXMLDrought->insertIndex(INDEX_DECILES);
+                        listXMLDrought->insertTimescale(0);  // Deciles has not timescale
+                        listXMLDrought->insertVariable(noMeteoVar);
                     }
                     else
                     {
@@ -3317,6 +3321,15 @@ bool parseXMLElaboration(Crit3DElabList *listXMLElab, Crit3DAnomalyList *listXML
                         errorDrought = true;
                     }
                 }
+                if (myTag == "VARIABLE")
+                {
+                    QString variable = child.toElement().text();
+                    meteoVariable var = getKeyMeteoVarMeteoMap(MapMonthlyMeteoVarToString, variable.toStdString());
+                    if (var != noMeteoVar)
+                    {
+                        listXMLDrought->updateVariable(var, listXMLDrought->listVariable().size() - 1);   //change var
+                    }
+                }
                 if (myTag == "EXPORT")
                 {
                     secondChild = child.firstChild();
@@ -3362,7 +3375,7 @@ bool parseXMLElaboration(Crit3DElabList *listXMLElab, Crit3DAnomalyList *listXML
     {
         if (listXMLElab->addElab(i))
         {
-            qDebug() << "elab: " << listXMLElab->listAll()[i].back();
+            qDebug() << "elab: " << listXMLElab->listAll().back();
         }
     }
     for (int i = 0; i < nAnomaly; i++)
