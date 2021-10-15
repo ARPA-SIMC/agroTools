@@ -2,9 +2,9 @@
 %{!?srcarchivename: %global srcarchivename agroTools-%{version}}
 
 Name:           agroTools
-Version:        1.1.2
+Version:        1.2.0
 Release:        1%{?dist}
-Summary:        One-dimensional soil water balance
+Summary:        Agro tools
 
 URL:            https://github.com/ARPA-SIMC/agroTools
 Source0:        https://github.com/ARPA-SIMC/agroTools/archive/v%{version}.tar.gz#/%{srcarchivename}.tar.gz
@@ -34,13 +34,13 @@ qmake-qt5 csv2dbMeteo.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug
 make
 popd
 
-pushd bin/Makeall_criteriaOutputTool
-qmake-qt5 Makeall_criteriaOutputTool.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler
+pushd bin/Makeall_csv2dbGrid
+qmake-qt5 Makeall_csv2dbGrid.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler
 make
 popd
 
-pushd bin/Makeall_csv2dbGrid
-qmake-qt5 Makeall_csv2dbGrid.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler
+pushd bin/Makeall_criteriaOutputTool
+qmake-qt5 Makeall_criteriaOutputTool.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler
 make
 popd
 
@@ -48,8 +48,8 @@ popd
 rm -rf $RPM_BUILD_ROOT
 mkdir -p %{buildroot}/%{_bindir}/
 cp -a bin/csv2dbMeteo/release/Csv2dbMeteo %{buildroot}/%{_bindir}/
-cp -a bin/criteriaOutputTool/release/CriteriaOutput %{buildroot}/%{_bindir}/
 cp -a bin/csv2dbGrid/release/Csv2dbGrid %{buildroot}/%{_bindir}/
+cp -a bin/criteriaOutputTool/release/CriteriaOutput %{buildroot}/%{_bindir}/
 mkdir -p %{buildroot}/%{_datadir}/
 cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 
@@ -60,6 +60,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Fri Oct 15 2021 Fausto Tomei <ftomei@arpae.it> - 1.2.0-1
+- Release 1.2.0
+
 * Thu May 13 2021 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.1.0-1
 - Release 1.1.0
 
