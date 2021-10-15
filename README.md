@@ -6,9 +6,10 @@ Shell script for manage the output of [CRITERIA1D/GEO](https://github.com/ARPA-S
 
 #### Usage:
 
-CriteriaOutput CSV | SHAPEFILE | MAPS | NETCDF | AGGREGATION | PRECOMPUTE_DTX projectName.ini [date]
+CriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|PRECOMPUTE_DTX projectName.ini [date]
 
-#### Example of parameters file (projectName.ini)  
+#### Example of projectName.ini:
+
 [software]  
 software="CriteriaOutput"
 
