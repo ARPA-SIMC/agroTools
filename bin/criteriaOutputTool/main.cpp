@@ -29,9 +29,9 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "/PROJECT/C5/C5_monthly.ini";
-            dateComputationStr = "2021-07-13";  // QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "NETCDF";
+            settingsFileName = "C:/CRITERIA1D/DATA/PROJECT/INCOLTO/deficit_macroaree.ini";
+            dateComputationStr = "2021-10-12";  // QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
+            myProject.operation = "AGGREGATION";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
