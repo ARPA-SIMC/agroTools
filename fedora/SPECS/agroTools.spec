@@ -55,12 +55,12 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 
 %files
 %{_bindir}/Csv2dbMeteo
-%{_bindir}/CriteriaOutput
 %{_bindir}/Csv2dbGrid
+%{_bindir}/CriteriaOutput
 %{_datadir}/agroTools/*
 
 %changelog
-* Fri Oct 15 2021 Fausto Tomei <ftomei@arpae.it> - 1.2.0-1
+* Mon Oct 18 2021 Fausto Tomei <ftomei@arpae.it> - 1.2.0-1
 - Release 1.2.0
 
 * Thu May 13 2021 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.1.0-1
