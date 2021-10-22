@@ -12,6 +12,7 @@
 void usage()
 {
     std::cout << "\nUsage:\nCriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|PRECOMPUTE_DTX project.ini [date]\n" << std::endl;
+    std::cout << std::flush;
 }
 
 
