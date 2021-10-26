@@ -279,6 +279,7 @@ int Import::writeMultiTimeValues()
     QStringList nameParts = QFileInfo(csvFileName).baseName().split("_");
     QString dateStr = nameParts[nameParts.size()-1];
     QDateTime dateTime = QDateTime::fromString(dateStr,"yyyyMMddhh");
+    dateTime.setTimeSpec(Qt::UTC);
     QDate date = dateTime.date();
 
     QList<float> valueList;
