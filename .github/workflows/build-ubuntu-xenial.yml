@@ -1,0 +1,14 @@
+name: Build on Ubuntu Xenial
+on: [push]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        image: ["ubuntu:xenial"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Build
+        run: docker run -v ${{ github.workspace }}:/root/src/ -w /root/src/ ${{ matrix.image }} /bin/bash .travis-build.sh ${{ matrix.image }}
