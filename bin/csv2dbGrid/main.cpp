@@ -112,7 +112,21 @@ int main(int argc, char *argv[])
             }
             else
             {
-                // TO DO not ensemble
+                result = import.loadDailyValues();
+                if (result!=CSV2DBGRID_OK)
+                {
+                    import.logger.writeError("Loading daily data ERROR");
+                    return result;
+                }
+                else
+                {
+                    result = import.writeDailyValues();
+                    if (result!=CSV2DBGRID_OK)
+                    {
+                        import.logger.writeError("Writing daily data ERROR");
+                        return result;
+                    }
+                }
             }
         }
         else

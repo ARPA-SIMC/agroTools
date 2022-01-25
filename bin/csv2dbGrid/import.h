@@ -27,7 +27,9 @@ public:
     void setSettingsFileName(const QString &value);
     void setCsvFileName(const QString &value);
     int loadMultiTimeValues();
+    int loadDailyValues();
     int writeMultiTimeValues();
+    int writeDailyValues();
     int loadEnsembleDailyValues();
     int writeEnsembleDailyValues();
     QString getCsvFilePath() const;
@@ -54,6 +56,7 @@ private:
     meteoVariable meteoVar;
     bool isDaily;
     bool isEnsemble;
+    bool isHourlyStep;
     bool isPrecProgressive;  // TO DO gestire caso particolare isPrecProgressive = true
     bool radConversion;
     bool isFirstCsv;
@@ -61,6 +64,7 @@ private:
     int nrStoredDays;
     QList<QString> IDList;
     QList<int> hoursList;
+    QList<int> dayList;
     QMultiMap<QString, float> valuesMap;
     Crit3DMeteoGridDbHandler grid;
 

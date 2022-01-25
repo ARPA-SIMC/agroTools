@@ -21,9 +21,10 @@ void Import::initialize()
     csvFileName = "";
     xmlDbGrid = "";
     meteoVarList.clear();
-    isDaily = false;;
+    isDaily = false;
     isEnsemble = false;
     isDeleteOldData = false;
+    isHourlyStep = false;
     nrStoredDays = DEFAULT_NR_STORED_DAYS;
     isPrecProgressive = false;
     radConversion = false;
@@ -137,6 +138,19 @@ int Import::readSettings()
         isEnsemble = projectSettings->value("isEnsemble","").toBool();
     }
 
+    if (projectSettings->value("isHourlyStep","").toString().isEmpty())
+    {
+        if (isDaily && !isEnsemble)
+        {
+            logger.writeError ("daily data and not ensemble: missing isHourlyStep");
+            return ERROR_MISSINGPARAMETERS;
+        }
+    }
+    else
+    {
+        isHourlyStep = projectSettings->value("isHourlyStep","").toBool();
+    }
+
     if (projectSettings->value("isPrecipitationProgressive","").toString().isEmpty())
     {
         logger.writeError ("missing isPrecipitationProgressive");
@@ -176,6 +190,93 @@ int Import::readSettings()
 
     projectSettings->endGroup();
 
+    return CSV2DBGRID_OK;
+}
+
+int Import::loadDailyValues()
+{
+    dayList.clear();
+    valuesMap.clear();
+    if (isEnsemble)
+    {
+        logger.writeError ("is ensemble");
+        return ERROR_BAD_REQUEST;
+    }
+    QFile myFile(csvFileName);
+    int posLat = 0;
+    int posLon = 1;
+    int posValue = 2;
+    int posDailyStep = 3;
+    int idListIndex = 0;
+    int prev_day = 0;
+    int nFields = 4;
+    std::string id;
+    bool ok;
+
+    if ( !myFile.open(QFile::ReadOnly | QFile::Text) )
+    {
+        logger.writeError ("csvFileName file does not exist");
+        return ERROR_MISSINGFILE;
+    }
+    else
+    {
+        QTextStream in(&myFile);
+        //skip header
+        QString line = in.readLine();
+        while (!in.atEnd())
+        {
+            line = in.readLine();
+            QStringList items = line.split(" ");
+            items.removeAll({});
+            if (items.size()<nFields)
+            {
+                logger.writeError ("missing field required");
+                return ERROR_BAD_REQUEST;
+            }
+            int day = items[posDailyStep].toInt(&ok,10);
+            if (isHourlyStep)
+            {
+                day = day/24;
+            }
+            if(!ok)
+            {
+                // repeated header lat lon value perturbation number
+                continue;
+            }
+            if (!dayList.contains(day))
+            {
+                // save daily step
+                dayList<<day;
+            }
+            if (day != prev_day)
+            {
+                // new day-set, reset idListIndex
+                prev_day = day;
+                idListIndex = 0;
+            }
+            if (isFirstCsv && day==dayList[0])
+            {
+                // make IDList
+                double lat = items[posLat].toDouble();
+                double lon = items[posLon].toDouble();
+                if (!grid.meteoGrid()->getIdFromLatLon(lat,lon,&id))
+                {
+                    return ERROR_DBGRID;
+                }
+                if (!grid.meteoGrid()->isActiveMeteoPointFromId(id))
+                {
+                    id = "-9999";
+                }
+                IDList<<QString::fromStdString(id);
+            }
+            if (IDList[idListIndex] != "-9999")
+            {
+                valuesMap.insert(IDList[idListIndex], items[posValue].toFloat());
+            }
+            idListIndex ++;
+        }
+    }
+    myFile.close();
     return CSV2DBGRID_OK;
 }
 
@@ -568,6 +669,47 @@ int Import::loadEnsembleDailyValues()
     }
     myFile.close();
     return CSV2DBGRID_OK;
+}
+
+int Import::writeDailyValues()
+{
+    QString errorString;
+    if (! grid.openDatabase(&errorString))
+    {
+        logger.writeError (errorString);
+        return ERROR_DBGRID;
+    }
+    if (meteoVar == noMeteoVar)
+    {
+        logger.writeError ("invalid MeteoVar");
+        return ERROR_BAD_REQUEST;
+    }
+
+    QStringList nameParts = QFileInfo(csvFileName).baseName().split("_");
+    QString dateStr = nameParts[nameParts.size()-1];
+    QDate date = QDate::fromString(dateStr,"yyyyMMdd");
+
+    QList<float> valueList;
+    QString key;
+
+    QString varname = QString::fromStdString(getMeteoVarName(meteoVar));
+    logger.writeInfo("write data: " + varname + "  " + date.toString("yyyy-MM-dd"));
+    for (int i=0; i<IDList.size(); i++)
+    {
+        key = IDList[i];
+        if ( key != "-9999")
+        {
+            valueList = valuesMap.values(key);
+            if (!grid.saveListDailyData(&errorString, key, date.addDays(dayList[0]), meteoVar, valueList))
+            {
+                return ERROR_WRITING_DATA;
+            }
+        }
+    }
+
+    grid.closeDatabase();
+    return CSV2DBGRID_OK;
+    // TO DO check che gli ID compaiano una sola volta per cella
 }
 
 int Import::writeEnsembleDailyValues()
