@@ -2,7 +2,7 @@
 
 	<connection>
 		<provider>mysql</provider>
-		<server>tomei-smr</server>
+		<server>tomei-smr.arpa.emr.net</server>
 		<name>highlander_romagna</name>
 		<user>root</user>
 		<password>mysql</password>
