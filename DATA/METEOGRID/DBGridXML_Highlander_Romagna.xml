@@ -9,10 +9,10 @@
 	</connection>
 	
 	<gridstructure isregular="true" isutm="false" istin="false" isfixedfields="false" isensemble='false'>
-		<xll>11.6915</xll>
-		<yll>44.202</yll>
-		<nrows>12</nrows>
-		<ncols>16</ncols>
+		<xll>11.6913</xll>
+		<yll>44.182</yll>
+		<nrows>15</nrows>
+		<ncols>18</ncols>
 		<xwidth>0.02</xwidth>
 		<ywidth>0.02</ywidth>
 	</gridstructure>
