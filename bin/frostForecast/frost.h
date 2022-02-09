@@ -16,6 +16,7 @@
 #define ERROR_WRITING_DATA -6
 #define ERROR_WRONGDATE -7
 #define ERROR_WRONGPARAM -8
+#define ERROR_DBPOINTSDOWNLOAD -9
 
 class Frost
 {

@@ -65,4 +65,10 @@ int main(int argc, char *argv[])
     {
         return result;
     }
+
+    result = frost.downloadMeteoPointsData();
+    if (result!=FROSTFORECAST_OK)
+    {
+        return result;
+    }
 }

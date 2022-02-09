@@ -237,12 +237,18 @@ void Frost::setRunDate(const QDate &value)
 
 int Frost::downloadMeteoPointsData()
 {
-//    Download* myDownload = new Download(meteoPointsDbHandler.getDbName());
+    Download* myDownload = new Download(meteoPointsDbHandler.getDbName());
 
     for( int i=0; i < idList.size(); i++ )
     {
-//        myDownload->downloadHourlyData(runDate.addDays(-1), runDate, datasetList[i], idList[i], arkIdVarList);
+        QString dataset = meteoPointsDbHandler.getDatasetFromId(idList[i]);
+        /*
+        if (!myDownload->downloadHourlyData(runDate.addDays(-1), runDate, dataset, idList[i], arkIdVarList) )
+        {
+            return ERROR_DBPOINTSDOWNLOAD;
+        }
+        */
     }
-
+    return FROSTFORECAST_OK;
 }
 

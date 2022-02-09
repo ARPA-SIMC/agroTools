@@ -5,7 +5,7 @@
 #
 #-----------------------------------------------------------
 
-QT += core sql xml
+QT += core sql xml network
 QT -= gui
 
 CONFIG += console
