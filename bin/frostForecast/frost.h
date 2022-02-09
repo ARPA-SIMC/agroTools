@@ -38,7 +38,12 @@ private:
     Crit3DMeteoGridDbHandler grid;
     Crit3DMeteoPointsDbHandler meteoPointsDbHandler;
     QList<QString> idList;
-
+    QList<QString> intercept;
+    QList<QString> parTss;
+    QList<QString> parRHss;
+    QList<QString> SE_intercept;
+    QList<QString> SE_parTss;
+    QList<QString> SE_parRHss;
 };
 
 #endif // FROST_H

@@ -130,5 +130,68 @@ int Frost::readSettings()
     }
     projectSettings->endGroup();
 
+    // reuter_param
+    projectSettings->beginGroup("reuter_param");
+    QString interceptTemp = projectSettings->value("intercept","").toString();
+    if (interceptTemp.isEmpty())
+    {
+        logger.writeError ("missing reuter param intercept");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        intercept = interceptTemp.split(",");
+    }
+    QString parTssTemp = projectSettings->value("parTss","").toString();
+    if (parTssTemp.isEmpty())
+    {
+        logger.writeError ("missing reuter param parTss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        parTss = parTssTemp.split(",");
+    }
+    QString parRHssTemp = projectSettings->value("parRHss","").toString();
+    if (parRHssTemp.isEmpty())
+    {
+        logger.writeError ("missing reuter param parRHss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        parRHss = parRHssTemp.split(",");
+    }
+    QString SEinterceptTemp = projectSettings->value("SE_intercept","").toString();
+    if (SEinterceptTemp.isEmpty())
+    {
+        logger.writeError ("missing reuter param SE_intercept");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        SE_intercept = SEinterceptTemp.split(",");
+    }
+    QString SEparTssTemp = projectSettings->value("SE_parTss","").toString();
+    if (SEparTssTemp.isEmpty())
+    {
+        logger.writeError ("missing reuter param SE_parTss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        SE_parTss = SEparTssTemp.split(",");
+    }
+    QString SEparRHssTemp = projectSettings->value("SE_parRHss","").toString();
+    if (SEparRHssTemp.isEmpty())
+    {
+        logger.writeError ("missing reuter param SE_parRHss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        SE_parRHss = SEparRHssTemp.split(",");
+    }
+
     return FROSTFORECAST_OK;
 }
