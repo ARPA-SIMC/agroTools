@@ -1,4 +1,5 @@
 #include "frost.h"
+#include "download.h"
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
@@ -135,6 +136,32 @@ int Frost::readSettings()
     {
         idList = idTemp.split(",");
     }
+
+    QString arkIdTemp = projectSettings->value("arkIdVar","").toString();
+    if (arkIdTemp.isEmpty())
+    {
+        logger.writeError ("missing ark id var");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        QList<QString> arkListStr = arkIdTemp.split(",");
+        for (int i = 0; i<arkListStr.size(); i++)
+        {
+            bool ok = false;
+            int varId = arkListStr[i].toInt(&ok);
+            if (ok)
+            {
+                arkIdVarList.append(varId);
+            }
+            else
+            {
+                logger.writeError ("invalid ark id var");
+                return ERROR_WRONGPARAM;
+            }
+        }
+    }
+
     projectSettings->endGroup();
 
     // reuter_param
@@ -202,3 +229,20 @@ int Frost::readSettings()
 
     return FROSTFORECAST_OK;
 }
+
+void Frost::setRunDate(const QDate &value)
+{
+    runDate = value;
+}
+
+int Frost::downloadMeteoPointsData()
+{
+//    Download* myDownload = new Download(meteoPointsDbHandler.getDbName());
+
+    for( int i=0; i < idList.size(); i++ )
+    {
+//        myDownload->downloadHourlyData(runDate.addDays(-1), runDate, datasetList[i], idList[i], arkIdVarList);
+    }
+
+}
+

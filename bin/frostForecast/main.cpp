@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
 
     frost.initialize();
     frost.setSettingsFileName(settingsFileName);
+    frost.setRunDate(runDate);
     frost.logger.writeInfo ("settingsFileName: " + settingsFileName);
 
     int result = frost.readSettings();
