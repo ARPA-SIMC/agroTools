@@ -17,6 +17,13 @@ void Frost::initialize()
     csvFileName = "";
     xmlDbGrid = "";
     dbMeteoPointsName = "";
+    idList.clear();
+    intercept.clear();
+    parTss.clear();
+    parRHss.clear();
+    SE_intercept.clear();
+    SE_parTss.clear();
+    SE_parRHss.clear();
 }
 
 void Frost::setSettingsFileName(const QString &value)
