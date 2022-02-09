@@ -1,6 +1,8 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <iostream>
+#include "utilities.h"
+#include "frost.h"
 
 // uncomment to execute test
 //#define TEST
@@ -8,25 +10,29 @@
 void usage()
 {
     std::cout << "frostForecast" << std::endl
-              << "Usage: frostForecast <project.ini> -d: date" << std::endl;
+              << "Usage: frostForecast <project.ini> [date]" << std::endl;
+    std::cout << std::flush;
 }
 
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
     QString settingsFileName;
-   // Import import;
+    QString runDateStr;
+    Frost frost;
 
-    if (argc <= 1)
+    if (argc <= 2)
     {
         #ifdef TEST
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            //settingsFileName = dataPath + "PROJECT/testFrostForecast/testFrostForecastSettings.ini";
+            settingsFileName = dataPath + "PROJECT/testFrostForecast/testFrostForecastSettings.ini";
+            QDate now = QDate::currentDate();
+            runDateStr = now.toString("yyyy-MM-dd");
         #else
             usage();
-            //return ERROR_MISSINGFILE;
+            return ERROR_MISSINGFILE;
         #endif
     }
     else
@@ -34,11 +40,28 @@ int main(int argc, char *argv[])
         settingsFileName = argv[1];
         if (settingsFileName.right(3) != "ini")
         {
-            //import.logger.writeError("Wrong file .ini: " + settingsFileName);
+            frost.logger.writeError("Wrong file .ini: " + settingsFileName);
             usage();
-            //return ERROR_MISSINGFILE;
+            return ERROR_MISSINGFILE;
         }
+        runDateStr = argv[2];
     }
 
-    // TO DO
+    // check date
+    QDate runDate = QDate::fromString(runDateStr, "yyyy-MM-dd");
+    if (! runDate.isValid())
+    {
+        frost.logger.writeError("Wrong date format. Requested format is: YYYY-MM-DD");
+        return ERROR_WRONGDATE;
+    }
+
+    frost.initialize();
+    frost.setSettingsFileName(settingsFileName);
+    frost.logger.writeInfo ("settingsFileName: " + settingsFileName);
+
+    int result = frost.readSettings();
+    if (result!=FROSTFORECAST_OK)
+    {
+        return result;
+    }
 }
