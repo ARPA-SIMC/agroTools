@@ -1,5 +1,6 @@
 #include "frost.h"
 #include "download.h"
+#include "commonConstants.h"
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
@@ -115,6 +116,12 @@ int Frost::readSettings()
         return ERROR_DBPOINT;
     }
 
+    if (!meteoPointsDbHandler.loadVariableProperties())
+    {
+        logger.writeError (errorString);
+        return ERROR_DBPOINT;
+    }
+
     csvFilePath = projectSettings->value("csvPath","").toString();
     if (csvFilePath.isEmpty())
     {
@@ -137,29 +144,15 @@ int Frost::readSettings()
         idList = idTemp.split(",");
     }
 
-    QString arkIdTemp = projectSettings->value("arkIdVar","").toString();
-    if (arkIdTemp.isEmpty())
+    QString varTemp = projectSettings->value("var","").toString();
+    if (varTemp.isEmpty())
     {
-        logger.writeError ("missing ark id var");
+        logger.writeError ("missing var");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        QList<QString> arkListStr = arkIdTemp.split(",");
-        for (int i = 0; i<arkListStr.size(); i++)
-        {
-            bool ok = false;
-            int varId = arkListStr[i].toInt(&ok);
-            if (ok)
-            {
-                arkIdVarList.append(varId);
-            }
-            else
-            {
-                logger.writeError ("invalid ark id var");
-                return ERROR_WRONGPARAM;
-            }
-        }
+        varList = varTemp.split(",");
     }
 
     projectSettings->endGroup();
@@ -239,15 +232,32 @@ int Frost::downloadMeteoPointsData()
 {
     Download* myDownload = new Download(meteoPointsDbHandler.getDbName());
 
-    for( int i=0; i < idList.size(); i++ )
+    QList<int> arkIdVarList;
+
+    for (int i = 0; i<varList.size(); i++)
     {
-        QString dataset = meteoPointsDbHandler.getDatasetFromId(idList[i]);
-        /*
-        if (!myDownload->downloadHourlyData(runDate.addDays(-1), runDate, dataset, idList[i], arkIdVarList) )
+        int id = meteoPointsDbHandler.getArkIdFromVar(varList[i]);
+        if (id == NODATA)
         {
             return ERROR_DBPOINTSDOWNLOAD;
         }
-        */
+        arkIdVarList.append(id);
+    }
+
+    QMultiMap<QString, QString> mapDatasetId;
+    for( int i=0; i < idList.size(); i++ )
+    {
+        QString dataset = meteoPointsDbHandler.getDatasetFromId(idList[i]);
+        mapDatasetId.insert(dataset,idList[i]);
+    }
+
+    QList<QString> keys = mapDatasetId.uniqueKeys();
+    for (int i = 0; i < keys.size(); i++)
+    {
+        if (!myDownload->downloadHourlyData(runDate.addDays(-1), runDate, keys[i], mapDatasetId.values(keys[i]), arkIdVarList) )
+        {
+            return ERROR_DBPOINTSDOWNLOAD;
+        }
     }
     return FROSTFORECAST_OK;
 }

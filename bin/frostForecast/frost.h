@@ -43,7 +43,7 @@ private:
     Crit3DMeteoGridDbHandler grid;
     Crit3DMeteoPointsDbHandler meteoPointsDbHandler;
     QList<QString> idList;
-    QList<int> arkIdVarList;
+    QList<QString> varList;
     QList<QString> intercept;
     QList<QString> parTss;
     QList<QString> parRHss;
