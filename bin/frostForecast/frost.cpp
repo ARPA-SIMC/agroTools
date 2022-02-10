@@ -1,6 +1,8 @@
 #include "frost.h"
 #include "download.h"
 #include "commonConstants.h"
+#include "utilities.h"
+#include "solarRadiation.h"
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
@@ -19,6 +21,7 @@ void Frost::initialize()
     csvFileName = "";
     xmlDbGrid = "";
     dbMeteoPointsName = "";
+    errorString = "";
     idList.clear();
     intercept.clear();
     parTss.clear();
@@ -78,7 +81,6 @@ int Frost::readSettings()
     }
 
     // open grid
-    QString errorString;
     if (! grid.parseXMLGrid(xmlDbGrid, &errorString))
     {
         logger.writeError (errorString);
@@ -117,6 +119,12 @@ int Frost::readSettings()
     }
 
     if (!meteoPointsDbHandler.loadVariableProperties())
+    {
+        logger.writeError (errorString);
+        return ERROR_DBPOINT;
+    }
+
+    if (!meteoPointsDbHandler.getPropertiesFromDb(meteoPointsList, gisSettings, errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBPOINT;
@@ -254,11 +262,90 @@ int Frost::downloadMeteoPointsData()
     QList<QString> keys = mapDatasetId.uniqueKeys();
     for (int i = 0; i < keys.size(); i++)
     {
-        if (!myDownload->downloadHourlyData(runDate.addDays(-1), runDate, keys[i], mapDatasetId.values(keys[i]), arkIdVarList) )
+        if (!myDownload->downloadHourlyData(runDate.addDays(-1), runDate.addDays(2), keys[i], mapDatasetId.values(keys[i]), arkIdVarList) )
         {
             return ERROR_DBPOINTSDOWNLOAD;
         }
     }
     return FROSTFORECAST_OK;
+}
+
+int Frost::getForecastData(QString id)
+{
+    int pos = 0;
+    bool found = false;
+    for (; pos< meteoPointsList.size(); pos++)
+    {
+        if (meteoPointsList[pos].id == id.toStdString())
+        {
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        logger.writeError ("missing id "+id+" into point_properties table");
+        return ERROR_DBPOINT;
+    }
+    // load meteo point observed data
+    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(runDate.addDays(-1)), getCrit3DDate(runDate.addDays(2)), &meteoPointsList[pos]))
+    {
+        logger.writeError ("id: "+id+" meteo point load hourly data error");
+        return ERROR_DBPOINT;
+    }
+    // load meteoGrid forecast data
+    QDateTime firstDateTime = QDateTime(runDate.addDays(-1), QTime(1,0), Qt::UTC);
+    QDateTime lastDateTime = QDateTime(runDate.addDays(2), QTime(0,0), Qt::UTC);
+    if (grid.loadGridHourlyData(&errorString, id, firstDateTime, lastDateTime))
+    {
+        logger.writeError ("id: "+id+" meteo grid load hourly data error");
+        return ERROR_DBGRID;
+    }
+    // Sun position
+    TsunPosition sunPosition;
+    int timeZone = gisSettings.timeZone;
+    float temperature = 25;
+    float pressure =  1013;
+    float radAspect = 0;
+    float radSlope = 0;
+    if (radiation::computeSunPosition(float(meteoPointsList[pos].longitude), float(meteoPointsList[pos].latitude), timeZone,
+        runDate.year(), runDate.month(), runDate.day(), 0, 0, 0,
+        temperature, pressure, radAspect, radSlope, &sunPosition))
+    {
+        int myHourSunSetInteger = sunPosition.set;
+        int myHourSunRiseInteger = sunPosition.rise;
+
+        int indexSunSet = myHourSunSetInteger;
+        int indexSunRise = 24 + myHourSunRiseInteger;
+
+        QDate fistDate = getQDate(meteoPointsList[pos].getMeteoPointHourlyValuesDate(0));
+        int myDateIndex = fistDate.daysTo(runDate);
+        int myHour = myHourSunSetInteger - timeZone;
+
+        if (myHour < 0)
+        {
+            myDateIndex = myDateIndex - 1;
+            myHour = myHourSunSetInteger + 24;
+        }
+        else if (myHour > 23)
+        {
+            myDateIndex = myDateIndex + 1;
+            myHour = myHourSunSetInteger - 24;
+        }
+        if (myDateIndex > meteoPointsList[pos].nrObsDataDaysH || myDateIndex < 0)
+        {
+            logger.writeError ("Sunset hour: " + QString::number(myHourSunSetInteger) + " data not available");
+            return ERROR_SUNSET;
+        }
+        QDate newDate = runDate.addDays(myDateIndex);
+        float tavg = meteoPointsList[pos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
+        float rhavg = meteoPointsList[pos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
+
+        // myTQuality = Quality.checkValueHourly(Definitions.HOURLY_TAVG, myHourlyData(myDateIndex), myHour, myTSunSet,meteoPoint(myStationIndex).Point.z)
+        // NON esiste questa funzione ci sono i check solo per i daily è da inserire?
+
+        // TO DO
+
+    }
 }
 

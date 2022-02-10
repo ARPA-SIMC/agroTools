@@ -17,6 +17,7 @@
 #define ERROR_WRONGDATE -7
 #define ERROR_WRONGPARAM -8
 #define ERROR_DBPOINTSDOWNLOAD -9
+#define ERROR_SUNSET -10
 
 class Frost
 {
@@ -29,6 +30,7 @@ public:
     void setSettingsFileName(const QString &value);
     int downloadMeteoPointsData();
     void setRunDate(const QDate &value);
+    int getForecastData(QString id);
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -42,6 +44,7 @@ private:
     QString dbMeteoPointsName;
     Crit3DMeteoGridDbHandler grid;
     Crit3DMeteoPointsDbHandler meteoPointsDbHandler;
+    QList<Crit3DMeteoPoint> meteoPointsList;
     QList<QString> idList;
     QList<QString> varList;
     QList<QString> intercept;
@@ -50,6 +53,7 @@ private:
     QList<QString> SE_intercept;
     QList<QString> SE_parTss;
     QList<QString> SE_parRHss;
+    QString errorString;
 };
 
 #endif // FROST_H
