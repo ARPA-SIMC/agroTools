@@ -514,7 +514,7 @@ int Import::writeMultiTimeValues()
                             myTime.date.month = tmp.date().month();
                             myTime.date.year = tmp.date().year();
                             myTime.time = (tmp.time().hour()*3600-1800);
-                            radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
+                            radiation::computeRadiationRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                             myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
                             // global rad check
                             if (myRadPoint.global == 0)
@@ -541,7 +541,7 @@ int Import::writeMultiTimeValues()
                                 myTime.date.year = tmp.date().year();
                                 myTime.time = (tmp.time().hour()*3600-1800);
 
-                                radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
+                                radiation::computeRadiationRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                                 myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
                                 // global rad check
                                 if (myRadPoint.global == 0)
@@ -559,7 +559,7 @@ int Import::writeMultiTimeValues()
                             myTime.date.year = tmp.date().year();
                             myTime.time = (tmp.time().hour()*3600-1800);
 
-                            radiation::computeRadiationPointRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
+                            radiation::computeRadiationRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
                                                             myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
 
                             if (myRadPoint.global == 0)
