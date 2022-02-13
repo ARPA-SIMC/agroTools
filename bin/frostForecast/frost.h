@@ -31,6 +31,8 @@ public:
     int downloadMeteoPointsData();
     void setRunDate(const QDate &value);
     int getForecastData(QString id);
+    float coeffReuter(float a0, float a1, float a2, float t, float RH);
+    float t_Reuter(float d, float deltaTime, float tIni);
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -54,6 +56,11 @@ private:
     QList<QString> SE_parTss;
     QList<QString> SE_parRHss;
     QString errorString;
+
+    QList<float> myForecast;
+    QList<float> myForecastMin;
+    QList<float> myForecastMax;
+    QList<float> myObsData;
 };
 
 #endif // FROST_H
