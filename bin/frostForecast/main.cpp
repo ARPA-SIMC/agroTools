@@ -5,7 +5,7 @@
 #include "frost.h"
 
 // uncomment to execute test
-// #define TEST
+#define TEST
 
 void usage()
 {
@@ -70,5 +70,15 @@ int main(int argc, char *argv[])
     if (result!=FROSTFORECAST_OK)
     {
         return result;
+    }
+
+    QList<QString> idList = frost.getIdList();
+    for (int i = 0; i< idList.size(); i++)
+    {
+        result = frost.getForecastData(idList[i]);
+        if (result == FROSTFORECAST_OK)
+        {
+            frost.createCsvFile(idList[i]);
+        }
     }
 }

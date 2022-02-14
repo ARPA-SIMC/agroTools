@@ -2,7 +2,7 @@
 
 	<connection>
 		<provider>mysql</provider>
-		<server>agrosql-smr.metarpa</server>
+		<server>127.0.0.1</server>
 		<name>ERG5_forecast</name>
 		<user>root</user>
 		<password>Praga</password>

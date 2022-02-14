@@ -18,6 +18,7 @@
 #define ERROR_WRONGPARAM -8
 #define ERROR_DBPOINTSDOWNLOAD -9
 #define ERROR_SUNSET -10
+#define ERROR_CSVFILE -11
 
 class Frost
 {
@@ -33,6 +34,8 @@ public:
     int getForecastData(QString id);
     float coeffReuter(float a0, float a1, float a2, float t, float RH);
     float t_Reuter(float d, float deltaTime, float tIni);
+    int createCsvFile(QString id);
+    QList<QString> getIdList() const;
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -61,6 +64,8 @@ private:
     QList<float> myForecastMin;
     QList<float> myForecastMax;
     QList<float> myObsData;
+    QList<QDateTime> myDate;
+    QList<float> myCloudiness;
 };
 
 #endif // FROST_H

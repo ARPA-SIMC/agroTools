@@ -272,6 +272,12 @@ int Frost::downloadMeteoPointsData()
 
 int Frost::getForecastData(QString id)
 {
+    myForecast.clear();
+    myForecastMax.clear();
+    myForecastMin.clear();
+    myObsData.clear();
+    myDate.clear();
+
     int pos = 0;
     bool found = false;
     for (; pos< meteoPointsList.size(); pos++)
@@ -282,6 +288,24 @@ int Frost::getForecastData(QString id)
             break;
         }
     }
+    // get row and col
+    int row;
+    int col;
+
+    double lat = meteoPointsList[pos].latitude;
+    double lon = meteoPointsList[pos].longitude;
+
+    gis::getRowColFromXY(grid.meteoGrid()->dataMeteoGrid, meteoPointsList[pos].point.utm.x, meteoPointsList[pos].point.utm.y, &row, &col);
+
+    TradPoint myRadPoint;
+    Crit3DRadiationSettings radSettings;
+    gis::Crit3DRasterGrid myDEM;
+    radSettings.gisSettings = &gisSettings;
+    /*! assign topographic height and coordinates */
+    myRadPoint.x = meteoPointsList[pos].point.utm.x;
+    myRadPoint.y = meteoPointsList[pos].point.utm.y;
+    myRadPoint.height = meteoPointsList[pos].point.z;
+
     if (!found)
     {
         logger.writeError ("missing id "+id+" into point_properties table");
@@ -308,7 +332,7 @@ int Frost::getForecastData(QString id)
     float pressure =  1013;
     float radAspect = 0;
     float radSlope = 0;
-    if (radiation::computeSunPosition(float(meteoPointsList[pos].longitude), float(meteoPointsList[pos].latitude), timeZone,
+    if (radiation::computeSunPosition(float(lon), float(lat), timeZone,
         runDate.year(), runDate.month(), runDate.day(), 0, 0, 0,
         temperature, pressure, radAspect, radSlope, &sunPosition))
     {
@@ -380,6 +404,7 @@ int Frost::getForecastData(QString id)
                 {
                     //myTQuality = Quality.checkValueHourly(Definitions.HOURLY_TAVG, myHourlyData(myDateTmpIndex), myTmpHour, myT, meteoPoint(myStationIndex).Point.z)
                     QDate dateTmp = runDate.addDays(myDateTmpIndex);
+                    myDate.append(QDateTime(dateTmp,QTime(myTmpHour,0,0)));
                     float myT = meteoPointsList[pos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
                     //If myTQuality < Quality.qualityWrongData Then
                     myObsData[i * 24 + j] = myT;
@@ -392,18 +417,22 @@ int Frost::getForecastData(QString id)
                 }
 
                 // cloudiness forecast data (local time)
-                /*
                 if ((i * 24 + j) >= indexSunSet && (i * 24 + j) <= indexSunRise)
                 {
-                    myCloudiness[i * 24 + j - indexSunSet] = NODATA;
+                    radiation::computeRadiationRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), myRadPoint, row, col, getCrit3DTime(myDate.last()));
                     if (gridAvailable)
                     {
-                        myCloudiness[i * 24 + j - indexSunSet] = min(1, max(0, 1 - passaggioDati.currentHourlyVarSeries(myDateTmpIndex).Value(myTmpHour) / CLEAR_SKY_TRANSMISSIVITY_DEFAULT))
+                        float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(myDate.last().date()), myDate.last().time().hour(), 0, directIrradiance);
+                        myCloudiness[i * 24 + j - indexSunSet] = myRadPoint.global/rad;
+                    }
+                    else
+                    {
+                        myCloudiness[i * 24 + j - indexSunSet] = NODATA;
                     }
                 }
-                */
             }
         } // end for
+
         float myCoeffReuter = coeffReuter(myIntecept, myParTss, myParRHss, myTSunSet, myRHSunSet);
         float myCoeffReuterMin = coeffReuter(myIntecept - 2 * abs(mySEintercept), myParTss - 2 * abs(mySEparTss), myParRHss - 2 * abs(mySEparRHss), myTSunSet, myRHSunSet);
         float myCoeffReuterMax = coeffReuter(myIntecept + 2 * abs(mySEintercept), myParTss + 2 * abs(mySEparTss), myParRHss + 2 * abs(mySEparRHss), myTSunSet, myRHSunSet);
@@ -434,6 +463,53 @@ float Frost::t_Reuter(float d, float deltaTime, float tIni)
 {
     float t_Reuter = pow(tIni - d * (deltaTime), 0.5);
     return t_Reuter;
+}
+
+int Frost::createCsvFile(QString id)
+{
+    logger.writeInfo("Create CSV");
+    // check output csv directory
+    if (! QDir(csvFilePath).exists())
+    {
+        QDir().mkdir(csvFilePath);
+    }
+
+    QString outputCsvFileName = csvFilePath + id + ".csv";
+    QFile outputFile(outputCsvFileName);
+
+    if (!outputFile.open(QIODevice::ReadWrite | QIODevice::Truncate))
+    {
+        logger.writeError ("Open failure: " + outputCsvFileName);
+        return ERROR_CSVFILE;
+    }
+    else
+    {
+        logger.writeInfo("Output file: " + outputCsvFileName);
+    }
+
+    QString header = "dateTime,TAVG,FORECAST,FORECAST_MIN, FORECAST_MAX, CLOUDINESS";
+    QTextStream out(&outputFile);
+    out << header << "\n";
+    for (int i = 0; i<myForecast.size(); i++)
+    {
+        out << myDate[i].toString("yyyy-MM-dd hh:mm");
+        out << "," << myObsData[i];
+        out << "," << myForecast[i];
+        out << "," << myForecastMin[i];
+        out << "," << myForecastMax[i];
+        //out << "," << myCloudiness[i];
+        out << "\n";
+    }
+    outputFile.flush();
+    outputFile.close();
+
+    return FROSTFORECAST_OK;
+
+}
+
+QList<QString> Frost::getIdList() const
+{
+    return idList;
 }
 
 
