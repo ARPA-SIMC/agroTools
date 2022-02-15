@@ -319,7 +319,8 @@ int Frost::getForecastData(QString id)
     }
     // load meteoGrid forecast data
     std::string idGrid;
-    if (grid.meteoGrid()->getIdFromLatLon(lat, lon, &idGrid))
+    if (!grid.meteoGrid()->getIdFromLatLon(lat, lon, &idGrid))
+    //if (!grid.meteoGrid()->getMeteoPointActiveId(row, col, &idGrid))
     {
         logger.writeError ("lat: "+QString::number(lat)+" lon: "+QString::number(lon)+" id grid not found");
         return ERROR_DBGRID;
@@ -428,7 +429,7 @@ int Frost::getForecastData(QString id)
                     radiation::computeRadiationRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), myRadPoint, row, col, getCrit3DTime(myDate.last()));
                     if (gridAvailable)
                     {
-                        float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(myDate.last().date()), myDate.last().time().hour(), 0, directIrradiance);
+                        float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(myDate.last().date()), myDate.last().time().hour(), 0, globalIrradiance);
                         myCloudiness[i * 24 + j - indexSunSet] = myRadPoint.global/rad;
                     }
                     else
