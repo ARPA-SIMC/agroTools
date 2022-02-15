@@ -18,7 +18,8 @@
 #define ERROR_WRONGPARAM -8
 #define ERROR_DBPOINTSDOWNLOAD -9
 #define ERROR_SUNSET -10
-#define ERROR_CSVFILE -11
+#define ERROR_MISSINGDATA -11
+#define ERROR_CSVFILE -12
 
 class Frost
 {
