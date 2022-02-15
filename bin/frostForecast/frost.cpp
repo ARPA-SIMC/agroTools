@@ -295,7 +295,7 @@ int Frost::getForecastData(QString id)
     double lat = meteoPointsList[pos].latitude;
     double lon = meteoPointsList[pos].longitude;
 
-    gis::getRowColFromXY(grid.meteoGrid()->dataMeteoGrid, meteoPointsList[pos].point.utm.x, meteoPointsList[pos].point.utm.y, &row, &col);
+    gis::getMeteoGridRowColFromXY(grid.gridStructure().header(), meteoPointsList[pos].point.utm.x, meteoPointsList[pos].point.utm.y, &row, &col);
 
     TradPoint myRadPoint;
     Crit3DRadiationSettings radSettings;
@@ -318,10 +318,16 @@ int Frost::getForecastData(QString id)
         return ERROR_DBPOINT;
     }
     // load meteoGrid forecast data
+    std::string idGrid;
+    if (grid.meteoGrid()->getIdFromLatLon(lat, lon, &idGrid))
+    {
+        logger.writeError ("lat: "+QString::number(lat)+" lon: "+QString::number(lon)+" id grid not found");
+        return ERROR_DBGRID;
+    }
     QDateTime firstDateTime = QDateTime(runDate.addDays(-1), QTime(1,0), Qt::UTC);
     QDateTime lastDateTime = QDateTime(runDate.addDays(2), QTime(0,0), Qt::UTC);
     bool gridAvailable = false;
-    if (grid.loadGridHourlyData(&errorString, id, firstDateTime, lastDateTime))
+    if (grid.loadGridHourlyData(&errorString, QString::fromStdString(idGrid), firstDateTime, lastDateTime))
     {
         gridAvailable = true;
     }
