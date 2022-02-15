@@ -28,8 +28,8 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath)) return -1;
 
             settingsFileName = dataPath + "PROJECT/testFrostForecast/testFrostForecastSettings.ini";
-            QDate now = QDate::currentDate();
-            runDateStr = now.toString("yyyy-MM-dd");
+            QDate yesterday = QDate::currentDate().addDays(-1);
+            runDateStr = yesterday.toString("yyyy-MM-dd");
         #else
             usage();
             return ERROR_MISSINGFILE;
