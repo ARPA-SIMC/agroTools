@@ -437,12 +437,12 @@ int Frost::getForecastData(QString id)
                 if ((i * 24 + j) >= indexSunSet && (i * 24 + j) <= indexSunRise)
                 {
                     //myCloudiness[i * 24 + j - indexSunSet] = NODATA;
-                    if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), myRadPoint, getCrit3DTime(myDate.last())))
+                    if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), radSlope, radAspect, getCrit3DTime(myDate.last()), &myRadPoint))
                     {
                         if (gridAvailable)
                         {
                             float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(myDate.last().date()), myDate.last().time().hour(), 0, globalIrradiance);
-                            if (rad != NODATA)
+                            if (rad != NODATA && myRadPoint.global != NODATA && myRadPoint.global > 0)
                             {
                                 //myCloudiness[i * 24 + j - indexSunSet] = rad / myRadPoint.global;
                                 myCloudiness.append(rad / myRadPoint.global);
