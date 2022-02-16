@@ -378,6 +378,7 @@ int Frost::getForecastData(QString id, int posIdList)
 
         int myDateTmpIndex;
         int myTmpHour;
+        QDateTime dateTimeTmp;
 
         float myIntercept = intercept[posIdList].toFloat();
         float myParTss = parTss[posIdList].toFloat();
@@ -406,7 +407,8 @@ int Frost::getForecastData(QString id, int posIdList)
                 if (myDateTmpIndex <= meteoPointsList[meteoPointListpos].nrObsDataDaysH && myDateTmpIndex >= 0)
                 {
                     QDate dateTmp = fistDate.addDays(myDateTmpIndex);
-                    myDate.append(QDateTime(dateTmp,QTime(myTmpHour,0,0)));
+                    dateTimeTmp = QDateTime(dateTmp,QTime(myTmpHour,0,0));
+                    myDate.append(QDateTime(runDate,QTime(j,0,0)));
                     float myT = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
                     if (myT != NODATA)
                     {
@@ -425,11 +427,11 @@ int Frost::getForecastData(QString id, int posIdList)
                 // cloudiness forecast data (local time)
                 if ((i * 24 + j) >= indexSunSet && (i * 24 + j) <= indexSunRise)
                 {
-                    if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), radSlope, radAspect, getCrit3DTime(myDate.last()), &myRadPoint))
+                    if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), radSlope, radAspect, getCrit3DTime(dateTimeTmp), &myRadPoint))
                     {
                         if (gridAvailable)
                         {
-                            float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(myDate.last().date()), myDate.last().time().hour(), 0, globalIrradiance);
+                            float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(dateTimeTmp.date()), dateTimeTmp.time().hour(), 0, globalIrradiance);
                             if (rad != NODATA && myRadPoint.global != NODATA && myRadPoint.global > 0)
                             {
                                 myCloudiness.append(rad / myRadPoint.global);
