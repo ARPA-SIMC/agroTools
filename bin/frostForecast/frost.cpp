@@ -386,12 +386,6 @@ int Frost::getForecastData(QString id)
         float mySEparTss = SE_parTss[pos].toFloat();
         float mySEparRHss = SE_parRHss[pos].toFloat();
 
-        //float myObsData[47];
-        //float myForecast[indexSunRise - indexSunSet + 1];
-        //float myForecastMin[indexSunRise - indexSunSet + 1];
-        //float myForecastMax[indexSunRise - indexSunSet + 1];
-        //float myCloudiness[indexSunRise-indexSunSet+1];
-
         for (int i = 0; i <= 1; i++)
         {
             for (int j = 0; j<=23; j++)
@@ -411,7 +405,6 @@ int Frost::getForecastData(QString id)
                 // observed values (local time)
                 if (myDateTmpIndex <= meteoPointsList[pos].nrObsDataDaysH && myDateTmpIndex >= 0)
                 {
-                    //myTQuality = Quality.checkValueHourly(Definitions.HOURLY_TAVG, myHourlyData(myDateTmpIndex), myTmpHour, myT, meteoPoint(myStationIndex).Point.z)
                     QDate dateTmp = fistDate.addDays(myDateTmpIndex);
                     myDate.append(QDateTime(dateTmp,QTime(myTmpHour,0,0)));
                     float myT = meteoPointsList[pos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
@@ -423,20 +416,15 @@ int Frost::getForecastData(QString id)
                     {
                          myObsData.append(NODATA);
                     }
-                    //myObsData[i * 24 + j] = myT;
-                    //Else
-                    //myObsData(i * 24 + j) = Definitions.NO_DATA
                 }
                 else
                 {
-                    //myObsData[i * 24 + j] = NODATA;
                      myObsData.append(NODATA);
                 }
 
                 // cloudiness forecast data (local time)
                 if ((i * 24 + j) >= indexSunSet && (i * 24 + j) <= indexSunRise)
                 {
-                    //myCloudiness[i * 24 + j - indexSunSet] = NODATA;
                     if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), myRadPoint, getCrit3DTime(myDate.last())))
                     {
                         if (gridAvailable)
@@ -444,7 +432,6 @@ int Frost::getForecastData(QString id)
                             float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(myDate.last().date()), myDate.last().time().hour(), 0, globalIrradiance);
                             if (rad != NODATA)
                             {
-                                //myCloudiness[i * 24 + j - indexSunSet] = rad / myRadPoint.global;
                                 myCloudiness.append(rad / myRadPoint.global);
                             }
                             else
@@ -477,14 +464,9 @@ int Frost::getForecastData(QString id)
         {
             if (i >= indexSunSet && i<= indexSunRise)
             {
-                /*
-                myForecast[i - indexSunSet] = t_Reuter(myCoeffReuter, i - indexSunSet, myTSunSet);
-                myForecastMin[i - indexSunSet] = t_Reuter(myCoeffReuterMin, i - indexSunSet, myTSunSet);
-                myForecastMax[i - indexSunSet] = t_Reuter(myCoeffReuterMax, i - indexSunSet, myTSunSet);
-                */
                 myForecast.append(t_Reuter(myCoeffReuter, i - indexSunSet, myTSunSet));
-                myForecastMin.append(t_Reuter(myCoeffReuterMin, i - indexSunSet, myTSunSet));
-                myForecastMax.append(t_Reuter(myCoeffReuterMax, i - indexSunSet, myTSunSet));
+                myForecastMax.append(t_Reuter(myCoeffReuterMin, i - indexSunSet, myTSunSet));
+                myForecastMin.append(t_Reuter(myCoeffReuterMax, i - indexSunSet, myTSunSet));
             }
             else
             {
