@@ -33,7 +33,7 @@ public:
     void setSettingsFileName(const QString &value);
     int downloadMeteoPointsData();
     void setRunDate(const QDate &value);
-    int getForecastData(QString id);
+    int getForecastData(QString id, int posIdList);
     float coeffReuter(float a0, float a1, float a2, float t, float RH);
     float t_Reuter(float d, float deltaTime, float tIni);
     int createCsvFile(QString id);

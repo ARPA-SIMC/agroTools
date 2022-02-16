@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     QList<QString> idList = frost.getIdList();
     for (int i = 0; i< idList.size(); i++)
     {
-        result = frost.getForecastData(idList[i]);
+        result = frost.getForecastData(idList[i], i);
         if (result == FROSTFORECAST_OK)
         {
             frost.createCsvFile(idList[i]);

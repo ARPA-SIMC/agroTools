@@ -269,7 +269,7 @@ int Frost::downloadMeteoPointsData()
     return FROSTFORECAST_OK;
 }
 
-int Frost::getForecastData(QString id)
+int Frost::getForecastData(QString id, int posIdList)
 {
     myForecast.clear();
     myForecastMax.clear();
@@ -277,11 +277,11 @@ int Frost::getForecastData(QString id)
     myObsData.clear();
     myDate.clear();
 
-    int pos = 0;
+    int meteoPointListpos = 0;
     bool found = false;
-    for (; pos< meteoPointsList.size(); pos++)
+    for (; meteoPointListpos< meteoPointsList.size(); meteoPointListpos++)
     {
-        if (meteoPointsList[pos].id == id.toStdString())
+        if (meteoPointsList[meteoPointListpos].id == id.toStdString())
         {
             found = true;
             break;
@@ -291,8 +291,8 @@ int Frost::getForecastData(QString id)
     int row;
     int col;
 
-    double lat = meteoPointsList[pos].latitude;
-    double lon = meteoPointsList[pos].longitude;
+    double lat = meteoPointsList[meteoPointListpos].latitude;
+    double lon = meteoPointsList[meteoPointListpos].longitude;
 
     gis::getMeteoGridRowColFromXY(grid.gridStructure().header(), lon, lat, &row, &col);
 
@@ -301,9 +301,9 @@ int Frost::getForecastData(QString id)
     gis::Crit3DRasterGrid myDEM;
     radSettings.gisSettings = &gisSettings;
     /*! assign topographic height and coordinates */
-    myRadPoint.x = meteoPointsList[pos].point.utm.x;
-    myRadPoint.y = meteoPointsList[pos].point.utm.y;
-    myRadPoint.height = meteoPointsList[pos].point.z;
+    myRadPoint.x = meteoPointsList[meteoPointListpos].point.utm.x;
+    myRadPoint.y = meteoPointsList[meteoPointListpos].point.utm.y;
+    myRadPoint.height = meteoPointsList[meteoPointListpos].point.z;
 
     if (!found)
     {
@@ -311,7 +311,7 @@ int Frost::getForecastData(QString id)
         return ERROR_DBPOINT;
     }
     // load meteo point observed data
-    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(runDate.addDays(-1)), getCrit3DDate(runDate.addDays(2)), &meteoPointsList[pos]))
+    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(runDate.addDays(-1)), getCrit3DDate(runDate.addDays(2)), &meteoPointsList[meteoPointListpos]))
     {
         logger.writeError ("id: "+id+" meteo point load hourly data error");
         return ERROR_DBPOINT;
@@ -347,7 +347,7 @@ int Frost::getForecastData(QString id)
         indexSunSet = myHourSunSetInteger;
         indexSunRise = 24 + myHourSunRiseInteger;
 
-        QDate fistDate = getQDate(meteoPointsList[pos].getMeteoPointHourlyValuesDate(0));
+        QDate fistDate = getQDate(meteoPointsList[meteoPointListpos].getMeteoPointHourlyValuesDate(0));
         int myDateIndex = fistDate.daysTo(runDate);
         int myHour = myHourSunSetInteger - timeZone;
 
@@ -361,14 +361,14 @@ int Frost::getForecastData(QString id)
             myDateIndex = myDateIndex + 1;
             myHour = myHourSunSetInteger - 24;
         }
-        if (myDateIndex > meteoPointsList[pos].nrObsDataDaysH || myDateIndex < 0)
+        if (myDateIndex > meteoPointsList[meteoPointListpos].nrObsDataDaysH || myDateIndex < 0)
         {
             logger.writeError ("Sunset hour: " + QString::number(myHourSunSetInteger) + " data not available");
             return ERROR_SUNSET;
         }
         QDate newDate = fistDate.addDays(myDateIndex);
-        float myTSunSet = meteoPointsList[pos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
-        float myRHSunSet = meteoPointsList[pos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
+        float myTSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
+        float myRHSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
 
         if (myTSunSet == NODATA || myRHSunSet == NODATA)
         {
@@ -379,12 +379,12 @@ int Frost::getForecastData(QString id)
         int myDateTmpIndex;
         int myTmpHour;
 
-        float myIntercept = intercept[pos].toFloat();
-        float myParTss = parTss[pos].toFloat();
-        float myParRHss = parRHss[pos].toFloat();
-        float mySEintercept = SE_intercept[pos].toFloat();
-        float mySEparTss = SE_parTss[pos].toFloat();
-        float mySEparRHss = SE_parRHss[pos].toFloat();
+        float myIntercept = intercept[posIdList].toFloat();
+        float myParTss = parTss[posIdList].toFloat();
+        float myParRHss = parRHss[posIdList].toFloat();
+        float mySEintercept = SE_intercept[posIdList].toFloat();
+        float mySEparTss = SE_parTss[posIdList].toFloat();
+        float mySEparRHss = SE_parRHss[posIdList].toFloat();
 
         for (int i = 0; i <= 1; i++)
         {
@@ -403,11 +403,11 @@ int Frost::getForecastData(QString id)
                     myTmpHour = myTmpHour - 24;
                 }
                 // observed values (local time)
-                if (myDateTmpIndex <= meteoPointsList[pos].nrObsDataDaysH && myDateTmpIndex >= 0)
+                if (myDateTmpIndex <= meteoPointsList[meteoPointListpos].nrObsDataDaysH && myDateTmpIndex >= 0)
                 {
                     QDate dateTmp = fistDate.addDays(myDateTmpIndex);
                     myDate.append(QDateTime(dateTmp,QTime(myTmpHour,0,0)));
-                    float myT = meteoPointsList[pos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
+                    float myT = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
                     if (myT != NODATA)
                     {
                         myObsData.append(myT);
