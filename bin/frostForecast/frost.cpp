@@ -425,7 +425,7 @@ int Frost::getForecastData(QString id)
                 // cloudiness forecast data (local time)
                 if ((i * 24 + j) >= indexSunSet && (i * 24 + j) <= indexSunRise)
                 {
-                    if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), myRadPoint, getCrit3DTime(myDate.last())))
+                    if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), radSlope, radAspect, getCrit3DTime(myDate.last()), &myRadPoint))
                     {
                         if (gridAvailable)
                         {
