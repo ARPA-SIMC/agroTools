@@ -60,6 +60,8 @@ private:
     QList<QString> SE_intercept;
     QList<QString> SE_parTss;
     QList<QString> SE_parRHss;
+    int indexSunSet;
+    int indexSunRise;
     QString errorString;
 
     QList<float> myForecast;

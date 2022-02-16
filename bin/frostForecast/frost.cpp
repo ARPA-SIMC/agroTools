@@ -99,7 +99,6 @@ int Frost::readSettings()
         grid.closeDatabase();
         return ERROR_DBGRID;
     }
-    grid.closeDatabase();
 
     dbMeteoPointsName = projectSettings->value("meteo_points","").toString();
     if (dbMeteoPointsName.isEmpty())
@@ -345,8 +344,8 @@ int Frost::getForecastData(QString id)
         int myHourSunSetInteger = round(sunPosition.set/3600);
         int myHourSunRiseInteger = round(sunPosition.rise/3600);
 
-        int indexSunSet = myHourSunSetInteger;
-        int indexSunRise = 24 + myHourSunRiseInteger;
+        indexSunSet = myHourSunSetInteger;
+        indexSunRise = 24 + myHourSunRiseInteger;
 
         QDate fistDate = getQDate(meteoPointsList[pos].getMeteoPointHourlyValuesDate(0));
         int myDateIndex = fistDate.daysTo(runDate);
@@ -463,6 +462,10 @@ int Frost::getForecastData(QString id)
                         myCloudiness.append(NODATA);
                     }
                 }
+                else
+                {
+                    myCloudiness.append(NODATA);
+                }
             }
         } // end for
 
@@ -470,16 +473,25 @@ int Frost::getForecastData(QString id)
         float myCoeffReuterMin = coeffReuter(myIntercept - 2 * abs(mySEintercept), myParTss - 2 * abs(mySEparTss), myParRHss - 2 * abs(mySEparRHss), myTSunSet, myRHSunSet);
         float myCoeffReuterMax = coeffReuter(myIntercept + 2 * abs(mySEintercept), myParTss + 2 * abs(mySEparTss), myParRHss + 2 * abs(mySEparRHss), myTSunSet, myRHSunSet);
 
-        for (int i = indexSunSet; i<= indexSunRise; i++)
+        for (int i = 0; i<myObsData.size(); i++)
         {
-            /*
-            myForecast[i - indexSunSet] = t_Reuter(myCoeffReuter, i - indexSunSet, myTSunSet);
-            myForecastMin[i - indexSunSet] = t_Reuter(myCoeffReuterMin, i - indexSunSet, myTSunSet);
-            myForecastMax[i - indexSunSet] = t_Reuter(myCoeffReuterMax, i - indexSunSet, myTSunSet);
-            */
-            myForecast.append(t_Reuter(myCoeffReuter, i - indexSunSet, myTSunSet));
-            myForecastMin.append(t_Reuter(myCoeffReuterMin, i - indexSunSet, myTSunSet));
-            myForecastMax.append(t_Reuter(myCoeffReuterMax, i - indexSunSet, myTSunSet));
+            if (i >= indexSunSet && i<= indexSunRise)
+            {
+                /*
+                myForecast[i - indexSunSet] = t_Reuter(myCoeffReuter, i - indexSunSet, myTSunSet);
+                myForecastMin[i - indexSunSet] = t_Reuter(myCoeffReuterMin, i - indexSunSet, myTSunSet);
+                myForecastMax[i - indexSunSet] = t_Reuter(myCoeffReuterMax, i - indexSunSet, myTSunSet);
+                */
+                myForecast.append(t_Reuter(myCoeffReuter, i - indexSunSet, myTSunSet));
+                myForecastMin.append(t_Reuter(myCoeffReuterMin, i - indexSunSet, myTSunSet));
+                myForecastMax.append(t_Reuter(myCoeffReuterMax, i - indexSunSet, myTSunSet));
+            }
+            else
+            {
+                myForecast.append(NODATA);
+                myForecastMin.append(NODATA);
+                myForecastMax.append(NODATA);
+            }
         }
 
 
@@ -500,7 +512,7 @@ float Frost::coeffReuter(float a0, float a1, float a2, float t, float RH)
 
 float Frost::t_Reuter(float d, float deltaTime, float tIni)
 {
-    float t_Reuter = pow(tIni - d * (deltaTime), 0.5);
+    float t_Reuter = tIni - d * pow((deltaTime), 0.5);
     return t_Reuter;
 }
 
@@ -529,15 +541,53 @@ int Frost::createCsvFile(QString id)
     QString header = "dateTime,TAVG,FORECAST,FORECAST_MIN, FORECAST_MAX, CLOUDINESS";
     QTextStream out(&outputFile);
     out << header << "\n";
-    for (int i = 0; i<myForecast.size(); i++)
+    for (int i = 0; i<myObsData.size(); i++)
     {
-        out << myDate[i].toString("yyyy-MM-dd hh:mm");
-        out << "," << myObsData[i];
-        out << "," << myForecast[i];
-        out << "," << myForecastMin[i];
-        out << "," << myForecastMax[i];
-        out << "," << myCloudiness[i];
-        out << "\n";
+        if (i>12 && i<38) // csv file from h.12 to h.12 day after
+        {
+            out << myDate[i].toString("yyyy-MM-dd hh:mm");
+            if (myObsData[i] !=NODATA && !isnan(myObsData[i]))
+            {
+                out << "," << myObsData[i];
+            }
+            else
+            {
+                out << "," << "";
+            }
+            if (myForecast[i] != NODATA && !isnan(myForecast[i]))
+            {
+                out << "," << myForecast[i];
+            }
+            else
+            {
+                out << "," << "";
+            }
+            if (myForecastMin[i] != NODATA && !isnan(myForecastMin[i]))
+            {
+                out << "," << myForecastMin[i];
+            }
+            else
+            {
+                out << "," << "";
+            }
+            if (myForecastMax[i] != NODATA && !isnan(myForecastMax[i]))
+            {
+                out << "," << myForecastMax[i];
+            }
+            else
+            {
+                out << "," << "";
+            }
+            if (myCloudiness[i] != NODATA && !isnan(myCloudiness[i]))
+            {
+                out << "," << myCloudiness[i];
+            }
+            else
+            {
+                out << "," << "";
+            }
+            out << "\n";
+        }
     }
     outputFile.flush();
     outputFile.close();
