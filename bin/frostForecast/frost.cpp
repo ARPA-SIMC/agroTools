@@ -430,7 +430,7 @@ int Frost::getForecastData(QString id)
                         if (gridAvailable)
                         {
                             float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(myDate.last().date()), myDate.last().time().hour(), 0, globalIrradiance);
-                            if (rad != NODATA)
+                            if (rad != NODATA && myRadPoint.global != NODATA && myRadPoint.global > 0)
                             {
                                 myCloudiness.append(rad / myRadPoint.global);
                             }
