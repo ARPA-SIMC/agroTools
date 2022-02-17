@@ -31,6 +31,15 @@ make
 
 cd -
 
+# build frostForecast
+cd ../bin/Makeall_frostForecast
+$QMAKE Makeall_frostForecast.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=qml_debug CONFIG+=c++11 CONFIG+=qtquickcompiler PREFIX=/usr
+make -f Makefile clean
+make -f Makefile qmake_all
+make 
+
+cd -
+
 # download linuxdeployqt
 wget -c -nv -O linuxqtdeploy "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
 chmod +x linuxqtdeploy
@@ -56,6 +65,9 @@ make_appimage ../bin/criteriaOutputTool/release/CriteriaOutput
 
 # build appimage csv2dbGrid
 make_appimage ../bin/csv2dbGrid/release/Csv2dbGrid
+
+# build appimage frostForecast
+make_appimage ../bin/frostForecast/release/FrostForecast
 
 mkdir -p agroTools/bin
 mv *.AppImage agroTools/bin/

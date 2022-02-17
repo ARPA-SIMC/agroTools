@@ -30,6 +30,14 @@ then
     
     cd -
     
+    # build frostForecast
+    cd bin/Makeall_frostForecast
+    $QMAKE Makeall_frostForecast.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler
+    make clean
+    make
+    
+    cd -
+    
     
 elif [[ $image =~ ^ubuntu: ]]
 then
@@ -53,6 +61,14 @@ then
     # build csv2dbGrid
     cd bin/Makeall_csv2dbGrid
     $QMAKE Makeall_csv2dbGrid.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler PREFIX=$QT_DIR
+    make clean
+    make
+    
+    cd -
+    
+    # build frostForecast
+    cd bin/Makeall_frostForecast
+    $QMAKE Makeall_frostForecast.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler PREFIX=$QT_DIR
     make clean
     make
     
@@ -82,6 +98,13 @@ then
     cp -rf deploy/appimage deploy/tmpbuild
     cp bin/csv2dbGrid/release/Csv2dbGrid deploy/tmpbuild/usr/bin/Csv2dbGrid
     ./linuxqtdeploy --appimage-extract-and-run deploy/tmpbuild/usr/share/applications/Csv2dbGrid.desktop -qmake=$QMAKE -qmlimport=$QT_DIR/qml -appimage -always-overwrite
+    cp deploy/tmpbuild/usr/bin/* deploy
+    rm -rf deploy/tmpbuild/
+    
+    # build appimage frostForecast
+    cp -rf deploy/appimage deploy/tmpbuild
+    cp bin/frostForecast/release/FrostForecast deploy/tmpbuild/usr/bin/FrostForecast
+    ./linuxqtdeploy --appimage-extract-and-run deploy/tmpbuild/usr/share/applications/FrostForecast.desktop -qmake=$QMAKE -qmlimport=$QT_DIR/qml -appimage -always-overwrite
     cp deploy/tmpbuild/usr/bin/* deploy
     rm -rf deploy/tmpbuild/
 

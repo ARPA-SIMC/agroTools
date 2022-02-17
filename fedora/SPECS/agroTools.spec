@@ -44,12 +44,18 @@ qmake-qt5 Makeall_criteriaOutputTool.pro -spec linux-g++-64 CONFIG+=release CONF
 make
 popd
 
+pushd bin/Makeall_frostForecast
+qmake-qt5 Makeall_frostForecast.pro -spec linux-g++-64 CONFIG+=release CONFIG+=force_debug_info CONFIG+=c++11 CONFIG+=qtquickcompiler
+make
+popd
+
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p %{buildroot}/%{_bindir}/
 cp -a bin/csv2dbMeteo/release/Csv2dbMeteo %{buildroot}/%{_bindir}/
 cp -a bin/csv2dbGrid/release/Csv2dbGrid %{buildroot}/%{_bindir}/
 cp -a bin/criteriaOutputTool/release/CriteriaOutput %{buildroot}/%{_bindir}/
+cp -a bin/frostForecast/release/FrostForecast %{buildroot}/%{_bindir}/
 mkdir -p %{buildroot}/%{_datadir}/
 cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 
@@ -57,6 +63,7 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_bindir}/Csv2dbMeteo
 %{_bindir}/Csv2dbGrid
 %{_bindir}/CriteriaOutput
+%{_bindir}/FrostForecast
 %{_datadir}/agroTools/*
 
 %changelog

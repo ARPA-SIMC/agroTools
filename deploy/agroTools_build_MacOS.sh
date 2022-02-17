@@ -32,16 +32,27 @@ make
 
 cd -
 
+# build frostForecast
+cd ../bin/Makeall_frostForecast
+$QMAKE Makeall_frostForecast.pro -spec macx-clang CONFIG+=release CONFIG+=force_debug_info CONFIG+=x86_64 CONFIG+=qtquickcompiler
+make -f Makefile clean
+make -f Makefile qmake_all
+make 
+
+cd -
+
 mkdir agroTools
 mkdir agroTools/bin
 
 cp -r ../bin/csv2dbMeteo/release/Csv2dbMeteo agroTools/bin/Csv2dbMeteo
 cp -r ../bin/criteriaOutputTool/release/CriteriaOutput agroTools/bin/CriteriaOutput
 cp -r ../bin/csv2dbGrid/release/Csv2dbGrid agroTools/bin/Csv2dbGrid
+cp -r ../bin/frostForecast/release/FrostForecast agroTools/bin/FrostForecast
 
 # deploy apps
 cd agroTools/bin
 $DEPLOY Csv2dbMeteo.app
 $DEPLOY CriteriaOutput.app
 $DEPLOY Csv2dbGrid.app
+$DEPLOY FrostForecast.app
 

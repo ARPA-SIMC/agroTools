@@ -12,6 +12,8 @@ cd ..\Makeall_criteriaOutputTool
 nmake /S /NOLOGO distclean
 cd ..\Makeall_csv2dbGrid
 nmake /S /NOLOGO distclean
+cd ..\Makeall_frostForecast
+nmake /S /NOLOGO distclean
 
 :: compile
 cd ..\csv2dbMeteo
@@ -26,6 +28,10 @@ cd ..\Makeall_csv2dbGrid
 qmake CONFIG+=release
 nmake /S /NOLOGO release
 
+cd ..\Makeall_frostForecast
+qmake CONFIG+=release
+nmake /S /NOLOGO release
+
 :: copy executables
 cd ..\..\deploy
 mkdir agroTools\bin
@@ -33,11 +39,13 @@ cd agroTools\bin
 copy ..\..\..\bin\criteriaOutputTool\release\CriteriaOutput.exe
 copy ..\..\..\bin\csv2dbMeteo\release\Csv2dbMeteo.exe
 copy ..\..\..\bin\csv2dbGrid\release\Csv2dbGrid.exe
+copy ..\..\..\bin\frostForecast\release\FrostForecast.exe
 
 :: deploy executables
 windeployqt Csv2dbMeteo.exe
 windeployqt CriteriaOutput.exe
 windeployqt Csv2dbGrid.exe
+windeployqt FrostForecast.exe
 
 :: return to deploy directory
 cd ..\..\

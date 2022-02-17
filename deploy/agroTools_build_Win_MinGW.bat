@@ -27,6 +27,11 @@ cd ..\Makeall_csv2dbGrid
 qmake -platform win32-g++ CONFIG+=release
 mingw32-make --silent release
 
+:: build frostForecast
+cd ..\Makeall_frostForecast
+qmake -platform win32-g++ CONFIG+=release
+mingw32-make --silent release
+
 cd ..\..\deploy
 
 :: copy executables
@@ -35,11 +40,13 @@ cd agroTools\bin
 copy ..\..\..\bin\csv2dbMeteo\release\Csv2dbMeteo.exe
 copy ..\..\..\bin\criteriaOutputTool\release\CriteriaOutput.exe
 copy ..\..\..\bin\csv2dbGrid\release\Csv2dbGrid.exe
+copy ..\..\..\bin\frostForecast\release\FrostForecast.exe
 
 :: deploy
 windeployqt Csv2dbMeteo.exe
 windeployqt CriteriaOutput.exe
 windeployqt Csv2dbGrid.exe
+windeployqt FrostForecast.exe
 
 :: return to deploy directory
 cd ..\..\
