@@ -530,7 +530,7 @@ int Frost::createCsvFile(QString id)
         if (i>12 && i<38) // csv file from h.12 to h.12 day after
         {
             out << myDate[i].toString("yyyy-MM-dd hh:mm");
-            if (myObsData[i] !=NODATA && !isnan(myObsData[i]))
+            if (myObsData[i] !=NODATA)
             {
                 out << "," << myObsData[i];
             }
@@ -538,7 +538,7 @@ int Frost::createCsvFile(QString id)
             {
                 out << "," << "";
             }
-            if (myForecast[i] != NODATA && !isnan(myForecast[i]))
+            if (myForecast[i] != NODATA)
             {
                 out << "," << myForecast[i];
             }
@@ -546,7 +546,7 @@ int Frost::createCsvFile(QString id)
             {
                 out << "," << "";
             }
-            if (myForecastMin[i] != NODATA && !isnan(myForecastMin[i]))
+            if (myForecastMin[i] != NODATA)
             {
                 out << "," << myForecastMin[i];
             }
@@ -554,7 +554,7 @@ int Frost::createCsvFile(QString id)
             {
                 out << "," << "";
             }
-            if (myForecastMax[i] != NODATA && !isnan(myForecastMax[i]))
+            if (myForecastMax[i] != NODATA)
             {
                 out << "," << myForecastMax[i];
             }
@@ -562,7 +562,7 @@ int Frost::createCsvFile(QString id)
             {
                 out << "," << "";
             }
-            if (myCloudiness[i] != NODATA && !isnan(myCloudiness[i]))
+            if (myCloudiness[i] != NODATA)
             {
                 out << "," << myCloudiness[i];
             }
