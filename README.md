@@ -1,13 +1,13 @@
 [![Build Status](https://copr.fedorainfracloud.org/coprs/simc/stable/package/CRITERIA1D/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/simc/stable/package/agroTools/)
 
 ## CriteriaOutput tool
-Shell command to manage the agro-hydrological output of [CRITERIA1D / GEO](https://github.com/ARPA-SIMC/criteria1d)
+CriteriaOutput is a shell command to manage the agro-hydrological output of [CRITERIA1D / GEO](https://github.com/ARPA-SIMC/criteria1d)
 
-#### Usage:
+#### Usage
 
 CriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION projectName.ini [date]
 
-#### Example of project.ini:
+#### Example of project.ini
 
 [software]  
 software="CriteriaOutput"
