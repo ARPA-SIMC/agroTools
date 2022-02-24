@@ -298,7 +298,7 @@ int Frost::getForecastData(QString id, int posIdList)
 
     TradPoint myRadPoint;
     Crit3DRadiationSettings radSettings;
-    gis::Crit3DRasterGrid myDEM;
+
     radSettings.gisSettings = &gisSettings;
     /*! assign topographic height and coordinates */
     myRadPoint.x = meteoPointsList[meteoPointListpos].point.utm.x;
@@ -325,10 +325,10 @@ int Frost::getForecastData(QString id, int posIdList)
     }
     QDateTime firstDateTime = QDateTime(runDate.addDays(-1), QTime(1,0), Qt::UTC);
     QDateTime lastDateTime = QDateTime(runDate.addDays(2), QTime(0,0), Qt::UTC);
-    bool gridAvailable = false;
-    if (grid.loadGridHourlyData(&errorString, QString::fromStdString(idGrid), firstDateTime, lastDateTime))
+
+    if (!grid.loadGridHourlyData(&errorString, QString::fromStdString(idGrid), firstDateTime, lastDateTime))
     {
-        gridAvailable = true;
+        logger.writeError ("meteo grid load hourly data error");
     }
     // Sun position
     TsunPosition sunPosition;
