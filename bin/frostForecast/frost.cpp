@@ -408,7 +408,7 @@ int Frost::getForecastData(QString id, int posIdList)
                 {
                     QDate dateTmp = fistDate.addDays(myDateTmpIndex);
                     dateTimeTmp = QDateTime(dateTmp,QTime(myTmpHour,0,0));
-                    myDate.append(QDateTime(runDate,QTime(j,0,0)));
+                    myDate.append(QDateTime(runDate.addDays(i),QTime(j,0,0)));
                     float myT = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
                     if (myT != NODATA)
                     {
