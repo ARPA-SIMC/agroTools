@@ -347,8 +347,8 @@ int Frost::getForecastData(QString id, int posIdList)
         indexSunSet = myHourSunSetInteger;
         indexSunRise = 24 + myHourSunRiseInteger;
 
-        QDate fistDate = getQDate(meteoPointsList[meteoPointListpos].getMeteoPointHourlyValuesDate(0));
-        int myDateIndex = fistDate.daysTo(runDate);
+        QDate firstDate = getQDate(meteoPointsList[meteoPointListpos].getMeteoPointHourlyValuesDate(0));
+        int myDateIndex = firstDate.daysTo(runDate);
         int myHour = myHourSunSetInteger - timeZone;
 
         if (myHour < 0)
@@ -366,7 +366,7 @@ int Frost::getForecastData(QString id, int posIdList)
             logger.writeError ("Sunset hour: " + QString::number(myHourSunSetInteger) + " data not available");
             return ERROR_SUNSET;
         }
-        QDate newDate = fistDate.addDays(myDateIndex);
+        QDate newDate = firstDate.addDays(myDateIndex);
         float myTSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
         float myRHSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
 
@@ -406,7 +406,7 @@ int Frost::getForecastData(QString id, int posIdList)
                 // observed values (local time)
                 if (myDateTmpIndex <= meteoPointsList[meteoPointListpos].nrObsDataDaysH && myDateTmpIndex >= 0)
                 {
-                    QDate dateTmp = fistDate.addDays(myDateTmpIndex);
+                    QDate dateTmp = firstDate.addDays(myDateTmpIndex);
                     dateTimeTmp = QDateTime(dateTmp,QTime(myTmpHour,0,0));
                     myDate.append(QDateTime(runDate.addDays(i),QTime(j,0,0)));
                     float myT = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
@@ -422,38 +422,6 @@ int Frost::getForecastData(QString id, int posIdList)
                 else
                 {
                      myObsData.append(NODATA);
-                }
-
-                // cloudiness forecast data (local time)
-                if ((i * 24 + j) >= indexSunSet && (i * 24 + j) <= indexSunRise)
-                {
-                    if (radiation::computeRadiationPotentialRSunMeteoPoint(&radSettings, myDEM, grid.meteoGrid()->meteoPointPointer(row,col), radSlope, radAspect, getCrit3DTime(dateTimeTmp), &myRadPoint))
-                    {
-                        if (gridAvailable)
-                        {
-                            float rad = grid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueH(getCrit3DDate(dateTimeTmp.date()), dateTimeTmp.time().hour(), 0, globalIrradiance);
-                            if (rad != NODATA && myRadPoint.global != NODATA && myRadPoint.global > 0)
-                            {
-                                myCloudiness.append(rad / myRadPoint.global);
-                            }
-                            else
-                            {
-                                myCloudiness.append(NODATA);
-                            }
-                        }
-                        else
-                        {
-                            myCloudiness.append(NODATA);
-                        }
-                    }
-                    else
-                    {
-                        myCloudiness.append(NODATA);
-                    }
-                }
-                else
-                {
-                    myCloudiness.append(NODATA);
                 }
             }
         } // end for
@@ -522,7 +490,7 @@ int Frost::createCsvFile(QString id)
         logger.writeInfo("Output file: " + outputCsvFileName);
     }
 
-    QString header = "dateTime,TAVG,FORECAST,FORECAST_MIN, FORECAST_MAX, CLOUDINESS";
+    QString header = "dateTime,TAVG,FORECAST,FORECAST_MIN, FORECAST_MAX";
     QTextStream out(&outputFile);
     out << header << "\n";
     for (int i = 0; i<myObsData.size(); i++)
@@ -557,14 +525,6 @@ int Frost::createCsvFile(QString id)
             if (myForecastMax[i] != NODATA)
             {
                 out << "," << myForecastMax[i];
-            }
-            else
-            {
-                out << "," << "";
-            }
-            if (myCloudiness[i] != NODATA)
-            {
-                out << "," << myCloudiness[i];
             }
             else
             {

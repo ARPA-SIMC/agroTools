@@ -69,7 +69,6 @@ private:
     QList<float> myForecastMax;
     QList<float> myObsData;
     QList<QDateTime> myDate;
-    QList<float> myCloudiness;
 };
 
 #endif // FROST_H
