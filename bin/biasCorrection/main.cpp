@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "PROJECT/highlander_bias_test/highlander_bias_test.ini";
+            settingsFileName = dataPath + "PROJECT/testHighlanderBias/testHighlanderBiasSettings.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
