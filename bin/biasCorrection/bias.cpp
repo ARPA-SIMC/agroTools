@@ -130,6 +130,8 @@ int Bias::readSettings()
 
     if (outputMeteoGrid.isEmpty() || !outputXmlFile.exists())
     {
+        // create outputMeteoGrid xml and db
+
         logger.writeInfo("outputMeteoGrid xml does not exist, copy inputMeteoGrid db structure");
         if (outputMeteoGrid.isEmpty())
         {
@@ -167,29 +169,59 @@ int Bias::readSettings()
         output << document.toString();
         myFile.close();
 
-        // TO DO crea db
-    }
+        // new db
+        outputGrid.meteoGrid()->setGisSettings(this->gisSettings);
+        if (! outputGrid.parseXMLGrid(outputMeteoGrid, &errorString))
+        {
+            return ERROR_DBOUTPUT;
+        }
 
-    // open output grid
-    if (! outputGrid.parseXMLGrid(outputMeteoGrid, &errorString))
+        if (! outputGrid.newDatabase(&errorString))
+        {
+            return ERROR_DBOUTPUT;
+        }
+
+        if (! outputGrid.newCellProperties(&errorString))
+        {
+            return ERROR_DBOUTPUT;
+        }
+
+        Crit3DMeteoGridStructure structure = outputGrid.meteoGrid()->gridStructure();
+
+        if (! outputGrid.writeCellProperties(&errorString, structure.nrRow(), structure.nrCol()))
+        {
+            return ERROR_DBOUTPUT;
+        }
+
+        if (! outputGrid.meteoGrid()->createRasterGrid())
+        {
+            return ERROR_DBOUTPUT;
+        }
+
+    }
+    else
     {
-        logger.writeError (errorString);
-        return ERROR_DBGRID;
-    }
+        // open output grid
+        if (! outputGrid.parseXMLGrid(outputMeteoGrid, &errorString))
+        {
+            logger.writeError (errorString);
+            return ERROR_DBGRID;
+        }
 
-    if (! outputGrid.openDatabase(&errorString))
-    {
-        logger.writeError (errorString);
-        return ERROR_DBGRID;
-    }
+        if (! outputGrid.openDatabase(&errorString))
+        {
+            logger.writeError (errorString);
+            return ERROR_DBGRID;
+        }
 
-    if (! outputGrid.loadCellProperties(&errorString))
-    {
-        logger.writeError (errorString);
-        outputGrid.closeDatabase();
-        return ERROR_DBGRID;
-    }
+        if (! outputGrid.loadCellProperties(&errorString))
+        {
+            logger.writeError (errorString);
+            outputGrid.closeDatabase();
+            return ERROR_DBGRID;
+        }
 
+    }
     // var
     QString varTemp = projectSettings->value("var","").toString();
     if (varTemp.isEmpty())
