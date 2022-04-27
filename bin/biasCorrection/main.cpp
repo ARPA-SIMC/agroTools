@@ -5,7 +5,7 @@
 #include "bias.h"
 
 // uncomment to execute test
-//#define TEST
+#define TEST
 
 void usage()
 {
@@ -41,6 +41,16 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGFILE;
         }
+    }
+
+    bias.initialize();
+    bias.setSettingsFileName(settingsFileName);
+    bias.logger.writeInfo ("settingsFileName: " + settingsFileName);
+
+    int result = bias.readSettings();
+    if (result!=BIASCORRECTION_OK)
+    {
+        return result;
     }
 
 }
