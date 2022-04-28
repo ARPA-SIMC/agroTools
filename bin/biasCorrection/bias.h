@@ -44,7 +44,8 @@ private:
     QString errorString;
     QDate firstDate;
     QDate lastDate;
-    QString dbClimate;
+    QString dbClimateName;
+    QSqlDatabase dbClimate;
     bool isFutureProjection;
 };
 

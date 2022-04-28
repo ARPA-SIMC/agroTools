@@ -2,6 +2,7 @@
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
+#include <QtSql>
 
 Bias::Bias()
 {
@@ -19,7 +20,7 @@ void Bias::initialize()
     method = "";
     varList.clear();
     errorString = "";
-    dbClimate = "";
+    dbClimateName = "";
 }
 
 void Bias::setSettingsFileName(const QString &value)
@@ -333,21 +334,21 @@ int Bias::readSettings()
     }
 
     // db Climate
-    dbClimate = projectSettings->value("dbClimate","").toString();
-    if (dbClimate.isEmpty())
+    dbClimateName = projectSettings->value("dbClimate","").toString();
+    if (dbClimateName.isEmpty())
     {
         logger.writeError ("missing xml DB inputMeteoGrid");
         refGrid.closeDatabase();
         inputGrid.closeDatabase();
         return ERROR_MISSINGPARAMETERS;
     }
-    if (dbClimate.left(1) == ".")
+    if (dbClimateName.left(1) == ".")
     {
-        dbClimate = path + QDir::cleanPath(dbClimate);
+        dbClimateName = path + QDir::cleanPath(dbClimateName);
     }
     if (isFutureProjection)
     {
-        if (!QFile::exists(dbClimate))
+        if (!QFile::exists(dbClimateName))
         {
             logger.writeError ("Compute reference before the projections");
             refGrid.closeDatabase();
@@ -358,20 +359,28 @@ int Bias::readSettings()
     else
     {
         // create an empty dbClimate, if exists overwrite.
-        QFile dbFile(dbClimate);
+        QFile dbFile(dbClimateName);
         if (dbFile.exists())
         {
             dbFile.close();
             dbFile.setPermissions(QFile::ReadOther | QFile::WriteOther);
             if (! dbFile.remove())
             {
-                logger.writeError ("Remove file failed: " + dbName + "\n" + dbFile.errorString());
+                logger.writeError ("Remove file failed: " + dbClimateName + "\n" + dbFile.errorString());
                 refGrid.closeDatabase();
                 inputGrid.closeDatabase();
                 return ERROR_DBCLIMATE;
             }
         }
-        // TO DO
+        dbClimate = QSqlDatabase::addDatabase("QSQLITE", QUuid::createUuid().toString());
+        dbClimate.setDatabaseName(dbClimateName);
+        if (!dbClimate.open())
+        {
+            logger.writeError ("Problem opening: " + dbClimateName + dbClimate.lastError().text()+"\n");
+            refGrid.closeDatabase();
+            inputGrid.closeDatabase();
+            return ERROR_DBCLIMATE;
+        }
 
     }
 
