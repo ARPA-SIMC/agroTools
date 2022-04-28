@@ -148,7 +148,7 @@ int Bias::readSettings()
     }
 
     outputMeteoGrid = projectSettings->value("outputMeteoGrid","").toString();
-    QFile outputXmlFile(outputMeteoGrid);
+
     if (outputMeteoGrid.left(1) == ".")
     {
         outputMeteoGrid = path + QDir::cleanPath(outputMeteoGrid);
@@ -358,6 +358,21 @@ int Bias::readSettings()
     else
     {
         // create an empty dbClimate, if exists overwrite.
+        QFile dbFile(dbClimate);
+        if (dbFile.exists())
+        {
+            dbFile.close();
+            dbFile.setPermissions(QFile::ReadOther | QFile::WriteOther);
+            if (! dbFile.remove())
+            {
+                logger.writeError ("Remove file failed: " + dbName + "\n" + dbFile.errorString());
+                refGrid.closeDatabase();
+                inputGrid.closeDatabase();
+                return ERROR_DBCLIMATE;
+            }
+        }
+        // TO DO
+
     }
 
     projectSettings->endGroup();
