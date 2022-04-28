@@ -11,6 +11,9 @@
 #define ERROR_MISSINGPARAMETERS -2
 #define ERROR_DBGRID -3
 #define ERROR_DBOUTPUT -4
+#define ERROR_AREA -5
+#define ERROR_DATE -6
+#define ERROR_DBCLIMATE -7
 
 class Bias
 {
@@ -21,6 +24,9 @@ public:
     void initialize();
     int readSettings();
     void setSettingsFileName(const QString &value);
+    bool getIsFutureProjection() const;
+    void setIsFutureProjection(bool value);
+    int matchCells();
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -36,6 +42,10 @@ private:
     Crit3DMeteoGridDbHandler inputGrid;
     Crit3DMeteoGridDbHandler outputGrid;
     QString errorString;
+    QDate firstDate;
+    QDate lastDate;
+    QString dbClimate;
+    bool isFutureProjection;
 };
 
 #endif // BIAS_H

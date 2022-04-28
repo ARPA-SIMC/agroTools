@@ -19,11 +19,22 @@ void Bias::initialize()
     method = "";
     varList.clear();
     errorString = "";
+    dbClimate = "";
 }
 
 void Bias::setSettingsFileName(const QString &value)
 {
     settingsFileName = value;
+}
+
+bool Bias::getIsFutureProjection() const
+{
+    return isFutureProjection;
+}
+
+void Bias::setIsFutureProjection(bool value)
+{
+    isFutureProjection = value;
 }
 
 int Bias::readSettings()
@@ -77,7 +88,7 @@ int Bias::readSettings()
         return ERROR_DBGRID;
     }
 
-    if (! refGrid.openDatabase(&errorString))
+    if (! refGrid.openDatabase(&errorString, "refGrid"))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
@@ -94,6 +105,7 @@ int Bias::readSettings()
     if (inputMeteoGrid.isEmpty())
     {
         logger.writeError ("missing xml DB inputMeteoGrid");
+        refGrid.closeDatabase();
         return ERROR_MISSINGPARAMETERS;
     }
     if (inputMeteoGrid.left(1) == ".")
@@ -105,12 +117,14 @@ int Bias::readSettings()
     if (! inputGrid.parseXMLGrid(inputMeteoGrid, &errorString))
     {
         logger.writeError (errorString);
+        refGrid.closeDatabase();
         return ERROR_DBGRID;
     }
 
-    if (! inputGrid.openDatabase(&errorString))
+    if (! inputGrid.openDatabase(&errorString, "inputGrid"))
     {
         logger.writeError (errorString);
+        refGrid.closeDatabase();
         return ERROR_DBGRID;
     }
 
@@ -118,7 +132,19 @@ int Bias::readSettings()
     {
         logger.writeError (errorString);
         inputGrid.closeDatabase();
+        refGrid.closeDatabase();
         return ERROR_DBGRID;
+    }
+
+    // check input and reference area
+    double refArea = (refGrid.gridStructure().header().nrRows*refGrid.gridStructure().header().dy)*(refGrid.gridStructure().header().nrCols*refGrid.gridStructure().header().dx);
+    double inputArea = (inputGrid.gridStructure().header().nrRows*inputGrid.gridStructure().header().dy)*(inputGrid.gridStructure().header().nrCols*inputGrid.gridStructure().header().dx);
+    if (refArea < inputArea)
+    {
+        logger.writeError ("reference Grid area should be >= input Grid area");
+        inputGrid.closeDatabase();
+        refGrid.closeDatabase();
+        return ERROR_AREA;
     }
 
     outputMeteoGrid = projectSettings->value("outputMeteoGrid","").toString();
@@ -128,7 +154,7 @@ int Bias::readSettings()
         outputMeteoGrid = path + QDir::cleanPath(outputMeteoGrid);
     }
 
-    if (outputMeteoGrid.isEmpty() || !outputXmlFile.exists())
+    if (outputMeteoGrid.isEmpty() || !QFile::exists(outputMeteoGrid))
     {
         // create outputMeteoGrid xml and db
 
@@ -176,7 +202,7 @@ int Bias::readSettings()
             return ERROR_DBOUTPUT;
         }
 
-        if (! outputGrid.newDatabase(&errorString))
+        if (! outputGrid.newDatabase(&errorString, "outputGrid"))
         {
             return ERROR_DBOUTPUT;
         }
@@ -208,19 +234,41 @@ int Bias::readSettings()
             return ERROR_DBGRID;
         }
 
-        if (! outputGrid.openDatabase(&errorString))
+        if (outputGrid.openDatabase(&errorString, "outputGrid"))
         {
-            logger.writeError (errorString);
-            return ERROR_DBGRID;
+            // database exists, open it
+            if (! outputGrid.loadCellProperties(&errorString))
+            {
+                logger.writeError (errorString);
+                outputGrid.closeDatabase();
+                return ERROR_DBGRID;
+            }
         }
-
-        if (! outputGrid.loadCellProperties(&errorString))
+        else
         {
-            logger.writeError (errorString);
-            outputGrid.closeDatabase();
-            return ERROR_DBGRID;
-        }
+            // maybe database does not exist, try to create it
+            if (! outputGrid.newDatabase(&errorString, "outputGrid"))
+            {
+                return ERROR_DBOUTPUT;
+            }
 
+            if (! outputGrid.newCellProperties(&errorString))
+            {
+                return ERROR_DBOUTPUT;
+            }
+
+            Crit3DMeteoGridStructure structure = outputGrid.meteoGrid()->gridStructure();
+
+            if (! outputGrid.writeCellProperties(&errorString, structure.nrRow(), structure.nrCol()))
+            {
+                return ERROR_DBOUTPUT;
+            }
+
+            if (! outputGrid.meteoGrid()->createRasterGrid())
+            {
+                return ERROR_DBOUTPUT;
+            }
+        }
     }
     // var
     QString varTemp = projectSettings->value("var","").toString();
@@ -241,9 +289,92 @@ int Bias::readSettings()
         logger.writeError ("missing method");
         return ERROR_MISSINGPARAMETERS;
     }
+    // firstDate
+    QString firstDateStr = projectSettings->value("firstDate","").toString();
+    firstDate = QDate::fromString(firstDateStr,"yyyy-MM-dd");
+    if (!firstDate.isValid())
+    {
+        logger.writeError ("missing or invalid first date");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    // lastDate
+    QString lastDateStr = projectSettings->value("lastDate","").toString();
+    lastDate = QDate::fromString(lastDateStr,"yyyy-MM-dd");
+    if (!lastDate.isValid())
+    {
+        logger.writeError ("missing or invalid last date");
+        return ERROR_MISSINGPARAMETERS;
+    }
+
+    // check dates
+    if (!refGrid.updateGridDate(&errorString))
+    {
+        logger.writeError("refGrid updateGridDate: " + errorString);
+        return ERROR_DATE;
+    }
+    logger.writeInfo("refGrid.firstDate(): " + refGrid.firstDate().toString());
+    logger.writeInfo("refGrid.lastDate(): " + refGrid.lastDate().toString());
+    if (refGrid.firstDate() > firstDate || refGrid.lastDate() < lastDate)
+    {
+        logger.writeError ("firstDate-lastDate interval not included in reference grid");
+        return ERROR_DATE;
+    }
+    if (!inputGrid.updateGridDate(&errorString))
+    {
+        logger.writeError("inputGrid updateGridDate: " + errorString);
+        return ERROR_DATE;
+    }
+    logger.writeInfo("inputGrid.firstDate(): " + inputGrid.firstDate().toString());
+    logger.writeInfo("inputGrid.lastDate(): " + inputGrid.lastDate().toString());
+    if (inputGrid.firstDate() > firstDate || inputGrid.lastDate() < lastDate)
+    {
+        logger.writeError ("firstDate-lastDate interval not included in input grid");
+        return ERROR_DATE;
+    }
+
+    // db Climate
+    dbClimate = projectSettings->value("dbClimate","").toString();
+    if (dbClimate.isEmpty())
+    {
+        logger.writeError ("missing xml DB inputMeteoGrid");
+        refGrid.closeDatabase();
+        inputGrid.closeDatabase();
+        return ERROR_MISSINGPARAMETERS;
+    }
+    if (dbClimate.left(1) == ".")
+    {
+        dbClimate = path + QDir::cleanPath(dbClimate);
+    }
+    if (isFutureProjection)
+    {
+        if (!QFile::exists(dbClimate))
+        {
+            logger.writeError ("Compute reference before the projections");
+            refGrid.closeDatabase();
+            inputGrid.closeDatabase();
+            return ERROR_DBCLIMATE;
+        }
+    }
+    else
+    {
+        // create an empty dbClimate, if exists overwrite.
+    }
+
     projectSettings->endGroup();
 
 
     return BIASCORRECTION_OK;
+}
+
+int Bias::matchCells()
+{
+    if (inputGrid.gridStructure().header().dx > refGrid.gridStructure().header().dx || inputGrid.gridStructure().header().dy > refGrid.gridStructure().header().dy)
+    {
+        // TO DO
+    }
+    else
+    {
+        // TO DO
+    }
 }
 

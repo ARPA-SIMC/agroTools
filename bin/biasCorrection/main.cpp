@@ -10,7 +10,7 @@
 void usage()
 {
     std::cout << "biasCorrection" << std::endl
-              << "Usage: biasCorrection <project.ini>" << std::endl;
+              << "Usage: biasCorrection <project.ini> REFERENCE/PROJ" << std::endl;
     std::cout << std::flush;
 }
 
@@ -20,13 +20,14 @@ int main(int argc, char *argv[])
     QString settingsFileName;
     Bias bias;
 
-    if (argc < 2)
+    if (argc <= 2)
     {
         #ifdef TEST
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
             settingsFileName = dataPath + "PROJECT/testHighlanderBias/testHighlanderBiasSettings.ini";
+            bias.setIsFutureProjection(false); // REFERENCE
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -41,6 +42,22 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGFILE;
         }
+        QString referenceProj = argv[2];
+        if (referenceProj == "REFERENCE")
+        {
+            bias.setIsFutureProjection(false);
+        }
+        else if (referenceProj == "PROJ")
+        {
+            bias.setIsFutureProjection(true);
+        }
+        else
+        {
+            bias.logger.writeError("Wrong file .ini: " + settingsFileName);
+            usage();
+            return ERROR_MISSINGPARAMETERS;
+        }
+
     }
 
     bias.initialize();
