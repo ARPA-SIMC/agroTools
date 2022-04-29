@@ -2,6 +2,7 @@
 #define BIAS_H
 
 #include <QString>
+#include <QPoint>
 #include "logger.h"
 #include "dbMeteoGrid.h"
 #include "meteo.h"
@@ -26,7 +27,9 @@ public:
     void setSettingsFileName(const QString &value);
     bool getIsFutureProjection() const;
     void setIsFutureProjection(bool value);
-    int matchCells();
+    void matchCells();
+    QString getMethod() const;
+    QList<QString> getVarList() const;
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -47,6 +50,8 @@ private:
     QString dbClimateName;
     QSqlDatabase dbClimate;
     bool isFutureProjection;
+    QList<QPoint> inputCells;
+    QList<QPoint> referenceCells;
 };
 
 #endif // BIAS_H

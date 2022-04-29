@@ -69,5 +69,34 @@ int main(int argc, char *argv[])
     {
         return result;
     }
+    bias.matchCells();
+    QList<QString> varList = bias.getVarList();
+    if (bias.getIsFutureProjection() == false) // reference
+    {
+        for (int i = 0; i < varList.size(); i++)
+        {
+            if (varList[i] == "DAILY_TMIN" || varList[i] == "DAILY_TMAX")
+            {
+                if (bias.getMethod() == "quantileMapping")
+                {
+
+                }
+                else
+                {
+                    // TO DO
+                }
+            }
+            else if (varList[i] == "DAILY_PREC")
+            {
+
+            }
+        }
+
+    }
+    else
+    {
+        // proj
+        // TO DO
+    }
 
 }

@@ -21,6 +21,8 @@ void Bias::initialize()
     varList.clear();
     errorString = "";
     dbClimateName = "";
+    inputCells.clear();
+    referenceCells.clear();
 }
 
 void Bias::setSettingsFileName(const QString &value)
@@ -36,6 +38,16 @@ bool Bias::getIsFutureProjection() const
 void Bias::setIsFutureProjection(bool value)
 {
     isFutureProjection = value;
+}
+
+QString Bias::getMethod() const
+{
+    return method;
+}
+
+QList<QString> Bias::getVarList() const
+{
+    return varList;
 }
 
 int Bias::readSettings()
@@ -390,7 +402,7 @@ int Bias::readSettings()
     return BIASCORRECTION_OK;
 }
 
-int Bias::matchCells()
+void Bias::matchCells()
 {
     if (inputGrid.gridStructure().header().dx > refGrid.gridStructure().header().dx || inputGrid.gridStructure().header().dy > refGrid.gridStructure().header().dy)
     {
@@ -398,7 +410,27 @@ int Bias::matchCells()
     }
     else
     {
-        // TO DO
+        for (int row = 0; row<inputGrid.gridStructure().header().nrRows; row++)
+        {
+            for (int col = 0; col<inputGrid.gridStructure().header().nrCols; col++)
+            {
+                QPoint inputPoint(row,col);
+                inputCells << inputPoint;
+                if (!inputGrid.gridStructure().isUTM() && !refGrid.gridStructure().isUTM()) // le griglie sono sempre lat lon?
+                {
+                    double lat;
+                    double lon;
+                    getLatLonFromRowCol(inputGrid.gridStructure().header(), row, col, &lat, &lon);
+                    int refRow;
+                    int refCol;
+                    getMeteoGridRowColFromXY (refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
+                    QPoint refPoint(refRow,refCol);
+                    referenceCells << refPoint;
+                }
+            }
+        }
     }
 }
+
+
 
