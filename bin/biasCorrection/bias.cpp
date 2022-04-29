@@ -414,18 +414,34 @@ void Bias::matchCells()
         {
             for (int col = 0; col<inputGrid.gridStructure().header().nrCols; col++)
             {
-                QPoint inputPoint(row,col);
-                inputCells << inputPoint;
-                if (!inputGrid.gridStructure().isUTM() && !refGrid.gridStructure().isUTM()) // le griglie sono sempre lat lon?
+                std::string id;
+                if (inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &id))
                 {
-                    double lat;
-                    double lon;
-                    getLatLonFromRowCol(inputGrid.gridStructure().header(), row, col, &lat, &lon);
-                    int refRow;
-                    int refCol;
-                    getMeteoGridRowColFromXY (refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
-                    QPoint refPoint(refRow,refCol);
-                    referenceCells << refPoint;
+                    QPoint inputPoint(row,col);
+                    inputCells << inputPoint;
+                    if (!inputGrid.gridStructure().isUTM() && !refGrid.gridStructure().isUTM()) // both lat lon
+                    {
+                        double lat;
+                        double lon;
+                        getLatLonFromRowCol(inputGrid.gridStructure().header(), row, col, &lat, &lon);
+                        int refRow;
+                        int refCol;
+                        getMeteoGridRowColFromXY (refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
+                        QPoint refPoint(refRow,refCol);
+                        referenceCells << refPoint;
+                    }
+                    else if (!inputGrid.gridStructure().isUTM() && refGrid.gridStructure().isUTM())
+                    {
+                        // TO DO
+                    }
+                    else if (inputGrid.gridStructure().isUTM() && !refGrid.gridStructure().isUTM())
+                    {
+                        // TO DO
+                    }
+                    else if (inputGrid.gridStructure().isUTM() && refGrid.gridStructure().isUTM())
+                    {
+                        // TO DO
+                    }
                 }
             }
         }
@@ -441,16 +457,21 @@ void Bias::computeMonthlyDistribution(meteoVariable var)
         int refRow = referenceCells[i].x();
         int refCol = referenceCells[i].y();
         std::string id;
-        if (inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &id))
+        inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &id);  // store id
+        if (!inputGrid.gridStructure().isFixedFields())
         {
-            if (!inputGrid.gridStructure().isFixedFields())
-            {
-                inputGrid.loadGridDailyData(&errorString, QString::fromStdString(id), firstDate, lastDate);
-            }
-            else
-            {
-                inputGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(id), firstDate, lastDate);
-            }
+            inputGrid.loadGridDailyData(&errorString, QString::fromStdString(id), firstDate, lastDate);
+        }
+        else
+        {
+            inputGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(id), firstDate, lastDate);
+        }
+        QDate temp(firstDate.year(),firstDate.month(),1);
+        while(temp<=lastDate)
+        {
+            int month = temp.month();
+            temp = temp.addMonths(1);
+            // TO DO
         }
     }
 }
