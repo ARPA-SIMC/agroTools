@@ -30,6 +30,7 @@ public:
     void matchCells();
     QString getMethod() const;
     QList<QString> getVarList() const;
+    void computeMonthlyDistribution(meteoVariable var);
 
 private:
     gis::Crit3DGisSettings gisSettings;

@@ -432,5 +432,27 @@ void Bias::matchCells()
     }
 }
 
+void Bias::computeMonthlyDistribution(meteoVariable var)
+{
+    for (int i = 0; i<inputCells.size(); i++)
+    {
+        int row = inputCells[i].x();
+        int col = inputCells[i].y();
+        int refRow = referenceCells[i].x();
+        int refCol = referenceCells[i].y();
+        std::string id;
+        if (inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &id))
+        {
+            if (!inputGrid.gridStructure().isFixedFields())
+            {
+                inputGrid.loadGridDailyData(&errorString, QString::fromStdString(id), firstDate, lastDate);
+            }
+            else
+            {
+                inputGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(id), firstDate, lastDate);
+            }
+        }
+    }
+}
 
 
