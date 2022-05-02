@@ -15,6 +15,7 @@
 #define ERROR_AREA -5
 #define ERROR_DATE -6
 #define ERROR_DBCLIMATE -7
+#define ERROR_SAVINGPARAM -8
 
 class Bias
 {
@@ -30,8 +31,8 @@ public:
     void matchCells();
     QString getMethod() const;
     QList<QString> getVarList() const;
-    void computeMonthlyDistribution(QString variable);
-    bool saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
+    int computeMonthlyDistribution(QString variable);
+    int saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
                                         std::vector<float> monthlyStdDevRef, bool deletePreviousData);
 
 private:

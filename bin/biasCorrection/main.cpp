@@ -79,7 +79,11 @@ int main(int argc, char *argv[])
             {
                 if (bias.getMethod() == "quantileMapping")
                 {
-                    bias.computeMonthlyDistribution(varList[i]);
+                    result = bias.computeMonthlyDistribution(varList[i]);
+                    if (result!=BIASCORRECTION_OK)
+                    {
+                        return result;
+                    }
                 }
                 else
                 {
@@ -98,5 +102,6 @@ int main(int argc, char *argv[])
         // proj
         // TO DO
     }
+    return BIASCORRECTION_OK;
 
 }

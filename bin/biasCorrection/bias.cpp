@@ -449,10 +449,11 @@ void Bias::matchCells()
     }
 }
 
-void Bias::computeMonthlyDistribution(QString variable)
+int Bias::computeMonthlyDistribution(QString variable)
 {
     meteoVariable var = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, variable.toStdString());
     bool deletePreviousData = true;
+    int res = 0;
     for (int i = 0; i<inputCells.size(); i++)
     {
         int row = inputCells[i].x();
@@ -547,11 +548,19 @@ void Bias::computeMonthlyDistribution(QString variable)
             }
         }
         // save values
-        saveDistributionParam(QString::fromStdString(idInput),variable,monthlyAvgInput,monthlyStdDevInput,monthlyAvgRef,monthlyStdDevRef,deletePreviousData);
+        res = res + saveDistributionParam(QString::fromStdString(idInput),variable,monthlyAvgInput,monthlyStdDevInput,monthlyAvgRef,monthlyStdDevRef,deletePreviousData);
+    }
+    if (res == 0)
+    {
+        return BIASCORRECTION_OK;
+    }
+    else
+    {
+        return ERROR_SAVINGPARAM;
     }
 }
 
-bool Bias::saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
+int Bias::saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
                                     std::vector<float> monthlyStdDevRef, bool deletePreviousData)
 {
     QString queryStr;
@@ -568,7 +577,7 @@ bool Bias::saveDistributionParam(QString idCell, QString variable, std::vector<f
     if (!qry.exec())
     {
         logger.writeError ("Error in create table: " + idCell + qry.lastError().text()+"\n");
-        return false;
+        return ERROR_SAVINGPARAM;
     }
 
     queryStr = QString(("INSERT OR REPLACE INTO `%1`"
@@ -584,10 +593,10 @@ bool Bias::saveDistributionParam(QString idCell, QString variable, std::vector<f
     if( !qry.exec(queryStr) )
     {
         logger.writeError ("Error in execute query: " + qry.lastError().text()+"\n");
-        return false;
+        return ERROR_SAVINGPARAM;
     }
     else
-        return true;
+        return BIASCORRECTION_OK;
 }
 
 
