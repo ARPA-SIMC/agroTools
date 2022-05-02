@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
             {
                 if (bias.getMethod() == "quantileMapping")
                 {
-                    meteoVariable var = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, varList[i].toStdString());
+                    bias.computeMonthlyDistribution(varList[i]);
                 }
                 else
                 {

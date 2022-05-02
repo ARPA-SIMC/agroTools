@@ -30,10 +30,13 @@ public:
     void matchCells();
     QString getMethod() const;
     QList<QString> getVarList() const;
-    void computeMonthlyDistribution(meteoVariable var);
+    void computeMonthlyDistribution(QString variable);
+    bool saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
+                                        std::vector<float> monthlyStdDevRef, bool deletePreviousData);
 
 private:
     gis::Crit3DGisSettings gisSettings;
+    Crit3DMeteoSettings meteoSettings;
     QString settingsFileName;
     QString projectName;
     QString path;

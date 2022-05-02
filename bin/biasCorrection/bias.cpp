@@ -1,4 +1,5 @@
 #include "bias.h"
+#include "utilities.h"
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
@@ -448,32 +449,145 @@ void Bias::matchCells()
     }
 }
 
-void Bias::computeMonthlyDistribution(meteoVariable var)
+void Bias::computeMonthlyDistribution(QString variable)
 {
+    meteoVariable var = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, variable.toStdString());
+    bool deletePreviousData = true;
     for (int i = 0; i<inputCells.size(); i++)
     {
         int row = inputCells[i].x();
         int col = inputCells[i].y();
         int refRow = referenceCells[i].x();
         int refCol = referenceCells[i].y();
-        std::string id;
-        inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &id);  // store id
+        std::string idInput;
+        std::string refInput;
+        inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &idInput);  // store id
+        refGrid.meteoGrid()->getMeteoPointActiveId(refRow, refCol, &refInput);  // store id
         if (!inputGrid.gridStructure().isFixedFields())
         {
-            inputGrid.loadGridDailyData(&errorString, QString::fromStdString(id), firstDate, lastDate);
+            if (!inputGrid.loadGridDailyData(&errorString, QString::fromStdString(idInput), firstDate, lastDate))
+            {
+                continue;
+            }
         }
         else
         {
-            inputGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(id), firstDate, lastDate);
+            if (!inputGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(idInput), firstDate, lastDate))
+            {
+                continue;
+            }
         }
-        QDate temp(firstDate.year(),firstDate.month(),1);
-        while(temp<=lastDate)
+        if (!refGrid.gridStructure().isFixedFields())
         {
-            int month = temp.month();
-            temp = temp.addMonths(1);
-            // TO DO
+            refGrid.loadGridDailyData(&errorString, QString::fromStdString(refInput), firstDate, lastDate);
         }
+        else
+        {
+            refGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(refInput), firstDate, lastDate);
+        }
+        Crit3DMeteoPoint mpInput = inputGrid.meteoGrid()->meteoPoint(row,col);
+        Crit3DMeteoPoint mpRef = refGrid.meteoGrid()->meteoPoint(refRow,refCol);
+        std::vector<float> monthlyAvgInput;
+        std::vector<float> monthlyStdDevInput;
+        std::vector<float> seriesInput;
+
+        std::vector<float> monthlyAvgRef;
+        std::vector<float> monthlyStdDevRef;
+        std::vector<float> seriesRef;
+
+        QDate startPeriod;
+        QDate endPeriod;
+        QDate tempDate;
+        for (int myMonth = 1; myMonth <= 12; myMonth ++)
+        {
+            seriesInput.clear();
+            seriesRef.clear();
+            for (int myYear = firstDate.year(); myYear <= lastDate.year(); myYear++)
+            {
+                startPeriod.setDate(myYear,myMonth,1);
+                endPeriod.setDate(myYear,myMonth,startPeriod.daysInMonth());
+                tempDate = startPeriod;
+                while (tempDate <= endPeriod)
+                {
+                    // input Grid
+                    float myDailyValue = mpInput.getMeteoPointValueD(getCrit3DDate(tempDate), var, &meteoSettings);
+                    if (myDailyValue != NODATA)
+                    {
+                        seriesInput.push_back(myDailyValue);
+                    }
+                    // ref Grid
+                    myDailyValue = mpRef.getMeteoPointValueD(getCrit3DDate(tempDate), var, &meteoSettings);
+                    if (myDailyValue != NODATA)
+                    {
+                        seriesRef.push_back(myDailyValue);
+                    }
+                    tempDate = tempDate.addDays(1);
+                }
+            }
+            if (seriesInput.size() != 0)
+            {
+                monthlyAvgInput.push_back(statistics::mean(seriesInput, seriesInput.size()));
+                monthlyStdDevInput.push_back(statistics::standardDeviation(seriesInput, seriesInput.size()));
+            }
+            else
+            {
+                monthlyAvgInput.push_back(NODATA);
+                monthlyStdDevInput.push_back(NODATA);
+            }
+
+            if (seriesRef.size() != 0)
+            {
+                monthlyAvgRef.push_back(statistics::mean(seriesRef, seriesRef.size()));
+                monthlyStdDevRef.push_back(statistics::standardDeviation(seriesRef, seriesRef.size()));
+            }
+            else
+            {
+                monthlyAvgRef.push_back(NODATA);
+                monthlyStdDevRef.push_back(NODATA);
+            }
+        }
+        // save values
+        saveDistributionParam(QString::fromStdString(idInput),variable,monthlyAvgInput,monthlyStdDevInput,monthlyAvgRef,monthlyStdDevRef,deletePreviousData);
     }
+}
+
+bool Bias::saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
+                                    std::vector<float> monthlyStdDevRef, bool deletePreviousData)
+{
+    QString queryStr;
+    if (deletePreviousData)
+    {
+        queryStr = "DROP TABLE IF EXISTS " + idCell;
+        dbClimate.exec(queryStr);
+    }
+
+    queryStr = QString("CREATE TABLE IF NOT EXISTS `%1`"
+                                "(var TEXT(20), month INTEGER, par1 REAL, par2 REAL, reference_par1 REAL, reference_par2 REAL, PRIMARY KEY(var, month))").arg(idCell);
+    QSqlQuery qry(dbClimate);
+    qry.prepare(queryStr);
+    if (!qry.exec())
+    {
+        logger.writeError ("Error in create table: " + idCell + qry.lastError().text()+"\n");
+        return false;
+    }
+
+    queryStr = QString(("INSERT OR REPLACE INTO `%1`"
+                                " VALUES ")).arg(idCell);
+
+    for (int i = 0; i<monthlyAvgInput.size(); i++)
+    {
+        queryStr += "('"+variable+"',"+QString::number(i+1)+","+QString::number(monthlyAvgInput[i])+","+QString::number(monthlyStdDevInput[i])+","+QString::number(monthlyAvgRef[i])+","
+                +QString::number(monthlyStdDevRef[i])+"),";
+    }
+    queryStr.chop(1); // remove last ,
+
+    if( !qry.exec(queryStr) )
+    {
+        logger.writeError ("Error in execute query: " + qry.lastError().text()+"\n");
+        return false;
+    }
+    else
+        return true;
 }
 
 
