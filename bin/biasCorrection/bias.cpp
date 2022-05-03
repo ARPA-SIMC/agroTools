@@ -1,5 +1,6 @@
 #include "bias.h"
 #include "utilities.h"
+#include "basicMath.h"
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
@@ -527,8 +528,9 @@ int Bias::computeMonthlyDistribution(QString variable)
             }
             if (seriesInput.size() != 0)
             {
-                monthlyAvgInput.push_back(statistics::mean(seriesInput, seriesInput.size()));
-                monthlyStdDevInput.push_back(statistics::standardDeviation(seriesInput, seriesInput.size()));
+                int nrValues = seriesInput.size();
+                monthlyStdDevInput.push_back(statistics::standardDeviation(seriesInput, nrValues));
+                monthlyAvgInput.push_back(sorting::percentile(seriesInput, &nrValues,50,true));
             }
             else
             {
@@ -538,8 +540,9 @@ int Bias::computeMonthlyDistribution(QString variable)
 
             if (seriesRef.size() != 0)
             {
-                monthlyAvgRef.push_back(statistics::mean(seriesRef, seriesRef.size()));
-                monthlyStdDevRef.push_back(statistics::standardDeviation(seriesRef, seriesRef.size()));
+                int nrValues = seriesRef.size();
+                monthlyStdDevRef.push_back(statistics::standardDeviation(seriesRef, nrValues));
+                monthlyAvgRef.push_back(sorting::percentile(seriesRef, &nrValues,50,true));
             }
             else
             {
@@ -585,8 +588,8 @@ int Bias::saveDistributionParam(QString idCell, QString variable, std::vector<fl
 
     for (int i = 0; i<monthlyAvgInput.size(); i++)
     {
-        queryStr += "('"+variable+"',"+QString::number(i+1)+","+QString::number(monthlyAvgInput[i])+","+QString::number(monthlyStdDevInput[i])+","+QString::number(monthlyAvgRef[i])+","
-                +QString::number(monthlyStdDevRef[i])+"),";
+        queryStr += "('"+variable+"',"+QString::number(i+1)+","+QString::number(monthlyAvgInput[i], 'f', 2)+","+QString::number(monthlyStdDevInput[i], 'f', 2)+","+QString::number(monthlyAvgRef[i], 'f', 2)+","
+                +QString::number(monthlyStdDevRef[i], 'f', 2)+"),";
     }
     queryStr.chop(1); // remove last ,
 
