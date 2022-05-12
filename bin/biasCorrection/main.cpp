@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
         {
             bias.setIsFutureProjection(false);
         }
-        else if (referenceProj == "PROJ")
+        else if (referenceProj == "DEBIAS")
         {
             bias.setIsFutureProjection(true);
         }
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        // proj
+        // debias
         // TO DO
     }
     return BIASCORRECTION_OK;
