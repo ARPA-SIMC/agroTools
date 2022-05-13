@@ -1,6 +1,7 @@
 #include "bias.h"
 #include "utilities.h"
 #include "basicMath.h"
+#include "gammaFunction.h"
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
@@ -489,12 +490,14 @@ int Bias::computeMonthlyDistribution(QString variable)
         }
         Crit3DMeteoPoint mpInput = inputGrid.meteoGrid()->meteoPoint(row,col);
         Crit3DMeteoPoint mpRef = refGrid.meteoGrid()->meteoPoint(refRow,refCol);
-        std::vector<float> monthlyAvgInput;
-        std::vector<float> monthlyStdDevInput;
+        std::vector<double> monthlyPar1Input;
+        std::vector<double> monthlyPar2Input;
+        std::vector<double> monthlyPar3Input;
         std::vector<float> seriesInput;
 
-        std::vector<float> monthlyAvgRef;
-        std::vector<float> monthlyStdDevRef;
+        std::vector<double> monthlyPar1Ref;
+        std::vector<double> monthlyPar2Ref;
+        std::vector<double> monthlyPar3Ref;
         std::vector<float> seriesRef;
 
         QDate startPeriod;
@@ -529,29 +532,59 @@ int Bias::computeMonthlyDistribution(QString variable)
             if (seriesInput.size() != 0)
             {
                 int nrValues = seriesInput.size();
-                monthlyStdDevInput.push_back(statistics::standardDeviation(seriesInput, nrValues));
-                monthlyAvgInput.push_back(sorting::percentile(seriesInput, &nrValues,50,true));
+                if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
+                {
+                    monthlyPar2Input.push_back(statistics::standardDeviation(seriesInput, nrValues));
+                    monthlyPar1Input.push_back(sorting::percentile(seriesInput, &nrValues,50,true));
+                    monthlyPar3Input.push_back(NODATA);
+                }
+                else if (var == dailyPrecipitation)
+                {
+                    double beta;
+                    double gamma;
+                    double pZero;
+                    gammaFitting(seriesInput, nrValues, &beta, &gamma,  &pZero);
+                    monthlyPar1Input.push_back(beta);
+                    monthlyPar2Input.push_back(gamma);
+                    monthlyPar3Input.push_back(pZero);
+                }
             }
             else
             {
-                monthlyAvgInput.push_back(NODATA);
-                monthlyStdDevInput.push_back(NODATA);
+                monthlyPar1Input.push_back(NODATA);
+                monthlyPar2Input.push_back(NODATA);
+                monthlyPar3Input.push_back(NODATA);
             }
 
             if (seriesRef.size() != 0)
             {
                 int nrValues = seriesRef.size();
-                monthlyStdDevRef.push_back(statistics::standardDeviation(seriesRef, nrValues));
-                monthlyAvgRef.push_back(sorting::percentile(seriesRef, &nrValues,50,true));
+                if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
+                {
+                    monthlyPar2Ref.push_back(statistics::standardDeviation(seriesRef, nrValues));
+                    monthlyPar1Ref.push_back(sorting::percentile(seriesRef, &nrValues,50,true));
+                    monthlyPar3Ref.push_back(NODATA);
+                }
+                else if (var == dailyPrecipitation)
+                {
+                    double beta;
+                    double gamma;
+                    double pZero;
+                    gammaFitting(seriesRef, nrValues, &beta, &gamma,  &pZero);
+                    monthlyPar1Ref.push_back(beta);
+                    monthlyPar2Ref.push_back(gamma);
+                    monthlyPar3Ref.push_back(pZero);
+                }
             }
             else
             {
-                monthlyAvgRef.push_back(NODATA);
-                monthlyStdDevRef.push_back(NODATA);
+                monthlyPar1Ref.push_back(NODATA);
+                monthlyPar2Ref.push_back(NODATA);
+                monthlyPar3Ref.push_back(NODATA);
             }
         }
         // save values
-        res = res + saveDistributionParam(QString::fromStdString(idInput),variable,monthlyAvgInput,monthlyStdDevInput,monthlyAvgRef,monthlyStdDevRef,deletePreviousData);
+        res = res + saveDistributionParam(QString::fromStdString(idInput),variable,monthlyPar1Input,monthlyPar2Input,monthlyPar3Input,monthlyPar1Ref,monthlyPar2Ref,monthlyPar3Ref,deletePreviousData);
     }
     if (res == 0)
     {
@@ -563,8 +596,8 @@ int Bias::computeMonthlyDistribution(QString variable)
     }
 }
 
-int Bias::saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
-                                    std::vector<float> monthlyStdDevRef, bool deletePreviousData)
+int Bias::saveDistributionParam(QString idCell, QString variable, std::vector<double> monthlyPar1Input, std::vector<double> monthlyPar2Input, std::vector<double> monthlyPar3Input,
+                                std::vector<double> monthlyPar1Ref,std::vector<double> monthlyPar2Ref, std::vector<double> monthlyPar3Ref, bool deletePreviousData)
 {
     QString queryStr;
     if (deletePreviousData)
@@ -574,7 +607,7 @@ int Bias::saveDistributionParam(QString idCell, QString variable, std::vector<fl
     }
 
     queryStr = QString("CREATE TABLE IF NOT EXISTS `%1`"
-                                "(var TEXT(20), month INTEGER, par1 REAL, par2 REAL, reference_par1 REAL, reference_par2 REAL, PRIMARY KEY(var, month))").arg(idCell);
+                                "(var TEXT(20), month INTEGER, par1 REAL, par2 REAL, par3 REAL, reference_par1 REAL, reference_par2 REAL, reference_par3 REAL, PRIMARY KEY(var, month))").arg(idCell);
     QSqlQuery qry(dbClimate);
     qry.prepare(queryStr);
     if (!qry.exec())
@@ -586,10 +619,10 @@ int Bias::saveDistributionParam(QString idCell, QString variable, std::vector<fl
     queryStr = QString(("INSERT OR REPLACE INTO `%1`"
                                 " VALUES ")).arg(idCell);
 
-    for (int i = 0; i<monthlyAvgInput.size(); i++)
+    for (int i = 0; i<monthlyPar1Input.size(); i++)
     {
-        queryStr += "('"+variable+"',"+QString::number(i+1)+","+QString::number(monthlyAvgInput[i], 'f', 2)+","+QString::number(monthlyStdDevInput[i], 'f', 2)+","+QString::number(monthlyAvgRef[i], 'f', 2)+","
-                +QString::number(monthlyStdDevRef[i], 'f', 2)+"),";
+        queryStr += "('"+variable+"',"+QString::number(i+1)+","+QString::number(monthlyPar1Input[i], 'f', 2)+","+QString::number(monthlyPar2Input[i], 'f', 2)+","+QString::number(monthlyPar3Input[i], 'f', 2)+
+                ","+QString::number(monthlyPar1Ref[i], 'f', 2)+","+QString::number(monthlyPar2Ref[i], 'f', 2)+","+QString::number(monthlyPar3Ref[i], 'f', 2)+"),";
     }
     queryStr.chop(1); // remove last ,
 

@@ -32,8 +32,8 @@ public:
     QString getMethod() const;
     QList<QString> getVarList() const;
     int computeMonthlyDistribution(QString variable);
-    int saveDistributionParam(QString idCell, QString variable, std::vector<float> monthlyAvgInput, std::vector<float> monthlyStdDevInput, std::vector<float> monthlyAvgRef,
-                                        std::vector<float> monthlyStdDevRef, bool deletePreviousData);
+    int saveDistributionParam(QString idCell, QString variable, std::vector<double> monthlyPar1Input, std::vector<double> monthlyPar2Input, std::vector<double> monthlyPar3Input,
+                              std::vector<double> monthlyPar1Ref,std::vector<double> monthlyPar2Ref, std::vector<double> monthlyPar3Ref, bool deletePreviousData);
 
 private:
     gis::Crit3DGisSettings gisSettings;

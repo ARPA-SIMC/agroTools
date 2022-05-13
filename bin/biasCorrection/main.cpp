@@ -10,7 +10,7 @@
 void usage()
 {
     std::cout << "biasCorrection" << std::endl
-              << "Usage: biasCorrection <project.ini> REFERENCE/PROJ" << std::endl;
+              << "Usage: biasCorrection <project.ini> REFERENCE/DEBIAS" << std::endl;
     std::cout << std::flush;
 }
 
@@ -75,24 +75,17 @@ int main(int argc, char *argv[])
     {
         for (int i = 0; i < varList.size(); i++)
         {
-            if (varList[i] == "DAILY_TMIN" || varList[i] == "DAILY_TMAX")
+            if (bias.getMethod() == "quantileMapping")
             {
-                if (bias.getMethod() == "quantileMapping")
+                result = bias.computeMonthlyDistribution(varList[i]);
+                if (result!=BIASCORRECTION_OK)
                 {
-                    result = bias.computeMonthlyDistribution(varList[i]);
-                    if (result!=BIASCORRECTION_OK)
-                    {
-                        return result;
-                    }
-                }
-                else
-                {
-                    // TO DO
+                    return result;
                 }
             }
-            else if (varList[i] == "DAILY_PREC")
+            else
             {
-
+                // TO DO
             }
         }
 
