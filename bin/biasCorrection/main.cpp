@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
         QList<QString> varList = bias.getVarList();
         for (int i = 0; i < varList.size(); i++)
         {
+            bias.logger.writeInfo ("variable: " + varList[i]);
             if (bias.getMethod() == "quantileMapping")
             {
                 result = bias.computeMonthlyDistribution(varList[i]);
@@ -102,6 +103,7 @@ int main(int argc, char *argv[])
         {
             if (bias.getMethod() == "quantileMapping")
             {
+                bias.logger.writeInfo ("variable: " + varList[i]);
                 result = bias.numericalDataReconstruction(varList[i]);
                 if (result!=BIASCORRECTION_OK)
                 {
