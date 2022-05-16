@@ -5,7 +5,7 @@
 #include "bias.h"
 
 // uncomment to execute test
-#define TEST
+// #define TEST
 
 void usage()
 {
@@ -64,15 +64,15 @@ int main(int argc, char *argv[])
     bias.setSettingsFileName(settingsFileName);
     bias.logger.writeInfo ("settingsFileName: " + settingsFileName);
 
-    int result = bias.readSettings();
-    if (result!=BIASCORRECTION_OK)
-    {
-        return result;
-    }
-    bias.matchCells();
-    QList<QString> varList = bias.getVarList();
     if (bias.getIsFutureProjection() == false) // reference
     {
+        int result = bias.readReferenceSettings();
+        if (result!=BIASCORRECTION_OK)
+        {
+            return result;
+        }
+        bias.matchCells();
+        QList<QString> varList = bias.getVarList();
         for (int i = 0; i < varList.size(); i++)
         {
             if (bias.getMethod() == "quantileMapping")
@@ -88,12 +88,31 @@ int main(int argc, char *argv[])
                 // TO DO
             }
         }
-
     }
     else
     {
         // debias
-        // TO DO
+        int result = bias.readDebiasSettings();
+        if (result!=BIASCORRECTION_OK)
+        {
+            return result;
+        }
+        QList<QString> varList = bias.getVarList();
+        for (int i = 0; i < varList.size(); i++)
+        {
+            if (bias.getMethod() == "quantileMapping")
+            {
+                result = bias.numericalDataReconstruction(varList[i]);
+                if (result!=BIASCORRECTION_OK)
+                {
+                    return result;
+                }
+            }
+            else
+            {
+                // TO DO
+            }
+        }
     }
     return BIASCORRECTION_OK;
 
