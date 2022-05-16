@@ -935,6 +935,7 @@ int Bias::getDistributionParam(QString idCell, QString variable, std::vector<dou
 int Bias::numericalDataReconstruction(QString variable)
 {
     meteoVariable var = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, variable.toStdString());
+    int res = 0;
     std::vector<double> monthlyPar1Input;
     std::vector<double> monthlyPar2Input;
     std::vector<double> monthlyPar3Input;
@@ -978,7 +979,7 @@ int Bias::numericalDataReconstruction(QString variable)
             {
                 return res;
             }
-            std::vector<float> outputValues;
+            QList <float> outputValues;
             float y;
             for (QDate date = firstDate; date <= lastDate; date = date.addDays(1))
             {
@@ -1020,10 +1021,9 @@ int Bias::numericalDataReconstruction(QString variable)
                 }
             }
             // save values
-            // TO DO
+            res = res + outputGrid.saveListDailyData(&errorString, QString::fromStdString(idInput), firstDate, var, outputValues);
         }
     }
-    /*
     if (res == 0)
     {
         return BIASCORRECTION_OK;
@@ -1032,5 +1032,4 @@ int Bias::numericalDataReconstruction(QString variable)
     {
         return ERROR_SAVINGPARAM;
     }
-    */
 }
