@@ -1016,11 +1016,15 @@ int Bias::numericalDataReconstruction(QString variable)
                         if (myDailyValue != 0)
                         {
                             double beta = monthlyPar1Input[month];
-                            double gamma = monthlyPar2Input[month];
+                            double alpha = monthlyPar2Input[month];
                             double pZero = monthlyPar3Input[month];
+                            double betaRef = monthlyPar1Ref[month];
+                            double alphaRef = monthlyPar2Ref[month];
+                            double pZeroRef = monthlyPar3Ref[month];
                             double accuracy = 0.0001;
-                            //float inverseGamma = inverseGeneralizedGammaCDF((double)myDailyValue, double alpha, double beta, double accuracy, pZero);
-                            //y = generalizedGammaCDF(inverseGamma, beta, gamma, pZero) ;
+                            double outlierStep = 0.2;
+                            float inverseGamma = inverseGeneralizedGammaCDF(myDailyValue, alpha, beta, accuracy, pZero, outlierStep);
+                            y = generalizedGammaCDF(inverseGamma, betaRef, alphaRef, pZeroRef) ;
                         }
                     }
                     outputValues.push_back(y);
