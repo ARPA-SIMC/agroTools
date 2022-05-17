@@ -33,14 +33,14 @@ void Bias::setSettingsFileName(const QString &value)
     settingsFileName = value;
 }
 
-bool Bias::getIsFutureProjection() const
+bool Bias::getIsDebias() const
 {
-    return isFutureProjection;
+    return isDebias;
 }
 
-void Bias::setIsFutureProjection(bool value)
+void Bias::setIsDebias(bool value)
 {
-    isFutureProjection = value;
+    isDebias = value;
 }
 
 QString Bias::getMethod() const

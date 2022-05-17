@@ -28,8 +28,8 @@ public:
     int readReferenceSettings();
     int readDebiasSettings();
     void setSettingsFileName(const QString &value);
-    bool getIsFutureProjection() const;
-    void setIsFutureProjection(bool value);
+    bool getIsDebias() const;
+    void setIsDebias(bool value);
     void matchCells();
     QString getMethod() const;
     QList<QString> getVarList() const;
@@ -59,7 +59,7 @@ private:
     QDate lastDate;
     QString dbClimateName;
     QSqlDatabase dbClimate;
-    bool isFutureProjection;
+    bool isDebias;
     QList<QPoint> inputCells;
     QList<QPoint> referenceCells;
 };

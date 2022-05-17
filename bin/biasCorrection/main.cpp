@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath)) return -1;
 
             settingsFileName = dataPath + "PROJECT/testHighlanderBias/testHighlanderBiasSettings.ini";
-            bias.setIsFutureProjection(false); // REFERENCE
+            bias.setIsDebias(false); // REFERENCE
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -45,11 +45,11 @@ int main(int argc, char *argv[])
         QString referenceProj = argv[2];
         if (referenceProj == "REFERENCE")
         {
-            bias.setIsFutureProjection(false);
+            bias.setIsDebias(false);
         }
         else if (referenceProj == "DEBIAS")
         {
-            bias.setIsFutureProjection(true);
+            bias.setIsDebias(true);
         }
         else
         {
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     bias.setSettingsFileName(settingsFileName);
     bias.logger.writeInfo ("settingsFileName: " + settingsFileName);
 
-    if (bias.getIsFutureProjection() == false) // reference
+    if (bias.getIsDebias() == false) // reference
     {
         int result = bias.readReferenceSettings();
         if (result!=BIASCORRECTION_OK)
