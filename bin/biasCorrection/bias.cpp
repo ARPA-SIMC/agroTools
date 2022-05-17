@@ -804,11 +804,11 @@ int Bias::computeMonthlyDistribution(QString variable)
                 else if (var == dailyPrecipitation)
                 {
                     double beta;
-                    double gamma;
+                    double alpha;
                     double pZero;
-                    gammaFitting(seriesInput, nrValues, &beta, &gamma,  &pZero);
+                    gammaFitting(seriesInput, nrValues, &beta, &alpha,  &pZero);
                     monthlyPar1Input.push_back(beta);
-                    monthlyPar2Input.push_back(gamma);
+                    monthlyPar2Input.push_back(alpha);
                     monthlyPar3Input.push_back(pZero);
                 }
             }
@@ -831,11 +831,11 @@ int Bias::computeMonthlyDistribution(QString variable)
                 else if (var == dailyPrecipitation)
                 {
                     double beta;
-                    double gamma;
+                    double alpha;
                     double pZero;
-                    gammaFitting(seriesRef, nrValues, &beta, &gamma,  &pZero);
+                    gammaFitting(seriesRef, nrValues, &beta, &alpha,  &pZero);
                     monthlyPar1Ref.push_back(beta);
-                    monthlyPar2Ref.push_back(gamma);
+                    monthlyPar2Ref.push_back(alpha);
                     monthlyPar3Ref.push_back(pZero);
                 }
             }
