@@ -700,7 +700,7 @@ int Import::writeDailyValues()
         if ( key != "-9999")
         {
             valueList = valuesMap.values(key);
-            if (!grid.saveListDailyData(&errorString, key, date.addDays(dayList[0]), meteoVar, valueList))
+            if (!grid.saveListDailyData(&errorString, key, date.addDays(dayList[0]), meteoVar, valueList,true))
             {
                 return ERROR_WRITING_DATA;
             }
