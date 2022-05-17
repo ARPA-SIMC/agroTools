@@ -646,6 +646,15 @@ int Bias::readDebiasSettings()
         inputGrid.closeDatabase();
         return ERROR_DBCLIMATE;
     }
+    dbClimate = QSqlDatabase::addDatabase("QSQLITE", QUuid::createUuid().toString());
+    dbClimate.setDatabaseName(dbClimateName);
+    if (!dbClimate.open())
+    {
+        logger.writeError ("Problem opening: " + dbClimateName + dbClimate.lastError().text()+"\n");
+        inputGrid.closeDatabase();
+        return ERROR_DBCLIMATE;
+    }
+
     projectSettings->endGroup();
 
     return BIASCORRECTION_OK;
@@ -914,6 +923,7 @@ int Bias::getDistributionParam(QString idCell, QString variable, std::vector<dou
                 logger.writeError ("Invalid month: " + QString::number(month) + " idCell: " +"\n");
                 return ERROR_GETTINGPARAM;
             }
+            month = month - 1;
             getValue(qry.value("par1"), &par);
             monthlyPar1Input[month] = par;
             getValue(qry.value("par2"), &par);
@@ -985,7 +995,7 @@ int Bias::numericalDataReconstruction(QString variable)
             {
                 // input Grid
                 float myDailyValue = inputGrid.meteoGrid()->meteoPoint(row,col).getMeteoPointValueD(getCrit3DDate(date), var, &meteoSettings);
-                int month = date.month();
+                int month = date.month() - 1; // index start from 0
                 if (myDailyValue != NODATA)
                 {
                     if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
@@ -1021,7 +1031,7 @@ int Bias::numericalDataReconstruction(QString variable)
                 }
             }
             // save values
-            res = res + outputGrid.saveListDailyData(&errorString, QString::fromStdString(idInput), firstDate, var, outputValues);
+            res = res + outputGrid.saveListDailyData(&errorString, QString::fromStdString(idInput), firstDate, var, outputValues, false);
         }
     }
     if (res == 0)
