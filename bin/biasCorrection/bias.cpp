@@ -893,11 +893,11 @@ int Bias::numericalDataReconstruction(QString variable)
                     }
                     else if (var == dailyPrecipitation)
                     {
-                        if (myDailyValue < meteoSettings.getRainfallThreshold())
+                        if (myDailyValue < meteoSettings.getRainfallThreshold() || myDailyValue == 0)
                         {
                             y = 0;
                         }
-                        if (myDailyValue != 0)
+                        else
                         {
                             double beta = monthlyPar1Input[month];
                             double alpha = monthlyPar2Input[month];
@@ -906,7 +906,7 @@ int Bias::numericalDataReconstruction(QString variable)
                             double alphaRef = monthlyPar2Ref[month];
                             double pZeroRef = monthlyPar3Ref[month];
                             double accuracy = 0.0001;
-                            double outlierStep = 0.2;
+                            double outlierStep = 1.0;
                             float inverseGamma = inverseGeneralizedGammaCDF(myDailyValue, alpha, beta, accuracy, pZero, outlierStep);
                             y = generalizedGammaCDF(inverseGamma, betaRef, alphaRef, pZeroRef) ;
                         }
