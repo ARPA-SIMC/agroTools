@@ -5,7 +5,7 @@
 #include "bias.h"
 
 // uncomment to execute test
-#define TEST
+//#define TEST
 
 void usage()
 {
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath)) return -1;
 
             settingsFileName = dataPath + "PROJECT/testHighlanderBias/testHighlanderBiasSettings.ini";
-            bias.setIsDebias(true); // REFERENCE
+            bias.setIsDebias(false); // REFERENCE
         #else
             usage();
             return ERROR_MISSINGFILE;
