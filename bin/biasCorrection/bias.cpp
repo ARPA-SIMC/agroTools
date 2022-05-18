@@ -690,7 +690,7 @@ int Bias::computeMonthlyDistribution(QString variable)
                     double beta;
                     double alpha;
                     double pZero;
-                    gammaFitting(seriesInput, nrValues, &beta, &alpha,  &pZero);
+                    generalizedGammaFitting(seriesInput, nrValues, &beta, &alpha,  &pZero);
                     monthlyPar1Input.push_back(beta);
                     monthlyPar2Input.push_back(alpha);
                     monthlyPar3Input.push_back(pZero);
@@ -717,7 +717,7 @@ int Bias::computeMonthlyDistribution(QString variable)
                     double beta;
                     double alpha;
                     double pZero;
-                    gammaFitting(seriesRef, nrValues, &beta, &alpha,  &pZero);
+                    generalizedGammaFitting(seriesRef, nrValues, &beta, &alpha,  &pZero);
                     monthlyPar1Ref.push_back(beta);
                     monthlyPar2Ref.push_back(alpha);
                     monthlyPar3Ref.push_back(pZero);
@@ -906,9 +906,9 @@ int Bias::numericalDataReconstruction(QString variable)
                             double alphaRef = monthlyPar2Ref[month];
                             double pZeroRef = monthlyPar3Ref[month];
                             double accuracy = 0.0001;
-                            double outlierStep = 1.0;
-                            float inverseGamma = inverseGeneralizedGammaCDF(myDailyValue, alpha, beta, accuracy, pZero, outlierStep);
-                            y = generalizedGammaCDF(inverseGamma, betaRef, alphaRef, pZeroRef) ;
+                            double outlierStep = 0.2;
+                            float percentileInput = generalizedGammaCDF(myDailyValue, beta, alpha, pZero) ;
+                            y = inverseGeneralizedGammaCDF(percentileInput, alphaRef, betaRef, accuracy, pZeroRef, outlierStep);
                         }
                     }
                     outputValues.push_back(y);
