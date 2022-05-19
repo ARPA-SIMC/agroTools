@@ -79,8 +79,9 @@ int main(int argc, char *argv[])
             if (bias.getMethod() == "quantileMapping")
             {
                 result = bias.computeMonthlyDistribution(varList[i]);
-                if (result!=BIASCORRECTION_OK)
+                if (result != BIASCORRECTION_OK)
                 {
+                    std::cout << "ERROR nr:" << result << " in debias variable:" << varList[i].toStdString();
                     return result;
                 }
             }
