@@ -565,10 +565,10 @@ void Bias::matchCells()
                     {
                         double lat;
                         double lon;
-                        getLatLonFromRowCol(inputGrid.gridStructure().header(), row, col, &lat, &lon);
+                        gis::getLatLonFromRowCol(inputGrid.gridStructure().header(), row, col, &lat, &lon);
                         int refRow;
                         int refCol;
-                        getMeteoGridRowColFromXY (refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
+                        gis::getMeteoGridRowColFromXY (refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
                         QPoint refPoint(refRow,refCol);
                         referenceCells << refPoint;
                     }
