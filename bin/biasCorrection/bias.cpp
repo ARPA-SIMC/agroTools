@@ -565,7 +565,7 @@ void Bias::matchCells()
                     {
                         double lat;
                         double lon;
-                        gis::getLatLonFromRowCol(inputGrid.gridStructure().header(), row, col, &lat, &lon);
+                        inputGrid.meteoGrid()->getLatLonFromId(id,&lat,&lon);
                         int refRow;
                         int refCol;
                         gis::getMeteoGridRowColFromXY (refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
