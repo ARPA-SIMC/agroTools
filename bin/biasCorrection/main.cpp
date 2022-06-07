@@ -42,18 +42,19 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGFILE;
         }
-        QString referenceProj = argv[2];
-        if (referenceProj == "REFERENCE")
+        QString operation = argv[2];
+        operation = operation.toUpper();
+        if (operation == "REFERENCE")
         {
             bias.setIsDebias(false);
         }
-        else if (referenceProj == "DEBIAS")
+        else if (operation == "DEBIAS")
         {
             bias.setIsDebias(true);
         }
         else
         {
-            bias.logger.writeError("Wrong file .ini: " + settingsFileName);
+            bias.logger.writeError("Wrong parameter: " + operation);
             usage();
             return ERROR_MISSINGPARAMETERS;
         }

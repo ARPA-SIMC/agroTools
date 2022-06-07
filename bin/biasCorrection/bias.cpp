@@ -526,7 +526,7 @@ int Bias::readDebiasSettings()
     }
     if (!QFile::exists(dbClimateName))
     {
-        logger.writeError ("Compute reference before the projections");
+        logger.writeError ("Compute reference before debias.");
         inputGrid.closeDatabase();
         return ERROR_DBCLIMATE;
     }
