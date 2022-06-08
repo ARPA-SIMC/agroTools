@@ -20,7 +20,6 @@ void Bias::initialize()
     refererenceMeteoGrid = "";
     inputMeteoGrid = "";
     outputMeteoGrid = "";
-    method = "";
     varList.clear();
     errorString = "";
     dbClimateName = "";
@@ -43,10 +42,6 @@ void Bias::setIsDebias(bool value)
     isDebias = value;
 }
 
-QString Bias::getMethod() const
-{
-    return method;
-}
 
 QList<QString> Bias::getVarList() const
 {
@@ -73,10 +68,9 @@ int Bias::readReferenceSettings()
         path = fileInfo.path() + "/";
     }
     projectSettings = new QSettings(settingsFileName, QSettings::IniFormat);
+
     // LOCATION
     projectSettings->beginGroup("location");
-    projectSettings->setValue("lat", gisSettings.startLocation.latitude);
-    projectSettings->setValue("lon", gisSettings.startLocation.longitude);
     projectSettings->setValue("utm_zone", gisSettings.utmZone);
     projectSettings->setValue("time_zone", gisSettings.timeZone);
     projectSettings->setValue("is_utc", gisSettings.isUTC);
@@ -182,13 +176,6 @@ int Bias::readReferenceSettings()
         varList = varTemp.split(",");
     }
 
-    // method
-    method = projectSettings->value("method","").toString();
-    if (method.isEmpty())
-    {
-        logger.writeError ("missing method");
-        return ERROR_MISSINGPARAMETERS;
-    }
     // firstDate
     QString firstDateStr = projectSettings->value("firstDate","").toString();
     firstDate = QDate::fromString(firstDateStr,"yyyy-MM-dd");
@@ -197,6 +184,7 @@ int Bias::readReferenceSettings()
         logger.writeError ("missing or invalid first date");
         return ERROR_MISSINGPARAMETERS;
     }
+
     // lastDate
     QString lastDateStr = projectSettings->value("lastDate","").toString();
     lastDate = QDate::fromString(lastDateStr,"yyyy-MM-dd");
@@ -296,10 +284,9 @@ int Bias::readDebiasSettings()
         path = fileInfo.path() + "/";
     }
     projectSettings = new QSettings(settingsFileName, QSettings::IniFormat);
+
     // LOCATION
     projectSettings->beginGroup("location");
-    projectSettings->setValue("lat", gisSettings.startLocation.latitude);
-    projectSettings->setValue("lon", gisSettings.startLocation.longitude);
     projectSettings->setValue("utm_zone", gisSettings.utmZone);
     projectSettings->setValue("time_zone", gisSettings.timeZone);
     projectSettings->setValue("is_utc", gisSettings.isUTC);
@@ -475,13 +462,6 @@ int Bias::readDebiasSettings()
         varList = varTemp.split(",");
     }
 
-    // method
-    method = projectSettings->value("method","").toString();
-    if (method.isEmpty())
-    {
-        logger.writeError ("missing method");
-        return ERROR_MISSINGPARAMETERS;
-    }
     // firstDate
     QString firstDateStr = projectSettings->value("firstDate","").toString();
     firstDate = QDate::fromString(firstDateStr,"yyyy-MM-dd");
@@ -846,9 +826,9 @@ int Bias::numericalDataReconstruction(QString variable)
         monthlyPar2Ref.push_back(NODATA);
         monthlyPar3Ref.push_back(NODATA);
     }
-    for (int row = 0; row<inputGrid.gridStructure().header().nrRows; row++)
+    for (int row = 0; row < inputGrid.gridStructure().header().nrRows; row++)
     {
-        for (int col = 0; col<inputGrid.gridStructure().header().nrCols; col++)
+        for (int col = 0; col < inputGrid.gridStructure().header().nrCols; col++)
         {
             std::string idInput;
             inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &idInput);  // store id
@@ -873,50 +853,58 @@ int Bias::numericalDataReconstruction(QString variable)
             {
                 return res;
             }
-            QList <float> outputValues;
+
             float y;
+            QList <float> outputValues;
             for (QDate date = firstDate; date <= lastDate; date = date.addDays(1))
             {
                 // input Grid
-                float myDailyValue = inputGrid.meteoGrid()->meteoPoint(row,col).getMeteoPointValueD(getCrit3DDate(date), var, &meteoSettings);
-                int month = date.month() - 1; // index start from 0
-                if (myDailyValue != NODATA)
+                float dailyValue = inputGrid.meteoGrid()->meteoPoint(row, col).getMeteoPointValueD(getCrit3DDate(date), var, &meteoSettings);
+                unsigned int month = date.month() - 1;   // index start from 0
+
+                y = NODATA;
+                if (dailyValue != NODATA)
                 {
                     if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
                     {
                         double median = monthlyPar1Input[month];
                         double stdDev = monthlyPar2Input[month];
-                        double n = (myDailyValue - median) / stdDev;
                         double medianRef = monthlyPar1Ref[month];
                         double stdDevRef = monthlyPar2Ref[month];
-                        y = medianRef + stdDevRef*n;
+                        if (median != NODATA && stdDev != NODATA && medianRef != NODATA && stdDevRef != NODATA)
+                        {
+                            double n = (dailyValue - median) / stdDev;
+                            y = medianRef + stdDevRef * n;
+                        }
                     }
                     else if (var == dailyPrecipitation)
                     {
-                        if (myDailyValue < meteoSettings.getRainfallThreshold() || myDailyValue == 0)
+                        double beta = monthlyPar1Input[month];
+                        double alpha = monthlyPar2Input[month];
+                        double pZero = monthlyPar3Input[month];
+                        double betaRef = monthlyPar1Ref[month];
+                        double alphaRef = monthlyPar2Ref[month];
+                        double pZeroRef = monthlyPar3Ref[month];
+
+                        if (beta != NODATA && alpha != NODATA && pZero != NODATA &&
+                            betaRef != NODATA && alphaRef != NODATA && pZeroRef != NODATA)
                         {
-                            y = 0;
-                        }
-                        else
-                        {
-                            double beta = monthlyPar1Input[month];
-                            double alpha = monthlyPar2Input[month];
-                            double pZero = monthlyPar3Input[month];
-                            double betaRef = monthlyPar1Ref[month];
-                            double alphaRef = monthlyPar2Ref[month];
-                            double pZeroRef = monthlyPar3Ref[month];
-                            double accuracy = 0.0001;
-                            double outlierStep = 0.2;
-                            float percentileInput = generalizedGammaCDF(myDailyValue, beta, alpha, pZero) ;
-                            y = inverseGeneralizedGammaCDF(percentileInput, alphaRef, betaRef, accuracy, pZeroRef, outlierStep);
+                            if (dailyValue <= meteoSettings.getRainfallThreshold())
+                            {
+                                y = 0;
+                            }
+                            else
+                            {
+                                double accuracy = 0.001;
+                                double outlierStep = 0.2;
+                                float percentileInput = generalizedGammaCDF(dailyValue, beta, alpha, pZero);
+                                y = inverseGeneralizedGammaCDF(percentileInput, alphaRef, betaRef, accuracy, pZeroRef, outlierStep);
+                            }
                         }
                     }
-                    outputValues.push_back(y);
                 }
-                else
-                {
-                    outputValues.push_back(NODATA);
-                }
+
+                outputValues.push_back(y);
             }
             // save values
             res = res + outputGrid.saveListDailyData(&errorString, QString::fromStdString(idInput), firstDate, var, outputValues, false);

@@ -50,7 +50,6 @@ private:
     QString inputMeteoGrid;
     QString outputMeteoGrid;
     QList<QString> varList;
-    QString method;
     Crit3DMeteoGridDbHandler refGrid;
     Crit3DMeteoGridDbHandler inputGrid;
     Crit3DMeteoGridDbHandler outputGrid;

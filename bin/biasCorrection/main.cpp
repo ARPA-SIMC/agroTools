@@ -10,7 +10,7 @@
 void usage()
 {
     std::cout << "biasCorrection" << std::endl
-              << "Usage: biasCorrection <project.ini> REFERENCE/DEBIAS" << std::endl;
+              << "Usage: biasCorrection <project.ini> <REFERENCE|DEBIAS>" << std::endl;
     std::cout << std::flush;
 }
 
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         }
         QString operation = argv[2];
         operation = operation.toUpper();
-        if (operation == "REFERENCE")
+        if (operation == "REFERENCE" || operation == "CLIMATE")
         {
             bias.setIsDebias(false);
         }
@@ -65,30 +65,25 @@ int main(int argc, char *argv[])
     bias.setSettingsFileName(settingsFileName);
     bias.logger.writeInfo ("settingsFileName: " + settingsFileName);
 
-    if (bias.getIsDebias() == false) // reference
+    if (! bias.getIsDebias())
     {
         int result = bias.readReferenceSettings();
-        if (result!=BIASCORRECTION_OK)
+        if (result != BIASCORRECTION_OK)
         {
             return result;
         }
+
         bias.matchCells();
+
         QList<QString> varList = bias.getVarList();
         for (int i = 0; i < varList.size(); i++)
         {
-            bias.logger.writeInfo ("variable: " + varList[i]);
-            if (bias.getMethod() == "quantileMapping")
+            bias.logger.writeInfo ("Compute variable: " + varList[i] + "...");
+            result = bias.computeMonthlyDistribution(varList[i]);
+            if (result != BIASCORRECTION_OK)
             {
-                result = bias.computeMonthlyDistribution(varList[i]);
-                if (result != BIASCORRECTION_OK)
-                {
-                    std::cout << "ERROR nr:" << result << " in debias variable:" << varList[i].toStdString();
-                    return result;
-                }
-            }
-            else
-            {
-                // TO DO
+                std::cout << "ERROR nr:" << result << " in compute climate of variable:" << varList[i].toStdString();
+                return result;
             }
         }
     }
@@ -103,21 +98,14 @@ int main(int argc, char *argv[])
         QList<QString> varList = bias.getVarList();
         for (int i = 0; i < varList.size(); i++)
         {
-            if (bias.getMethod() == "quantileMapping")
+            bias.logger.writeInfo ("Compute variable: " + varList[i] + "...");
+            result = bias.numericalDataReconstruction(varList[i]);
+            if (result!=BIASCORRECTION_OK)
             {
-                bias.logger.writeInfo ("variable: " + varList[i]);
-                result = bias.numericalDataReconstruction(varList[i]);
-                if (result!=BIASCORRECTION_OK)
-                {
-                    return result;
-                }
-            }
-            else
-            {
-                // TO DO
+                return result;
             }
         }
     }
-    return BIASCORRECTION_OK;
 
+    return BIASCORRECTION_OK;
 }
