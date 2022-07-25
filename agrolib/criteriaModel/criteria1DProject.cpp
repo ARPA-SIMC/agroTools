@@ -904,7 +904,7 @@ int Crit1DProject::computeAllUnits()
     // create db state
     if (isSaveState)
     {
-        if (! createState(projectError))
+        if (! createDbState(projectError))
         {
             logger.writeError(projectError);
             return ERROR_DB_STATE;
@@ -1163,7 +1163,7 @@ bool Crit1DProject::computeIrrigationStatistics(unsigned int index, float irriRa
 {
     if (! computeUnit(index, 0))
     {
-        projectError = "Computational Unit: " + compUnitList[index].idCase + "\n" + projectError;
+        projectError = "Computational Unit: " + compUnitList[index].idCase + " - " + projectError;
         logger.writeError(projectError);
         return false;
     }
@@ -1214,7 +1214,7 @@ bool Crit1DProject::setPercentileOutputCsv()
         }
         else
         {
-            logger.writeInfo("Output file: " + outputCsvFileName + "\n");
+            logger.writeInfo("Statistics output file (csv): " + outputCsvFileName + "\n");
         }
 
         if (isYearlyStatistics || isSeasonalForecast)
@@ -1249,12 +1249,12 @@ void Crit1DProject::initializeIrrigationStatistics(const Crit3DDate& firstDate, 
 }
 
 
-bool Crit1DProject::createState(QString &myError)
+bool Crit1DProject::createDbState(QString &myError)
 {
     // create db state
-    QString date = lastSimulationDate.addDays(1).toString("yyyy_MM_dd");
+    QString dateStr = lastSimulationDate.addDays(1).toString("yyyy_MM_dd");
     QString outputDbPath = getFilePath(dbOutput.databaseName());
-    QString dbStateName = outputDbPath + "state_" + date + ".db";
+    QString dbStateName = outputDbPath + "state_" + dateStr + ".db";
     if (QFile::exists(dbStateName))
     {
         QFile::remove(dbStateName);

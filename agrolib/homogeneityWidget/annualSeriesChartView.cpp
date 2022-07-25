@@ -62,13 +62,30 @@ void AnnualSeriesChartView::draw(std::vector<int> years, std::vector<float> outp
         axisY->setMin(minValue-3);
     }
     axisX->setRange(years[0], years[years.size()-1]);
-    if (years.size() <= 15)
+    int nYears = years.size();
+    if ( nYears <= 15)
     {
-        axisX->setTickCount(years.size());
+        axisX->setTickCount(nYears);
     }
     else
     {
-        axisX->setTickCount(15);
+        int div = 0;
+        for (int i = 2; i<=4; i++)
+        {
+            if ( (nYears-1) % i == 0 && (nYears-1)/i <= 15)
+            {
+                div = i;
+                break;
+            }
+        }
+        if (div == 0)
+        {
+            axisX->setTickCount(2);
+        }
+        else
+        {
+            axisX->setTickCount( (nYears-1)/div + 1);
+        }
     }
     axisX->setLabelFormat("%d");
     axisY->setLabelFormat("%.1f");
@@ -83,6 +100,7 @@ void AnnualSeriesChartView::clearSeries()
     if (chart()->series().size() > 0)
     {
         chart()->removeSeries(annualSeries);
+        annualSeries->clear();
     }
 }
 
@@ -121,4 +139,9 @@ void AnnualSeriesChartView::tooltipAnnualSeries(QPointF point, bool state)
     {
         m_tooltip->hide();
     }
+}
+
+QList<QPointF> AnnualSeriesChartView::exportAnnualValues()
+{
+    return annualSeries->points();
 }
