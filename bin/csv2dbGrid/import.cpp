@@ -269,9 +269,12 @@ int Import::loadDailyValues()
                 }
                 IDList<<QString::fromStdString(id);
             }
-            if (IDList[idListIndex] != "-9999")
+            if (idListIndex < IDList.size())
             {
-                valuesMap.insert(IDList[idListIndex], items[posValue].toFloat());
+                if (IDList[idListIndex] != "-9999")
+                {
+                    valuesMap.insert(IDList[idListIndex], items[posValue].toFloat());
+                }
             }
             idListIndex ++;
         }

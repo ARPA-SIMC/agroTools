@@ -5,7 +5,7 @@
 #include <iostream>
 
 // uncomment to execute test
-//#define TEST
+// #define TEST
 
 void usage()
 {
@@ -25,8 +25,7 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            //settingsFileName = dataPath + "PROJECT/testImportCSV/testImportSettings.ini";
-            settingsFileName = dataPath + "PROJECT/testCMCC/testCMCCSettings.ini";
+            settingsFileName = dataPath + "PROJECT/highlander_trento/trento.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
