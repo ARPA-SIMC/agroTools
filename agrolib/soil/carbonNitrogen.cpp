@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <math.h>
+
+#include "carbonNitrogen.h"
+//#include "soil.h"
 
 
 
@@ -5,34 +10,33 @@
 
 
 
-/*
- *
 
-
-float convertToGramsPerM3(int layerIndex,float myQuantity)
+float Crit3DCarbonNitrogenWholeProfile::convertToGramsPerM3(int layerIndex, float myQuantity,std::vector<soil::Crit3DLayer> &soilLayers)
 {
     // convert from g m-2 to g m-3 (= mg dm-3)
-    return myQuantity / (suolo[layerIndex].spess / 100);
+
+    return myQuantity / (soilLayers[layerIndex].thickness / 100);
 }
 
 
-float convertToGramsPerLiter(int layerIndex,float myQuantity)
+float Crit3DCarbonNitrogenWholeProfile::convertToGramsPerLiter(int layerIndex,float myQuantity,std::vector<soil::Crit3DLayer> &soilLayers)
 {
     //' convert from g m-2 to g l-1
 
     //' to g dm-3 and to g l-1
-    return (convertToGramsPerM3(layerIndex, myQuantity) / 1000)/WaterBalance.ConvertWCToVolumetric(suolo[layerIndex], U[layerIndex]);
+    return (convertToGramsPerM3(layerIndex, myQuantity, soilLayers) / 1000);// /WaterBalance.ConvertWCToVolumetric(suolo[layerIndex], U[layerIndex]);
 }
 
 
-float convertToGramsPerKg(int layerIndex,float myQuantity)
+float Crit3DCarbonNitrogenWholeProfile::convertToGramsPerKg(int layerIndex,float myQuantity, std::vector<soil::Crit3DLayer> &soilLayers,soil::Crit3DSoil* soil)
 {
     //' convert from g m-2 to g kg-1
 
     //' to g dm-3 and then to g kg-1
-    return (convertToGramsPerM3(layerIndex, myQuantity) / 1000) / suolo(layerIndex).MVA;
+    return (convertToGramsPerM3(layerIndex, myQuantity,soilLayers) / 1000) / soil->horizon[layerIndex].bulkDensity;
 }
-
+/*
+ *
 // da valutare
 void N_InitializeLayers()
 {
@@ -125,8 +129,8 @@ void updateTotalOfPartitioned(float* mySoluteSum, float* mySoluteAds,float* mySo
         mySoluteSum[L] = mySoluteAds[L] + mySoluteSol[L];
     }
 }
-
-void partitioning()
+*/
+void Crit3DCarbonNitrogenWholeProfile::partitioning(float* theta,std::vector<soil::Crit3DLayer> &soilLayers,soil::Crit3DSoil* soil)
 {
     //2013.06
     // partitioning of N (only NH4) between adsorbed and in solution
@@ -142,25 +146,24 @@ void partitioning()
     float myTheta;
     int L;
 
-    N_NH4_AdsorbedGG = 0;
+    N_NH4_adsorbedGG = 0;
 
-    for (L = 0; L<nrLayers; L++)
+    for (L = 0; L<numberOfLayers; L++)
     {
-        myTheta = WaterBalance.ConvertWCToVolumetric(suolo[L], U[L]);
-        N_NH4_g_dm3 = convertToGramsPerM3(L, N_NH4[L]) / 1000;
-        N_NH4_sol_g_l = N_NH4_g_dm3 / (Kd_NH4 * suolo[L].MVA + myTheta)
+        myTheta = theta[L];
+        N_NH4_g_dm3 = convertToGramsPerM3(L,arrayCarbonNitrogen[L].N_NH4,soilLayers) / 1000;
+        N_NH4_sol_g_l = N_NH4_g_dm3 / (Kd_NH4 * soil->horizon[L].bulkDensity + myTheta);
 
-        N_NH4_Sol[L] = N_NH4_sol_g_l * (suolo[L].spess / 100) * myTheta * 1000;
+        arrayCarbonNitrogen[L].N_NH4_Sol = N_NH4_sol_g_l * (soilLayers[L].thickness / 100) * myTheta * 1000;
 
         N_NH4_ads_g_kg = Kd_NH4 * N_NH4_sol_g_l;
-        N_NH4_ads_g_m3 = N_NH4_ads_g_kg * suolo[L].MVA * 1000;
-        N_NH4_Adsorbed[L] = N_NH4_ads_g_m3 * suolo[L].spess / 100;
-
-        N_NH4_AdsorbedGG += N_NH4_Adsorbed(L);
+        N_NH4_ads_g_m3 = N_NH4_ads_g_kg * soil->horizon[L].bulkDensity * 1000;
+        arrayCarbonNitrogen[L].N_NH4_Adsorbed = N_NH4_ads_g_m3 * soilLayers[L].thickness / 100;
+        N_NH4_adsorbedGG += arrayCarbonNitrogen[L].N_NH4_Adsorbed;
     }
 }
 
-
+/*
 void litterIni()
 {
     //2008.10 GA inizializzazione indipendente da humus ma da input utente
@@ -1061,8 +1064,8 @@ Dim L As Integer
     If FlVarOutN_uptakePOTGG Then tbUscite_Azoto("N_uptakePOTGG") = tbUscite_Azoto("N_uptakePOTGG") + N_DailyDemand * 10
 
 End Sub
-
-void N_main()
+*/
+void Crit3DCarbonNitrogenWholeProfile::N_main(float precGG,int nrLayers,float* theta,std::vector<soil::Crit3DLayer> &soilLayers,soil::Crit3DSoil* soil)
 {
     //++++++++++ MAIN NITROGEN ROUTINE +++++++++++++++++++++++++++++++++++
     //2008.09 GA
@@ -1082,16 +1085,18 @@ void N_main()
         //suddividendo equamente tra NO3 e NH4
         //0.00075 g m-2 N nitrico e ammoniacale mm-1
         //controllare dati di concentrazione ARPA piogge
-
+    numberOfLayers = nrLayers;
+    arrayCarbonNitrogen = (Crit3DCarbonNitrogen*) calloc(numberOfLayers,sizeof(Crit3DCarbonNitrogen));
+    // (float *) calloc(nrLayers, sizeof(float));
     if (precGG > 0)
     {
         precN_NO3GG = 0.00075 * precGG;
         precN_NH4GG = 0.00075 * precGG;
-        N_NO3[0] += PrecN_NO3GG;
-        N_NH4[0] += PrecN_NH4GG;
-        partitioning();
+        arrayCarbonNitrogen[0].N_NO3 += precN_NO3GG;
+        arrayCarbonNitrogen[0].N_NH4 += precN_NH4GG;
+        partitioning(theta,soilLayers,soil);
     }
-
+    /*
     N_Uptake();
     // definire attuale
     if (Attuale == Date_N_EndCrop)
@@ -1122,7 +1127,7 @@ void N_main()
     if (FlagWaterTableWashing)
         leachingWaterTable(N_NH4_Sol, Flux_NH4GG);
     updateTotalOfPartitioned(N_NH4, N_NH4_Adsorbed, N_NH4_Sol);
-    partitioning;
+    partitioning();
 
     // perdita superficiale
     if (FlagRunoff == 1)
@@ -1137,8 +1142,9 @@ void N_main()
     //bilanci
     NH4_Balance();
     NO3_Balance();
+    */
 }
-
+/*
 float CNRatio(float c,float n)
 {
     // 2004.02.20.VM
@@ -1247,8 +1253,8 @@ void computeLayerRates(int L)
     actualRate_Urea_Hydr = rate_Urea_Hydr * totalCorrectionFactor;
 
 }
-
-void N_Uptake()
+*/
+void Crit3DCarbonNitrogenWholeProfile::N_Uptake()
 {
     // 2008.09 GA ristrutturazione in base a LEACHM
     //           + nuovo calcolo potenziale uptake giornaliero (eliminato FGS)
@@ -1256,12 +1262,12 @@ void N_Uptake()
     // 02.11.26.MVS
     // 01.01.10.GD
 
-    float N_max_transp;          // potential N uptake in transpiration stream
-    float* N_NO3_up_max = (float *) calloc(nrLayers, sizeof(float));
-    float* N_NH4_up_max = (float *) calloc(nrLayers, sizeof(float));
+    /*float N_max_transp;          // potential N uptake in transpiration stream
+    float* N_NO3_up_max = (float *) calloc(numberOfLayers, sizeof(float));
+    float* N_NH4_up_max = (float *) calloc(numberOfLayers, sizeof(float));
     int L;
 
-    if (LAI == 0)
+    if (LAI <= 0)
     {
         return;
     }
@@ -1330,9 +1336,9 @@ void N_Uptake()
             N_NH4_uptake[L] = 0 'min(N_NH4_Sol[L], (N_NH4_up_max[L] / N_max_transp) * N_UptakeMax)
         }
     }
-
+*/
 }
-
+/*
 void N_SurfaceRunoff()
 {
     //-----------------------------------------
