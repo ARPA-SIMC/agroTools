@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
 
     if (! bias.getIsDebias())
     {
+        // reference
         int result = bias.readReferenceSettings();
         if (result != BIASCORRECTION_OK)
         {

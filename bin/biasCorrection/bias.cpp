@@ -194,6 +194,9 @@ int Bias::readReferenceSettings()
         return ERROR_MISSINGPARAMETERS;
     }
 
+    logger.writeInfo("first computation date: " + firstDate.toString());
+    logger.writeInfo("last computation date: " + lastDate.toString());
+
     // check dates
     if (!refGrid.updateGridDate(&errorString))
     {

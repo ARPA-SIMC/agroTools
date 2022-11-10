@@ -3,15 +3,15 @@
 	<connection>
 		<provider>mysql</provider>
 		<server>tomei-smr.arpa.emr.net</server>
-		<name>highlander_trento</name>
+		<name>highlander_trento_hist</name>
 		<user>root</user>
 		<password>mysql</password>
 	</connection>
 	
 	<gridstructure isregular="true" isutm="false" istin="false" isfixedfields="false" isensemble='false'>
-		<xll>11.0183</xll>
-		<yll>46.1185</yll>
-		<nrows>6</nrows>
+		<xll>11.0219</xll>
+		<yll>46.1255</yll>
+		<nrows>7</nrows>
 		<ncols>8</ncols>
 		<xwidth>0.02</xwidth>
 		<ywidth>0.02</ywidth>
