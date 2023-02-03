@@ -959,10 +959,7 @@ bool isThermal(meteoVariable myVar)
             myVar == airDewTemperature ||
             myVar == dailyAirTemperatureAvg ||
             myVar == dailyAirTemperatureMax ||
-            myVar == dailyAirTemperatureMin ||
-            myVar == dailyAirDewTemperatureAvg ||
-            myVar == dailyAirDewTemperatureMax ||
-            myVar == dailyAirDewTemperatureMin)
+            myVar == dailyAirTemperatureMin)
 
         return true;
     else
@@ -977,9 +974,7 @@ bool getUseDetrendingVar(meteoVariable myVar)
             myVar == dailyAirTemperatureAvg ||
             myVar == dailyAirTemperatureMax ||
             myVar == dailyAirTemperatureMin ||
-            myVar == dailyAirDewTemperatureAvg ||
-            myVar == dailyAirDewTemperatureMax ||
-            myVar == dailyAirDewTemperatureMin)
+            myVar == elaboration)
 
         return true;
     else
@@ -1188,7 +1183,7 @@ void topographicDistanceOptimize(meteoVariable myVar,
                 bestKh = kh;
             }
 
-            mySettings->addToKhSeries(kh, avgError);
+            mySettings->addToKhSeries(float(kh), avgError);
         }
         kh = ((kh == 0) ? 1 : kh*2);
     }

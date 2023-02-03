@@ -53,10 +53,16 @@ bool loadVanGenuchtenParameters(QSqlDatabase* dbSoil, soil::Crit3DTextureClass* 
     query.first();
     do
     {
-        id = query.value(0).toInt();
+        bool isOk;
+        id = query.value(0).toInt(&isOk);
+        if (! isOk)
+        {
+            *error = "Table van_genuchten: \nWrong ID: " + query.value(0).toString();
+            return false;
+        }
 
         //check data
-        for (j = 0; j <= 8; j++)
+        for (j = 2; j <= 8; j++)
             if (! getValue(query.value(j), &myValue))
             {
                 *error = "Table van_genuchten: missing data in soil texture:" + QString::number(id);
@@ -542,7 +548,7 @@ QString getIdSoilString(QSqlDatabase* dbSoil, int idSoilNumber, QString *myError
 }
 
 
-bool getSoilList(QSqlDatabase* dbSoil, QStringList* soilList, QString* error)
+bool getSoilList(QSqlDatabase* dbSoil, QList<QString>* soilList, QString* error)
 {
     // query soil list
     QString queryString = "SELECT DISTINCT soil_code FROM soils ORDER BY soil_code";
