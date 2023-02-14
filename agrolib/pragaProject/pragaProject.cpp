@@ -777,7 +777,10 @@ bool PragaProject::elaborationPointsCycle(bool isAnomaly, bool showInfo)
     // initialize
     for (int i = 0; i < nrMeteoPoints; i++)
     {
-        meteoPoints[i].elaboration = NODATA;
+        if (! isAnomaly)
+        {
+            meteoPoints[i].elaboration = NODATA;
+        }
         meteoPoints[i].anomaly = NODATA;
         meteoPoints[i].anomalyPercentage = NODATA;
     }
@@ -1030,7 +1033,6 @@ bool PragaProject::climatePointsCycle(bool showInfo)
         infoStr = "Climate  - Meteo Points";
         infoStep = setProgressBar(infoStr, nrMeteoPoints);
     }
-
     // parser all the list
     Crit3DClimateList* climateList = clima->getListElab();
     climateList->parserElaboration();
@@ -1040,7 +1042,6 @@ bool PragaProject::climatePointsCycle(bool showInfo)
     {
         if (meteoPoints[i].active)
         {
-
             if (showInfo && (i % infoStep) == 0)
             {
                 updateProgressBar(i);
@@ -1055,15 +1056,13 @@ bool PragaProject::climatePointsCycle(bool showInfo)
 
             for (int j = 0; j < climateList->listClimateElab().size(); j++)
             {
-
                 clima->resetParam();
                 clima->setClimateElab(climateList->listClimateElab().at(j));
 
-
                 if (climateList->listClimateElab().at(j)!= nullptr)
                 {
-
                     // copy current elaboration to clima
+                    clima->setDailyCumulated(climateList->listDailyCumulated()[j]);
                     clima->setYearStart(climateList->listYearStart().at(j));
                     clima->setYearEnd(climateList->listYearEnd().at(j));
                     clima->setPeriodType(climateList->listPeriodType().at(j));
@@ -1120,11 +1119,13 @@ bool PragaProject::climatePointsCycle(bool showInfo)
         {
             errorString = "no valid cells available";
         }
+        logError(errorString);
         delete meteoPointTemp;
         return false;
     }
     else
     {
+        logInfo("climate saved");
         delete meteoPointTemp;
         return true;
     }
@@ -1189,6 +1190,7 @@ bool PragaProject::climatePointsCycleGrid(bool showInfo)
                    {
 
                        // copy current elaboration to clima
+                       clima->setDailyCumulated(climateList->listDailyCumulated()[j]);
                        clima->setYearStart(climateList->listYearStart().at(j));
                        clima->setYearEnd(climateList->listYearEnd().at(j));
                        clima->setPeriodType(climateList->listPeriodType().at(j));
@@ -1248,11 +1250,13 @@ bool PragaProject::climatePointsCycleGrid(bool showInfo)
        {
            errorString = "no valid cells available";
        }
+       logError(errorString);
        delete meteoPointTemp;
        return false;
     }
     else
     {
+       logInfo("climate saved");
         delete meteoPointTemp;
         return true;
     }
@@ -3182,4 +3186,149 @@ bool PragaProject::removeGriddingTask(QDateTime dateCreation, QString user, QDat
     }
 
     return true;
+}
+
+bool PragaProject::computeClimaFromXMLSaveOnDB(QString xmlName)
+{
+
+    Crit3DElabList *listXMLElab = new Crit3DElabList();
+    Crit3DAnomalyList *listXMLAnomaly = new Crit3DAnomalyList();
+    Crit3DDroughtList *listXMLDrought = new Crit3DDroughtList();
+    Crit3DPhenologyList *listXMLPhenology = new Crit3DPhenologyList();
+
+    if (xmlName == "")
+    {
+        errorString = "Empty XML name";
+        delete listXMLElab;
+        delete listXMLAnomaly;
+        delete listXMLDrought;
+        delete listXMLPhenology;
+        return false;
+    }
+    if (!parseXMLElaboration(listXMLElab, listXMLAnomaly, listXMLDrought, listXMLPhenology, xmlName, &errorString))
+    {
+        delete listXMLElab;
+        delete listXMLAnomaly;
+        delete listXMLDrought;
+        delete listXMLPhenology;
+        return false;
+    }
+    if (!elaborationCheck(listXMLElab->isMeteoGrid(), false))
+    {
+        errorString = "Elaboration check return false";
+        delete listXMLElab;
+        delete listXMLAnomaly;
+        delete listXMLDrought;
+        delete listXMLPhenology;
+        return false;
+    }
+    if (listXMLElab->listAll().isEmpty())
+    {
+        errorString = "There are not valid Elaborations";
+        delete listXMLElab;
+        delete listXMLAnomaly;
+        delete listXMLDrought;
+        delete listXMLPhenology;
+        return false;
+    }
+
+    clima->getListElab()->setListClimateElab(listXMLElab->listAll());
+    int validCell = 0;
+    bool changeDataSet = true;
+    QDate startDate;
+    QDate endDate;
+    Crit3DMeteoPoint* meteoPointTemp = new Crit3DMeteoPoint;
+
+    for (int i = 0; i < nrMeteoPoints; i++)
+    {
+        if (meteoPoints[i].active)
+        {
+            meteoPointTemp->id = meteoPoints[i].id;
+            meteoPointTemp->point.z = meteoPoints[i].point.z;
+            meteoPointTemp->latitude = meteoPoints[i].latitude;
+            changeDataSet = true;
+
+            std::vector<float> outputValues;
+            for (int i = 0; i<listXMLElab->listAll().size(); i++)
+            {
+                clima->setDailyCumulated(listXMLElab->listDailyCumulated()[i]);
+                clima->setClimateElab(listXMLElab->listAll()[i]);
+                clima->setVariable(listXMLElab->listVariable()[i]);
+                clima->setYearStart(listXMLElab->listYearStart()[i]);
+                clima->setYearEnd(listXMLElab->listYearEnd()[i]);
+                clima->setPeriodStr(listXMLElab->listPeriodStr()[i]);
+                clima->setPeriodType(listXMLElab->listPeriodType()[i]);
+
+                clima->setGenericPeriodDateStart(listXMLElab->listDateStart()[i]);
+                clima->setGenericPeriodDateEnd(listXMLElab->listDateEnd()[i]);
+                clima->setNYears(listXMLElab->listNYears()[i]);
+                clima->setElab1(listXMLElab->listElab1()[i]);
+
+                if (!listXMLElab->listParam1IsClimate()[i])
+                {
+                    clima->setParam1IsClimate(false);
+                    clima->setParam1(listXMLElab->listParam1()[i]);
+                }
+                else
+                {
+                    clima->setParam1IsClimate(true);
+                    clima->setParam1ClimateField(listXMLElab->listParam1ClimateField()[i]);
+                    int climateIndex = getClimateIndexFromElab(listXMLElab->listDateStart()[i], listXMLElab->listParam1ClimateField()[i]);
+                    clima->setParam1ClimateIndex(climateIndex);
+
+                }
+                clima->setElab2(listXMLElab->listElab2()[i]);
+                clima->setParam2(listXMLElab->listParam2()[i]);
+
+                if (clima->periodType() == genericPeriod)
+                {
+                    startDate.setDate(clima->yearStart(), clima->genericPeriodDateStart().month(), clima->genericPeriodDateStart().day());
+                    endDate.setDate(clima->yearEnd() + clima->nYears(), clima->genericPeriodDateEnd().month(), clima->genericPeriodDateEnd().day());
+                }
+                else if (clima->periodType() == seasonalPeriod)
+                {
+                    startDate.setDate(clima->yearStart() -1, 12, 1);
+                    endDate.setDate(clima->yearEnd(), 12, 31);
+                }
+                else
+                {
+                    startDate.setDate(clima->yearStart(), 1, 1);
+                    endDate.setDate(clima->yearEnd(), 12, 31);
+                }
+
+                if (climateOnPoint(&errorString, meteoPointsDbHandler, nullptr, clima, meteoPointTemp, outputValues, listXMLElab->isMeteoGrid(), startDate, endDate, changeDataSet, meteoSettings))
+                {
+                    validCell = validCell + 1;
+                }
+                changeDataSet = false;
+
+                // reset param
+                clima->resetParam();
+                // reset current values
+                clima->resetCurrentValues();
+            }
+        }
+    }
+
+    delete listXMLElab;
+    delete listXMLAnomaly;
+    delete listXMLDrought;
+    delete listXMLPhenology;
+
+    if (validCell == 0)
+    {
+        if (errorString.isEmpty())
+        {
+            errorString = "no valid cells available";
+        }
+        logError(errorString);
+        delete meteoPointTemp;
+        return false;
+     }
+     else
+     {
+        logInfo("climate saved");
+         delete meteoPointTemp;
+         return true;
+     }
 }

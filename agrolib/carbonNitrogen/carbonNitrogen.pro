@@ -1,14 +1,13 @@
 #----------------------------------------------------
 #
-#   soil library
+#   carbonNitrogen library
 #   This project is part of CRITERIA-3D distribution
 #
 #----------------------------------------------------
 
 QT -= gui
-QT += core sql
 
-TARGET = soil
+TARGET = carbonNitrogen
 TEMPLATE = lib
 CONFIG += staticlib
 
@@ -16,20 +15,18 @@ CONFIG += debug_and_release
 
 unix:{
     CONFIG(debug, debug|release) {
-        TARGET = debug/soil
+        TARGET = debug/carbonNitrogen
     } else {
-        TARGET = release/soil
+        TARGET = release/carbonNitrogen
     }
 }
 win32:{
-    TARGET = soil
+    TARGET = carbonNitrogen
 }
 
-INCLUDEPATH += ../crit3dDate ../mathFunctions ../utilities
+INCLUDEPATH += ../mathFunctions ../soil
 
-SOURCES += soil.cpp \
-    soilDbTools.cpp
-
-HEADERS += soil.h \
-    soilDbTools.h
+HEADERS += carbonNitrogen.h
+	
+SOURCES += carbonNitrogen.cpp
 
