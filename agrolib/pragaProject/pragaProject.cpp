@@ -41,6 +41,7 @@ void PragaProject::initializePragaProject()
     pragaDefaultSettings = nullptr;
     pragaDailyMaps = nullptr;
     users.clear();
+    lastElabTargetisGrid = false;
 }
 
 void PragaProject::clearPragaProject()
@@ -2036,7 +2037,7 @@ bool PragaProject::interpolationMeteoGridPeriod(QDate dateIni, QDate dateFin, QL
                             {
                                 myGrid = getPragaMapFromVar(airDewTemperature);
                                 rasterName = getMapFileOutName(airDewTemperature, myDate, myHour);
-                                if (rasterName != "") gis::writeEsriGrid(getProjectPath().toStdString() + rasterName.toStdString(), myGrid, &errString);
+                                if (rasterName != "") gis::writeEsriGrid(getProjectPath().toStdString() + rasterName.toStdString(), myGrid, errString);
                             }
                         }
                         else if (myVar == windVectorDirection || myVar == windVectorIntensity) {
@@ -2061,7 +2062,7 @@ bool PragaProject::interpolationMeteoGridPeriod(QDate dateIni, QDate dateFin, QL
                         if (saveRasters)
                         {
                             rasterName = getMapFileOutName(myVar, myDate, myHour);
-                            if (rasterName != "") gis::writeEsriGrid(getProjectPath().toStdString() + rasterName.toStdString(), myGrid, &errString);
+                            if (rasterName != "") gis::writeEsriGrid(getProjectPath().toStdString() + rasterName.toStdString(), myGrid, errString);
                         }
 
                         if (myVar == windVectorDirection || myVar == windVectorIntensity)
@@ -2107,7 +2108,7 @@ bool PragaProject::interpolationMeteoGridPeriod(QDate dateIni, QDate dateFin, QL
                     if (saveRasters)
                     {
                         rasterName = getMapFileOutName(myVar, myDate, 0);
-                        gis::writeEsriGrid(getProjectPath().toStdString() + rasterName.toStdString(), myGrid, &errString);
+                        gis::writeEsriGrid(getProjectPath().toStdString() + rasterName.toStdString(), myGrid, errString);
                     }
 
                     meteoGridDbHandler->meteoGrid()->spatialAggregateMeteoGrid(myVar, daily, getCrit3DDate(myDate), 0, 0, &DEM, myGrid, interpolationSettings.getMeteoGridAggrMethod());
@@ -3466,4 +3467,31 @@ bool PragaProject::computeClimaFromXMLSaveOnDB(QString xmlName)
          delete meteoPointTemp;
          return true;
      }
+}
+
+bool PragaProject::saveLogProceduresGrid(QString nameProc, QDate date)
+{
+
+    // check meteo grid
+    if (! meteoGridLoaded)
+    {
+        logError("No meteo grid");
+        return false;
+    }
+
+    // check dates
+    if (date.isNull() || !date.isValid())
+    {
+        logError("Wrong date");
+        return false;
+    }
+
+    QString myError;
+    logInfoGUI("Saving procedure last date");
+    if (! meteoGridDbHandler->saveLogProcedures(&myError, nameProc, date))
+    {
+        logError(myError);
+        return false;
+    }
+    return true;
 }

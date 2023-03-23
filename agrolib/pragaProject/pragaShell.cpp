@@ -25,6 +25,7 @@ QList<QString> getPragaCommandList()
     cmdList.append("ComputeClimate  | ComputeClimaFromXMLSaveOnDB");
     cmdList.append("Drought         | ComputeDroughtIndexGrid");
     cmdList.append("DroughtPoint    | ComputeDroughtIndexPoint");
+    cmdList.append("SaveLogProc     | SaveLogProceduresGrid");
 
     return cmdList;
 }
@@ -123,6 +124,11 @@ int PragaProject::executePragaCommand(QList<QString> argumentList, bool* isComma
     {
         *isCommandFound = true;
         return cmdDroughtIndexPoint(this, argumentList);
+    }
+    else if (command == "SAVELOGPROC" || command == "SAVELOGPROCEDURESGRID")
+    {
+        *isCommandFound = true;
+        return cmdSaveLogDataProceduresGrid(this, argumentList);
     }
     else
     {
@@ -631,20 +637,20 @@ int cmdGridAggregationOnZones(PragaProject* myProject, QList<QString> argumentLi
     meteoComputation elab1MeteoComp = noMeteoComp;
     QString periodType = "D";
 
-    gis::Crit3DRasterGrid* myRaster = new gis::Crit3DRasterGrid();
     QString rasterName;
     if (!myProject->aggregationDbHandler->getRasterName(&rasterName))
     {
-        myProject->errorString = "Missing Raster Name inside aggregation db";
-        myProject->logError();
+        myProject->logError("Missing Raster Name inside aggregation db.");
         return PRAGA_ERROR;
     }
+
     // open raster
+    gis::Crit3DRasterGrid* myRaster = new gis::Crit3DRasterGrid();
     QString fnWithoutExt = myProject->projectPragaFolder+"/"+rasterName;
-    std::string* myError = new std::string();
+    std::string myError = "";
     if (! gis::readEsriGrid(fnWithoutExt.toStdString(), myRaster, myError))
     {
-        myProject->logError("Load raster failed!");
+        myProject->logError("Load raster failed: " + QString::fromStdString(myError));
         delete myRaster;
         return PRAGA_ERROR;
     }
@@ -925,6 +931,26 @@ int pragaShell(PragaProject* myProject)
             }
         }
         if (! myProject->computeDroughtIndexPoint(index, timescale, ry1, ry2))
+        {
+            return PRAGA_ERROR;
+        }
+
+        return PRAGA_OK;
+    }
+
+    int cmdSaveLogDataProceduresGrid(PragaProject* myProject, QList<QString> argumentList)
+    {
+        if (argumentList.size() < 3)
+        {
+            myProject->logError("Missing procedure name or date to save");
+            return PRAGA_INVALID_COMMAND;
+        }
+
+        QString nameProc = argumentList.at(1);
+        QString dateStr = argumentList.at(2);
+        QDate date = QDate::fromString(dateStr, "dd/MM/yyyy");
+
+        if (!myProject->saveLogProceduresGrid(nameProc, date))
         {
             return PRAGA_ERROR;
         }
