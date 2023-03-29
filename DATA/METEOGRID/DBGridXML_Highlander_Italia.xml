@@ -1,0 +1,41 @@
+<xml version="1.0" encoding="ISO-8859-1">
+
+	<connection>
+		<provider>mysql</provider>
+		<server>tomei-smr.arpa.emr.net</server>
+		<name>highlander_italia</name>
+		<user>root</user>
+		<password>mysql</password>
+	</connection>
+	
+	<gridstructure isregular="true" isutm="false" istin="false" isfixedfields="false" isensemble='false'>
+		<xll>6.6</xll>
+		<yll>35.48</yll>
+		<nrows>117</nrows>
+		<ncols>120</ncols>
+		<xwidth>0.1</xwidth>
+		<ywidth>0.1</ywidth>
+	</gridstructure>
+        
+        <tabledaily>
+		<fieldtime>PragaTime</fieldtime>
+		<postfix>_d</postfix>
+		<varcode>
+			<varcode>1</varcode>
+			<varpraganame>DAILY_TMIN</varpraganame>
+		</varcode>
+		<varcode>
+			<varcode>2</varcode>
+			<varpraganame>DAILY_TMAX</varpraganame>
+		</varcode>
+		<varcode>
+			<varcode>3</varcode>
+			<varpraganame>DAILY_TAVG</varpraganame>
+		</varcode>
+		<varcode>
+			<varcode>4</varcode>
+			<varpraganame>DAILY_PREC</varpraganame>
+		</varcode>
+	</tabledaily>
+	
+</xml>

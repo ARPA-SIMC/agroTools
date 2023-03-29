@@ -269,9 +269,12 @@ int Import::loadDailyValues()
                 }
                 IDList<<QString::fromStdString(id);
             }
-            if (IDList[idListIndex] != "-9999")
+            if (idListIndex < IDList.size())
             {
-                valuesMap.insert(IDList[idListIndex], items[posValue].toFloat());
+                if (IDList[idListIndex] != "-9999")
+                {
+                    valuesMap.insert(IDList[idListIndex], items[posValue].toFloat());
+                }
             }
             idListIndex ++;
         }
@@ -700,7 +703,7 @@ int Import::writeDailyValues()
         if ( key != "-9999")
         {
             valueList = valuesMap.values(key);
-            if (!grid.saveListDailyData(&errorString, key, date.addDays(dayList[0]), meteoVar, valueList))
+            if (!grid.saveListDailyData(&errorString, key, date.addDays(dayList[0]), meteoVar, valueList,true))
             {
                 return ERROR_WRITING_DATA;
             }

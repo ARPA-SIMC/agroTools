@@ -294,7 +294,7 @@ int Frost::getForecastData(QString id, int posIdList)
     double lat = meteoPointsList[meteoPointListpos].latitude;
     double lon = meteoPointsList[meteoPointListpos].longitude;
 
-    gis::getMeteoGridRowColFromXY(grid.gridStructure().header(), lon, lat, &row, &col);
+    gis::getGridRowColFromXY(grid.gridStructure().header(), lon, lat, &row, &col);
 
     TradPoint myRadPoint;
     Crit3DRadiationSettings radSettings;

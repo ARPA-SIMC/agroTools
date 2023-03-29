@@ -6,12 +6,12 @@
  * outputDb: output database (SQLite)
  * --------------------------------------------------------------------------
  * csv format:
- * date, tmin (°C), tmax (°C), tavg (°C), prec (mm), etp (mm), watertable (m)
+ * date, tmin (°C), tmax (°C), tavg (°C), prec (mm), et0 (mm), watertable (m)
  *
- * first line is header
+ * header: first line
  * mandatory variables: tmin, tmax, prec
  * date format: YYYY-MM-DD
- * NODATA value: void (,,) or -9999 or -999.9
+ * accepted NODATA value: void (,,) or -9999 or -999.9
   ---------------------------------------------------------------------------*/
 
 #include <QCoreApplication>
@@ -88,7 +88,7 @@ bool cleanTable(QString tableName, QSqlDatabase* myDB)
     myDB->exec(query);
 
     query = "CREATE TABLE " + tableName;
-    query += "(date char(10), tmin float, tmax float, tavg float, prec float, etp float, watertable float);";
+    query += "(date char(10), tmin float, tmax float, tavg float, prec float, et0 float, watertable float);";
     myDB->exec(query);
 
     if (myDB->lastError().type() != QSqlError::NoError)
@@ -110,7 +110,7 @@ bool insertData(QString fileName, QString tableName, QSqlDatabase* myDB)
         return false;
     }
 
-    QString query, value;
+    QString query, valueStr;
     QTextStream myStream (&myFile);
     query = "INSERT INTO " + tableName + " VALUES";
     QStringList line;
@@ -128,15 +128,15 @@ bool insertData(QString fileName, QString tableName, QSqlDatabase* myDB)
                 if (i > 0) query.append(",");
                 if (i == line.length())
                 {
-                    // etp and watertable missing -> void
+                    // et0 and watertable missing -> void
                     if (i == 5)
                     {
-                        value = ",";
+                        valueStr = ",";
                     }
                     // watertable missing -> void
                     else if (i == 6)
                     {
-                        value = "";
+                        valueStr = "";
                     }
                     else
                     {
@@ -147,15 +147,15 @@ bool insertData(QString fileName, QString tableName, QSqlDatabase* myDB)
                 }
                 else
                 {
-                    value = line.at(i);
+                    valueStr = line.at(i);
 
-                    if (value.at(0) == "\"")
-                        value = value.mid(1,value.length()-2);
+                    if (valueStr.at(0) == '\"')
+                        valueStr = valueStr.mid(1, valueStr.length()-2);
 
-                    if (value == "-9999" || value == "-999.9" || value == " ")
-                        value = "";
+                    if (valueStr == "-9999" || valueStr == "-999.9" || valueStr == " ")
+                        valueStr = "";
                 }
-                query.append("'" + value + "'");
+                query.append("'" + valueStr + "'");
             }
             query.append("),");
         }
