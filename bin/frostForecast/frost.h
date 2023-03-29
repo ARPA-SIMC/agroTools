@@ -10,7 +10,7 @@
 #define FROSTFORECAST_OK 0
 #define ERROR_MISSINGFILE -1
 #define ERROR_MISSINGPARAMETERS -2
-#define ERROR_DBGRID -3
+//#define ERROR_DBGRID -3
 #define ERROR_DBPOINT -4
 #define ERROR_BAD_REQUEST -5
 #define ERROR_WRITING_DATA -6
@@ -47,9 +47,9 @@ private:
     QString csvFileName;
     QString projectName;
     QString path;
-    QString xmlDbGrid;
+    //QString xmlDbGrid;
     QString dbMeteoPointsName;
-    Crit3DMeteoGridDbHandler grid;
+    //Crit3DMeteoGridDbHandler grid;
     Crit3DMeteoPointsDbHandler meteoPointsDbHandler;
     QList<Crit3DMeteoPoint> meteoPointsList;
     QList<QString> idList;

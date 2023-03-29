@@ -19,7 +19,7 @@ void Frost::initialize()
     projectName = "";
     settingsFileName = "";
     csvFileName = "";
-    xmlDbGrid = "";
+    //xmlDbGrid = "";
     dbMeteoPointsName = "";
     errorString = "";
     idList.clear();
@@ -69,6 +69,7 @@ int Frost::readSettings()
     projectSettings->beginGroup("project");
     projectName = projectSettings->value("name","").toString();
 
+    /*
     xmlDbGrid = projectSettings->value("meteoGrid","").toString();
     if (xmlDbGrid.isEmpty())
     {
@@ -99,6 +100,7 @@ int Frost::readSettings()
         grid.closeDatabase();
         return ERROR_DBGRID;
     }
+    */
 
     dbMeteoPointsName = projectSettings->value("meteo_points","").toString();
     if (dbMeteoPointsName.isEmpty())
@@ -288,22 +290,22 @@ int Frost::getForecastData(QString id, int posIdList)
         }
     }
     // get row and col
-    int row;
-    int col;
+    //int row;
+    //int col;
 
     double lat = meteoPointsList[meteoPointListpos].latitude;
     double lon = meteoPointsList[meteoPointListpos].longitude;
 
-    gis::getGridRowColFromXY(grid.gridStructure().header(), lon, lat, &row, &col);
+    //gis::getGridRowColFromXY(grid.gridStructure().header(), lon, lat, &row, &col);
 
-    TradPoint myRadPoint;
+    //TradPoint myRadPoint;
     Crit3DRadiationSettings radSettings;
 
     radSettings.gisSettings = &gisSettings;
     /*! assign topographic height and coordinates */
-    myRadPoint.x = meteoPointsList[meteoPointListpos].point.utm.x;
-    myRadPoint.y = meteoPointsList[meteoPointListpos].point.utm.y;
-    myRadPoint.height = meteoPointsList[meteoPointListpos].point.z;
+    //myRadPoint.x = meteoPointsList[meteoPointListpos].point.utm.x;
+    //myRadPoint.y = meteoPointsList[meteoPointListpos].point.utm.y;
+    //myRadPoint.height = meteoPointsList[meteoPointListpos].point.z;
 
     if (!found)
     {
@@ -317,6 +319,7 @@ int Frost::getForecastData(QString id, int posIdList)
         return ERROR_DBPOINT;
     }
     // load meteoGrid forecast data
+    /*
     std::string idGrid;
     if (!grid.meteoGrid()->getIdFromLatLon(lat, lon, &idGrid))
     {
@@ -330,6 +333,7 @@ int Frost::getForecastData(QString id, int posIdList)
     {
         logger.writeError ("meteo grid load hourly data error");
     }
+    */
     // Sun position
     TsunPosition sunPosition;
     int timeZone = gisSettings.timeZone;
