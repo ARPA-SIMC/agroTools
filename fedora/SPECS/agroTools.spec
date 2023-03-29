@@ -2,7 +2,7 @@
 %{!?srcarchivename: %global srcarchivename agroTools-%{version}}
 
 Name:           agroTools
-Version:        1.5.1
+Version:        1.5.2
 Release:        2%{?dist}
 Summary:        Agro tools
 
