@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
         {
             import.setIsFirstCsv(false);
         }
+
         if (import.getIsDaily())
         {
             if (import.getIsEnsemble())
