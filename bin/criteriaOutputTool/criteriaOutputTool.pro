@@ -50,18 +50,18 @@ INCLUDEPATH +=  ../../agrolib/crit3dDate ../../agrolib/mathFunctions ../../agrol
                 ../../agrolib/shapeHandler/shapelib ../../agrolib/criteriaOutput
 
 # comment to compile without GDAL library
-#CONFIG += GDAL
+CONFIG += GDAL
 
 CONFIG(debug, debug|release) {
 
     LIBS += -L../../agrolib/criteriaOutput/debug -lcriteriaOutput
 
-GDAL {
+    GDAL:{
     DEFINES += GDAL
     INCLUDEPATH += ../../agrolib/gdalHandler
     LIBS += -L../../agrolib/gdalHandler/debug -lgdalHandler
     include(../../agrolib/gdal.pri)
-}
+    }
 
     LIBS += -L../../agrolib/netcdfHandler/debug -lnetcdfHandler
     win32:{
@@ -85,12 +85,12 @@ GDAL {
 
     LIBS += -L../../agrolib/criteriaOutput/release -lcriteriaOutput
 
-GDAL {
+    GDAL:{
     DEFINES += GDAL
     INCLUDEPATH += ../../agrolib/gdalHandler
     LIBS += -L../../agrolib/gdalHandler/release -lgdalHandler
     include(../../agrolib/gdal.pri)
-}
+    }
 
     LIBS += -L../../agrolib/netcdfHandler/release -lnetcdfHandler
     win32:{
