@@ -11,7 +11,7 @@
 
 void usage()
 {
-    std::cout << "\nUsage:\nCriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|PRECOMPUTE_DTX project.ini [date]\n" << std::endl;
+    std::cout << "\nUsage:\nCriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|DTX_HISTORY project.ini [date]\n" << std::endl;
     std::cout << std::flush;
 }
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     }
     myProject.logger.writeInfo("computation date: " + dateComputationStr);
 
-    if (myProject.operation == "PRECOMPUTE_DTX")
+    if (myProject.operation == "DTX" || myProject.operation == "DTX_HISTORY")
     {
         myResult = myProject.precomputeDtx();
     }
