@@ -30,9 +30,11 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "PROJECT/C5/C5_monthly.ini";
-            dateComputationStr = "2021-07-13"; // QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "NETCDF";
+            //settingsFileName = dataPath + "PROJECT/C5/C5_monthly.ini";
+            settingsFileName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/iCOLT_2022/seasonalIrriObserved_C1.ini";
+            dateComputationStr = "2022-06-01";
+            //dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
+            myProject.operation = "AGGREGATION";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
