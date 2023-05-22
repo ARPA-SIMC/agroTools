@@ -23,6 +23,7 @@
 
 bool cleanTable(QString tableName, QSqlDatabase& myDB);
 bool insertData(QString fileName, QString tableName, QSqlDatabase& myDB);
+bool cleanTableTPrec(QString tableName, QSqlDatabase &myDB);
 bool insertDataTPrec(QString fileName, QString tableName, QSqlDatabase& myDB);
 int getNrColumns(QString fileName);
 
@@ -74,7 +75,14 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    int nrColumn = getNrColumns(fileList[0]);
+    int nrColumn = getNrColumns(pathName + fileList[0]);
+    if (nrColumn == 0)
+    {
+        qDebug() << "\n-----ERROR-----\n";
+        myDB.close();
+        exit(-1);
+    }
+    qDebug() << "nr columns: " << nrColumn;
 
     for (int i=0; i<fileList.count(); i++)
     {
@@ -83,13 +91,14 @@ int main(int argc, char *argv[])
         tableName = fn.left(fn.length()-4);
         fileName = pathName + fn;
 
-        cleanTable(tableName, myDB);
         if (nrColumn == 4)
         {
+            cleanTableTPrec(tableName, myDB);
             insertDataTPrec(fileName, tableName, myDB);
         }
         else
         {
+            cleanTable(tableName, myDB);
             insertData(fileName, tableName, myDB);
         }
     }
@@ -106,6 +115,25 @@ bool cleanTable(QString tableName, QSqlDatabase &myDB)
 
     query = "CREATE TABLE " + tableName;
     query += "(date char(10), tmin float, tmax float, tavg float, prec float, et0 float, watertable float);";
+    myDB.exec(query);
+
+    if (myDB.lastError().type() != QSqlError::NoError)
+    {
+        qDebug() << "---Error---\n" << myDB.lastError().text();
+        return false;
+    }
+    else
+        return true;
+}
+
+
+bool cleanTableTPrec(QString tableName, QSqlDatabase &myDB)
+{
+    QString query = "DROP TABLE " + tableName;
+    myDB.exec(query);
+
+    query = "CREATE TABLE " + tableName;
+    query += "(date char(10), tmin float, tmax float, prec float);";
     myDB.exec(query);
 
     if (myDB.lastError().type() != QSqlError::NoError)
@@ -158,7 +186,7 @@ bool insertData(QString fileName, QString tableName, QSqlDatabase &myDB)
                     }
                     else
                     {
-                        qDebug() << "---Error---\n" << "missing values in line nr:" << nrLine+1;
+                        qDebug() << "Error in table: " << tableName << "\nmissing values in line nr:" << nrLine+1;
                         myFile.close ();
                         return false;
                     }
@@ -217,17 +245,18 @@ bool insertDataTPrec(QString fileName, QString tableName, QSqlDatabase& myDB)
             query.append("(");
             for(int i=0; i<4; ++i)
             {
-                QString valueStr = line.at(i);
+                if (i > 0) query.append(",");
 
+                QString valueStr = line.at(i);
                 if (valueStr.at(0) == '\"')
                     valueStr = valueStr.mid(1, valueStr.length()-2);
 
                 if (valueStr == "-9999" || valueStr == "-999.9" || valueStr == " ")
                     valueStr = "";
 
-                if (i > 0) query.append(",");
                 query.append("'" + valueStr + "'");
             }
+            // skip et0, watertable
             query.append("),");
         }
         nrLine++;
@@ -252,7 +281,7 @@ int getNrColumns(QString fileName)
     QFile myFile(fileName);
     if(! myFile.open (QIODevice::ReadOnly))
     {
-        qDebug() << myFile.errorString();
+        qDebug() <<"Error in opening: " << fileName <<  myFile.errorString();
         return 0;
     }
 
