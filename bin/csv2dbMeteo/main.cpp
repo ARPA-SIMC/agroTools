@@ -19,6 +19,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
+#include <QDate>
 
 
 bool cleanTable(QString tableName, QSqlDatabase& myDB);
@@ -82,7 +83,10 @@ int main(int argc, char *argv[])
         myDB.close();
         exit(-1);
     }
-    qDebug() << "nr columns: " << nrColumn;
+    if (nrColumn == 4)
+    {
+        qDebug() << "File format: Date, Tmin, Tmax, Prec";
+    }
 
     for (int i=0; i<fileList.count(); i++)
     {
@@ -239,8 +243,11 @@ bool insertDataTPrec(QString fileName, QString tableName, QSqlDatabase& myDB)
     while(!myStream.atEnd())
     {
         line = myStream.readLine().split(',');
-        // skip header or void lines
-        if ((nrLine > 0) && (line.length()>1))
+        // check date
+        QDate myDate = QVariant(line.at(0)).toDate();
+
+        // skip header, void lines and invalid dates
+        if ( nrLine > 0 && line.length() > 1 && myDate.isValid() )
         {
             query.append("(");
             for(int i=0; i<4; ++i)
