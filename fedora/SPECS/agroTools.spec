@@ -67,10 +67,10 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
-* Tue April 18 2023 Fausto Tomei <ftomei@arpae.it> - 1.6.0-2
+* Tue Apr 18 2023 Fausto Tomei <ftomei@arpae.it> - 1.6.0-2
 - Release 1.6.0
 
-* Mon April 17 2023 Fausto Tomei <ftomei@arpae.it> - 1.6.0-1
+* Mon Apr 17 2023 Fausto Tomei <ftomei@arpae.it> - 1.6.0-1
 - Release 1.6.0
 
 * Mon Jun  6 2022 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.5.1-2
