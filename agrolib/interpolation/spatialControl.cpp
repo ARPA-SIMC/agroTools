@@ -2,9 +2,11 @@
 #include <cmath>
 
 #include "commonConstants.h"
+#include "basicMath.h"
 #include "spatialControl.h"
 #include "interpolation.h"
 #include "statistics.h"
+
 
 float findThreshold(meteoVariable myVar, Crit3DMeteoSettings* meteoSettings,
                     float value, float stdDev, float nrStdDev, float avgDeltaZ, float minDistance)
@@ -329,8 +331,9 @@ bool passDataToInterpolation(Crit3DMeteoPoint* meteoPoints, int nrMeteoPoints,
             myPoint.proxyValues = meteoPoints[i].proxyValues;
             myPoint.topographicDistance = meteoPoints[i].topographicDistance;
             myPoint.isActive = true;
+            myPoint.isMarked = meteoPoints[i].marked;
 
-            if (int(xMin) == int(NODATA))
+            if (isEqual(xMin, NODATA))
             {
                 xMin = float(myPoint.point->utm.x);
                 xMax = float(myPoint.point->utm.x);

@@ -69,7 +69,7 @@ void Crit1DProject::initialize()
     waterPotentialDepth.clear();
     availableWaterDepth.clear();
     fractionAvailableWaterDepth.clear();
-    slopeStabilityDepth.clear();
+    factorOfSafetyDepth.clear();
     awcDepth.clear();
 
     texturalClassList.resize(13);
@@ -281,10 +281,10 @@ bool Crit1DProject::readSettings()
             projectError = "Wrong fraction available water depth in " + configFileName;
             return false;
         }
-        depthList = projectSettings->value("slopeStability").toStringList();
+        depthList = projectSettings->value("factorOfSafety").toStringList();
         if (depthList.size() == 0)
-            depthList = projectSettings->value("slopeStability").toStringList();
-        if (! setVariableDepth(depthList, slopeStabilityDepth))
+            depthList = projectSettings->value("factorOfSafety").toStringList();
+        if (! setVariableDepth(depthList, factorOfSafetyDepth))
         {
             projectError = "Wrong slope stability depth in " + configFileName;
             return false;
@@ -424,8 +424,7 @@ bool Crit1DProject::setSoil(QString soilCode, QString &errorStr)
 
 bool Crit1DProject::setMeteoXmlGrid(QString idMeteo, QString idForecast, unsigned int memberNr)
 {
-    unsigned row;
-    unsigned col;
+    unsigned row, col;
     unsigned nrDays = unsigned(firstSimulationDate.daysTo(lastSimulationDate)) + 1;
 
     if (!observedMeteoGrid->meteoGrid()->findMeteoPointFromId(&row, &col, idMeteo.toStdString()) )
@@ -436,7 +435,7 @@ bool Crit1DProject::setMeteoXmlGrid(QString idMeteo, QString idForecast, unsigne
 
     if (!observedMeteoGrid->gridStructure().isFixedFields())
     {
-        if (!observedMeteoGrid->loadGridDailyData(&projectError, idMeteo, firstSimulationDate, lastSimulationDate))
+        if (!observedMeteoGrid->loadGridDailyData(projectError, idMeteo, firstSimulationDate, lastSimulationDate))
         {
             projectError = "Missing observed data: " + idMeteo;
             return false;
@@ -444,7 +443,7 @@ bool Crit1DProject::setMeteoXmlGrid(QString idMeteo, QString idForecast, unsigne
     }
     else
     {
-        if (!observedMeteoGrid->loadGridDailyDataFixedFields(&projectError, idMeteo, firstSimulationDate, lastSimulationDate))
+        if (!observedMeteoGrid->loadGridDailyDataFixedFields(projectError, idMeteo, firstSimulationDate, lastSimulationDate))
         {
             if (projectError == "Missing MeteoPoint id")
             {
@@ -462,7 +461,7 @@ bool Crit1DProject::setMeteoXmlGrid(QString idMeteo, QString idForecast, unsigne
     {
         if (!this->forecastMeteoGrid->gridStructure().isFixedFields())
         {
-            if (!this->forecastMeteoGrid->loadGridDailyData(&projectError, idForecast, lastSimulationDate.addDays(1), lastSimulationDate.addDays(daysOfForecast)))
+            if (!this->forecastMeteoGrid->loadGridDailyData(projectError, idForecast, lastSimulationDate.addDays(1), lastSimulationDate.addDays(daysOfForecast)))
             {
                 if (projectError == "Missing MeteoPoint id")
                 {
@@ -477,7 +476,7 @@ bool Crit1DProject::setMeteoXmlGrid(QString idMeteo, QString idForecast, unsigne
         }
         else
         {
-            if (!this->forecastMeteoGrid->loadGridDailyDataFixedFields(&projectError, idForecast, lastSimulationDate.addDays(1), lastSimulationDate.addDays(daysOfForecast)))
+            if (!this->forecastMeteoGrid->loadGridDailyDataFixedFields(projectError, idForecast, lastSimulationDate.addDays(1), lastSimulationDate.addDays(daysOfForecast)))
             {
                 if (projectError == "Missing MeteoPoint id")
                 {
@@ -502,7 +501,7 @@ bool Crit1DProject::setMeteoXmlGrid(QString idMeteo, QString idForecast, unsigne
         }
         else
         {
-            if (!this->forecastMeteoGrid->loadGridDailyDataEnsemble(&projectError, idForecast, int(memberNr), lastSimulationDate.addDays(1), lastSimulationDate.addDays(daysOfForecast)))
+            if (!this->forecastMeteoGrid->loadGridDailyDataEnsemble(projectError, idForecast, int(memberNr), lastSimulationDate.addDays(1), lastSimulationDate.addDays(daysOfForecast)))
             {
                 if (projectError == "Missing MeteoPoint id")
                 {
@@ -797,6 +796,8 @@ bool Crit1DProject::computeUnit(unsigned int unitIndex, unsigned int memberNr)
 bool Crit1DProject::computeCase(unsigned int memberNr)
 {
     myCase.fittingOptions.useWaterRetentionData = myCase.unit.useWaterRetentionData;
+    // user wants to compute factor of safety
+    myCase.computeFactorOfSafety = (factorOfSafetyDepth.size() > 0);
 
     if (! loadCropParameters(dbCrop, myCase.unit.idCrop, myCase.crop, projectError))
         return false;
@@ -1525,9 +1526,9 @@ bool Crit1DProject::createOutputTable(QString &myError)
         QString fieldName = "FAW_" + QString::number(fractionAvailableWaterDepth[i]);
         queryString += ", " + fieldName + " REAL";
     }
-    for (unsigned int i = 0; i < slopeStabilityDepth.size(); i++)
+    for (unsigned int i = 0; i < factorOfSafetyDepth.size(); i++)
     {
-        QString fieldName = "SF_" + QString::number(slopeStabilityDepth[i]);
+        QString fieldName = "FoS_" + QString::number(factorOfSafetyDepth[i]);
         queryString += ", " + fieldName + " REAL";
     }
 
@@ -1585,9 +1586,9 @@ void Crit1DProject::updateOutput(Crit3DDate myDate, bool isFirst)
             QString fieldName = "FAW_" + QString::number(fractionAvailableWaterDepth[i]);
             outputString += ", " + fieldName;
         }
-        for (unsigned int i = 0; i < slopeStabilityDepth.size(); i++)
+        for (unsigned int i = 0; i < factorOfSafetyDepth.size(); i++)
         {
-            QString fieldName = "SF_" + QString::number(slopeStabilityDepth[i]);
+            QString fieldName = "FoS_" + QString::number(factorOfSafetyDepth[i]);
             outputString += ", " + fieldName;
         }
 
@@ -1644,9 +1645,9 @@ void Crit1DProject::updateOutput(Crit3DDate myDate, bool isFirst)
     {
         outputString += "," + QString::number(myCase.getFractionAW(fractionAvailableWaterDepth[i]), 'g', 3);
     }
-    for (unsigned int i = 0; i < slopeStabilityDepth.size(); i++)
+    for (unsigned int i = 0; i < factorOfSafetyDepth.size(); i++)
     {
-        outputString += "," + QString::number(myCase.getSlopeStability(slopeStabilityDepth[i]), 'g', 4);
+        outputString += "," + QString::number(myCase.getSlopeStability(factorOfSafetyDepth[i]), 'g', 4);
     }
 
     outputString += ")";

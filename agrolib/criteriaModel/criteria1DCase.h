@@ -55,6 +55,7 @@
     {
     public:
         Crit1DCompUnit unit;
+        bool computeFactorOfSafety;
 
         // SOIL
         soil::Crit3DSoil mySoil;
