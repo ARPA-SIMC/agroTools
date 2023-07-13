@@ -551,7 +551,7 @@ void Bias::matchCells()
                         inputGrid.meteoGrid()->getLatLonFromId(id,&lat,&lon);
                         int refRow;
                         int refCol;
-                        gis::getMeteoGridRowColFromXY (refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
+                        gis::getGridRowColFromXY(refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
                         QPoint refPoint(refRow,refCol);
                         referenceCells << refPoint;
                     }
@@ -590,25 +590,25 @@ int Bias::computeMonthlyDistribution(QString variable)
         refGrid.meteoGrid()->getMeteoPointActiveId(refRow, refCol, &refInput);  // store id
         if (!inputGrid.gridStructure().isFixedFields())
         {
-            if (!inputGrid.loadGridDailyData(&errorString, QString::fromStdString(idInput), firstDate, lastDate))
+            if (!inputGrid.loadGridDailyData(errorString, QString::fromStdString(idInput), firstDate, lastDate))
             {
                 continue;
             }
         }
         else
         {
-            if (!inputGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(idInput), firstDate, lastDate))
+            if (!inputGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(idInput), firstDate, lastDate))
             {
                 continue;
             }
         }
         if (!refGrid.gridStructure().isFixedFields())
         {
-            refGrid.loadGridDailyData(&errorString, QString::fromStdString(refInput), firstDate, lastDate);
+            refGrid.loadGridDailyData(errorString, QString::fromStdString(refInput), firstDate, lastDate);
         }
         else
         {
-            refGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(refInput), firstDate, lastDate);
+            refGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(refInput), firstDate, lastDate);
         }
         Crit3DMeteoPoint mpInput = inputGrid.meteoGrid()->meteoPoint(row,col);
         Crit3DMeteoPoint mpRef = refGrid.meteoGrid()->meteoPoint(refRow,refCol);
@@ -661,7 +661,7 @@ int Bias::computeMonthlyDistribution(QString variable)
             }
             if (seriesInput.size() != 0)
             {
-                int nrValues = seriesInput.size();
+                int nrValues = int(seriesInput.size());
                 if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
                 {
                     monthlyPar2Input.push_back(statistics::standardDeviation(seriesInput, nrValues));
@@ -688,7 +688,7 @@ int Bias::computeMonthlyDistribution(QString variable)
 
             if (seriesRef.size() != 0)
             {
-                int nrValues = seriesRef.size();
+                int nrValues = int(seriesRef.size());
                 if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
                 {
                     monthlyPar2Ref.push_back(statistics::standardDeviation(seriesRef, nrValues));
@@ -837,14 +837,14 @@ int Bias::numericalDataReconstruction(QString variable)
             inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &idInput);  // store id
             if (!inputGrid.gridStructure().isFixedFields())
             {
-                if (!inputGrid.loadGridDailyData(&errorString, QString::fromStdString(idInput), firstDate, lastDate))
+                if (!inputGrid.loadGridDailyData(errorString, QString::fromStdString(idInput), firstDate, lastDate))
                 {
                     continue;
                 }
             }
             else
             {
-                if (!inputGrid.loadGridDailyDataFixedFields(&errorString, QString::fromStdString(idInput), firstDate, lastDate))
+                if (!inputGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(idInput), firstDate, lastDate))
                 {
                     continue;
                 }
