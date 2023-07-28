@@ -665,7 +665,7 @@ int Bias::computeMonthlyDistribution(QString variable)
                 if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
                 {
                     monthlyPar2Input.push_back(statistics::standardDeviation(seriesInput, nrValues));
-                    monthlyPar1Input.push_back(sorting::percentile(seriesInput, &nrValues,50,true));
+                    monthlyPar1Input.push_back(sorting::percentile(seriesInput, nrValues,50,true));
                     monthlyPar3Input.push_back(NODATA);
                 }
                 else if (var == dailyPrecipitation)
@@ -692,7 +692,7 @@ int Bias::computeMonthlyDistribution(QString variable)
                 if (var == dailyAirTemperatureMax || var == dailyAirTemperatureMin)
                 {
                     monthlyPar2Ref.push_back(statistics::standardDeviation(seriesRef, nrValues));
-                    monthlyPar1Ref.push_back(sorting::percentile(seriesRef, &nrValues,50,true));
+                    monthlyPar1Ref.push_back(sorting::percentile(seriesRef, nrValues,50,true));
                     monthlyPar3Ref.push_back(NODATA);
                 }
                 else if (var == dailyPrecipitation)
