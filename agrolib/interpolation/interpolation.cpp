@@ -1157,6 +1157,98 @@ bool regressionOrography(std::vector <Crit3DInterpolationDataPoint> &myPoints,
 }
 
 
+void multipleDetrending(std::vector <Crit3DInterpolationDataPoint> &myPoints,
+                Crit3DProxyCombination myCombination, Crit3DInterpolationSettings* mySettings, meteoVariable myVar)
+{
+    if (! getUseDetrendingVar(myVar)) return;
+
+    unsigned nrPredictors = 0, proxyPos;
+    for (int pos=0; pos < int(mySettings->getProxyNr()); pos++)
+    {
+        if (myCombination.getValue(pos))
+        {
+            nrPredictors++;
+            proxyPos = pos;
+        }
+    }
+
+    if (nrPredictors == 0)
+        return;
+    else if (nrPredictors == 1)
+        regressionGeneric(myPoints, mySettings, proxyPos, false);
+
+    unsigned i,j,nrPoints;
+
+    std::vector <float> proxyValues;
+
+    nrPoints = 0;
+    for (i = 0; i < myPoints.size(); i++)
+    {
+        if (myPoints[i].isActive)
+        {
+            proxyValues.clear();
+            if (myPoints[i].getActiveProxyValues(myCombination, proxyValues))
+                nrPoints++;
+        }
+    }
+
+    if (nrPoints == 0) return;
+
+    float proxyValue;
+    float* predictands = (float*)calloc(nrPoints, sizeof(float));
+    float** predictors = (float**)calloc(nrPredictors, sizeof(float*));
+
+    for (i=0; i<nrPoints; i++)
+        predictors[i]= (float*)calloc(nrPoints, sizeof(float));
+
+    for (i = 0; i < myPoints.size(); i++)
+    {
+        if (myPoints[i].isActive)
+        {
+            proxyValues.clear();
+
+            if (myPoints[i].getActiveProxyValues(myCombination, proxyValues))
+            {
+                predictands[i] = myPoints[i].value;
+
+                for (j=0; j < proxyValues.size(); j++)
+                    predictors[j][i] = proxyValues[j];
+            }
+        }
+    }
+
+    float *m = (float*)calloc(nrPredictors, sizeof(float));
+    float q;
+    float *weights = (float*)calloc(nrPoints, sizeof(float));;
+
+    if (nrPoints >= MIN_REGRESSION_POINTS)
+    {
+        statistics::weightedMultiRegressionLinear(predictors, predictands, weights, nrPoints, &q, m, nrPredictors);
+    }
+
+    float detrendValue;
+
+    for (i = 0; i < myPoints.size(); i++)
+    {   
+        for (int pos=0; pos < int(mySettings->getProxyNr()); pos++)
+        {
+            detrendValue = 0;
+
+            if (myCombination.getValue(pos))
+            {
+                proxyValue = myPoints[i].getProxyValue(pos);
+
+                if (proxyValue != NODATA)
+                    detrendValue = proxyValue * m[pos];
+
+                myPoints[i].value -= detrendValue;
+            }
+        }
+    }
+
+}
+
+
 void detrending(std::vector <Crit3DInterpolationDataPoint> &myPoints,
                 Crit3DProxyCombination myCombination, Crit3DInterpolationSettings* mySettings, Crit3DClimateParameters* myClimate,
                 meteoVariable myVar, Crit3DTime myTime)
@@ -1300,15 +1392,22 @@ bool preInterpolation(std::vector <Crit3DInterpolationDataPoint> &myPoints, Crit
 
     if (getUseDetrendingVar(myVar))
     {
-        if (mySettings->getUseBestDetrending())
+        if (mySettings->getUseMultipleDetrending())
         {
-            optimalDetrending(myVar, myMeteoPoints, nrMeteoPoints, myPoints, mySettings, meteoSettings, myClimate, myTime);
-            mySettings->setCurrentCombination(mySettings->getOptimalCombination());
+            multipleDetrending(myPoints, mySettings->getSelectedCombination(), mySettings, myVar);
         }
         else
         {
-            detrending(myPoints, mySettings->getSelectedCombination(), mySettings, myClimate, myVar, myTime);
-            mySettings->setCurrentCombination(mySettings->getSelectedCombination());
+            if (mySettings->getUseBestDetrending())
+            {
+                optimalDetrending(myVar, myMeteoPoints, nrMeteoPoints, myPoints, mySettings, meteoSettings, myClimate, myTime);
+                mySettings->setCurrentCombination(mySettings->getOptimalCombination());
+            }
+            else
+            {
+                detrending(myPoints, mySettings->getSelectedCombination(), mySettings, myClimate, myVar, myTime);
+                mySettings->setCurrentCombination(mySettings->getSelectedCombination());
+            }
         }
     }
 
