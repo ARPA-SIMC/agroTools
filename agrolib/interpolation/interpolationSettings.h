@@ -114,7 +114,7 @@
         float minRegressionR2;
         bool useThermalInversion;
         bool useTD;
-        bool useDynamicLapserate;
+        bool useLocalDetrending;
         int maxTdMultiplier;
         bool useLapseRateCode;
         bool useBestDetrending;
@@ -141,6 +141,10 @@
         Crit3DProxyCombination currentCombination;
         unsigned indexHeight;
 
+        std::vector <double> multiRegressionSlopes;
+        std::vector <double> multiRegressionAvgs;
+        std::vector <double> multiRegressionStdDevs;
+
     public:
         Crit3DInterpolationSettings();
 
@@ -166,8 +170,8 @@
         void setUseTD(bool myValue);
         bool getUseTD();
 
-        void setUseDynamicLapserate(bool myValue);
-        bool getUseDynamicLapserate();
+        void setUseLocalDetrending(bool myValue);
+        bool getUseLocalDetrending();
 
         void setUseDewPoint(bool myValue);
         bool getUseDewPoint();
@@ -219,6 +223,12 @@
         void setMeteoGridUpscaleFromDem(bool newMeteoGridUpscaleFromDem);
         bool getUseMultipleDetrending() const;
         void setUseMultipleDetrending(bool newUseMultipleDetrending);
+        std::vector<double> getMultiRegressionSlopes() const;
+        void setMultiRegressionSlopes(const std::vector<double> &newMultiRegressionSlopes);
+        std::vector<double> getMultiRegressionAvgs() const;
+        void setMultiRegressionAvgs(const std::vector<double> &newMultiRegressionAvgs);
+        std::vector<double> getMultiRegressionStdDevs() const;
+        void setMultiRegressionStdDevs(const std::vector<double> &newMultiRegressionStdDevs);
     };
 
 #endif // INTERPOLATIONSETTINGS_H

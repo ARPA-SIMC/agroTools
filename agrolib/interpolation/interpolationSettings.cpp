@@ -260,6 +260,36 @@ void Crit3DInterpolationSettings::setUseMultipleDetrending(bool newUseMultipleDe
     useMultipleDetrending = newUseMultipleDetrending;
 }
 
+std::vector<double> Crit3DInterpolationSettings::getMultiRegressionSlopes() const
+{
+    return multiRegressionSlopes;
+}
+
+void Crit3DInterpolationSettings::setMultiRegressionSlopes(const std::vector<double> &newMultiRegressionSlopes)
+{
+    multiRegressionSlopes = newMultiRegressionSlopes;
+}
+
+std::vector<double> Crit3DInterpolationSettings::getMultiRegressionAvgs() const
+{
+    return multiRegressionAvgs;
+}
+
+void Crit3DInterpolationSettings::setMultiRegressionAvgs(const std::vector<double> &newMultiRegressionAvgs)
+{
+    multiRegressionAvgs = newMultiRegressionAvgs;
+}
+
+std::vector<double> Crit3DInterpolationSettings::getMultiRegressionStdDevs() const
+{
+    return multiRegressionStdDevs;
+}
+
+void Crit3DInterpolationSettings::setMultiRegressionStdDevs(const std::vector<double> &newMultiRegressionStdDevs)
+{
+    multiRegressionStdDevs = newMultiRegressionStdDevs;
+}
+
 Crit3DInterpolationSettings::Crit3DInterpolationSettings()
 {
     initialize();
@@ -282,7 +312,7 @@ void Crit3DInterpolationSettings::initialize()
     interpolationMethod = idw;
     useThermalInversion = true;
     useTD = false;
-    useDynamicLapserate = false;
+    useLocalDetrending = false;
     topoDist_maxKh = 128;
     useDewPoint = true;
     useInterpolatedTForRH = true;
@@ -302,6 +332,10 @@ void Crit3DInterpolationSettings::initialize()
 
     Kh_series.clear();
     Kh_error_series.clear();
+
+    multiRegressionSlopes.clear();
+    multiRegressionAvgs.clear();
+    multiRegressionStdDevs.clear();
 
     initializeProxy();
 }
@@ -326,10 +360,10 @@ TInterpolationMethod Crit3DInterpolationSettings::getInterpolationMethod()
 { return interpolationMethod;}
 
 bool Crit3DInterpolationSettings::getUseTD()
-{ return useTD;}
+{ return (useTD && !useLocalDetrending);}
 
-bool Crit3DInterpolationSettings::getUseDynamicLapserate()
-{ return useDynamicLapserate;}
+bool Crit3DInterpolationSettings::getUseLocalDetrending()
+{ return useLocalDetrending;}
 
 float Crit3DInterpolationSettings::getMaxHeightInversion()
 { return maxHeightInversion;}
@@ -346,8 +380,8 @@ void Crit3DInterpolationSettings::setUseThermalInversion(bool myValue)
 void Crit3DInterpolationSettings::setUseTD(bool myValue)
 { useTD = myValue;}
 
-void Crit3DInterpolationSettings::setUseDynamicLapserate(bool myValue)
-{ useDynamicLapserate = myValue;}
+void Crit3DInterpolationSettings::setUseLocalDetrending(bool myValue)
+{ useLocalDetrending = myValue;}
 
 void Crit3DInterpolationSettings::setUseDewPoint(bool myValue)
 { useDewPoint = myValue;}

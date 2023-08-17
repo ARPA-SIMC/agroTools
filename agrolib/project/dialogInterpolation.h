@@ -24,8 +24,9 @@
             QCheckBox* lapseRateCodeEdit;
             QCheckBox* thermalInversionEdit;
             QCheckBox* optimalDetrendingEdit;
+            QCheckBox* multipleDetrendingEdit;
             QCheckBox* topographicDistanceEdit;
-            QCheckBox* dynamicLapserateEdit;
+            QCheckBox* localDetrendingEdit;
             QCheckBox* upscaleFromDemEdit;
             QCheckBox* useDewPointEdit;
             QCheckBox* useInterpolTForRH;
@@ -45,7 +46,9 @@
         private slots:
             void editProxies();
             void upscaleFromDemChanged(int active);
-
+            void multipleDetrendingChanged(int active);
+            void localDetrendingChanged(int active);
+            void optimalDetrendingChanged(int active);
     };
 
     class ProxyDialog : public QDialog
