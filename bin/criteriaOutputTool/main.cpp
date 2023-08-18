@@ -11,7 +11,7 @@
 
 void usage()
 {
-    std::cout << "\nUsage:\nCriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|DTX_HISTORY project.ini [date]\n" << std::endl;
+    std::cout << "\nUsage:\nCriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|DTX_HISTORY projectName.ini [computationDate]\n" << std::endl;
     std::cout << std::flush;
 }
 
@@ -30,10 +30,11 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/C5_monthly.ini";
-            dateComputationStr = "2023-08-15";
-            //dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "SHAPEFILE";
+            //settingsFileName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/C5_monthly.ini";
+            settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
+            //dateComputationStr = "2023-08-15";
+            dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
+            myProject.operation = "CSV";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -74,6 +75,7 @@ int main(int argc, char *argv[])
     if (settingsFileName.left(1) == ".")
     {
         settingsFileName = appPath + settingsFileName;
+        QDir::cleanPath(settingsFileName);
     }
 
     // initialize
