@@ -7,7 +7,7 @@
 #include <iostream>
 
 // uncomment to compute test
-//#define TEST
+#define TEST
 
 void usage()
 {
@@ -28,13 +28,13 @@ int main(int argc, char *argv[])
     {
         #ifdef TEST
             QString dataPath;
-            if (! searchDataPath(&dataPath)) return -1;
+            if (! searchDataPath(&dataPath))
+                return -1;
 
-            //settingsFileName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/C5_monthly.ini";
             settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
             //dateComputationStr = "2023-08-15";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "CSV";
+            myProject.operation = "MAPS";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -71,8 +71,15 @@ int main(int argc, char *argv[])
         return ERROR_WRONGDATE;
     }
 
+    if (settingsFileName.isEmpty())
+    {
+        myProject.logger.writeError("Missing file .ini");
+        usage();
+        return ERROR_WRONGPARAMETER;
+    }
+
     // complete path
-    if (settingsFileName.left(1) == ".")
+    if (settingsFileName.at(0) == ".")
     {
         settingsFileName = appPath + settingsFileName;
         QDir::cleanPath(settingsFileName);
