@@ -31,10 +31,11 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
-            //dateComputationStr = "2023-08-15";
+            //settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
+            settingsFileName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/monthlyClimate/monthlyIrriObserved_C5.ini";
+            //dateComputationStr = "2022-06-01";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "MAPS";
+            myProject.operation = "AGGREGATION";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
