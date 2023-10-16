@@ -152,7 +152,58 @@ void Crit3DCrop::initialize(double latitude, unsigned int nrLayers, double total
 }
 
 
-bool Crit3DCrop::updateLAI(double latitude, unsigned int nrLayers, int myDoy)
+float Crit3DCrop::computeSimpleLAI(float myDegreeDays, double latitude, int currentDoy)
+{
+    float myLAI = 0;
+
+    if (isSowingCrop())
+    {
+        if (myDegreeDays < degreeDaysEmergence)
+        {
+            myLAI = 0;
+        }
+        else
+        {
+            myDegreeDays -= degreeDaysEmergence;
+            myLAI = leafDevelopment::getLAICriteria(this, myDegreeDays);
+        }
+    }
+    else
+    {
+        if (myDegreeDays > 0)
+            myLAI = leafDevelopment::getLAICriteria(this, myDegreeDays);
+        else
+            myLAI = LAImin;
+
+        if (type == TREE)
+        {
+            bool isLeafFall;
+            if (latitude > 0)   // north
+            {
+                isLeafFall = (currentDoy >= doyStartSenescence);
+            }
+            else                // south
+            {
+                isLeafFall = ((currentDoy >= doyStartSenescence) && (currentDoy < 182));
+            }
+
+            if (isLeafFall)
+            {
+                if (currentDoy == doyStartSenescence || int(LAIstartSenescence) == int(NODATA))
+                    LAIstartSenescence = myLAI;
+                else
+                    myLAI = leafDevelopment::getLAISenescence(LAImin, LAIstartSenescence, currentDoy - doyStartSenescence);
+            }
+
+            myLAI += LAIgrass;
+        }
+    }
+
+    return myLAI;
+}
+
+
+bool Crit3DCrop::updateLAI(double latitude, unsigned int nrLayers, int currentDoy)
 {
     double degreeDaysLai = 0;
     double myLai = 0;
@@ -163,7 +214,7 @@ bool Crit3DCrop::updateLAI(double latitude, unsigned int nrLayers, int myDoy)
         {
             if (degreeDays < degreeDaysEmergence)
                 return true;
-            else if (myDoy - sowingDoy >= MIN_EMERGENCE_DAYS)
+            else if (currentDoy - sowingDoy >= MIN_EMERGENCE_DAYS)
             {
                 isEmerged = true;
                 degreeDaysLai = degreeDays - degreeDaysEmergence;
@@ -196,19 +247,19 @@ bool Crit3DCrop::updateLAI(double latitude, unsigned int nrLayers, int myDoy)
             bool isLeafFall;
             if (latitude > 0)   // north
             {
-                isLeafFall = (myDoy >= doyStartSenescence);
+                isLeafFall = (currentDoy >= doyStartSenescence);
             }
             else                // south
             {
-                isLeafFall = ((myDoy >= doyStartSenescence) && (myDoy < 182));
+                isLeafFall = ((currentDoy >= doyStartSenescence) && (currentDoy < 182));
             }
 
             if (isLeafFall)
             {
-                if (myDoy == doyStartSenescence || int(LAIstartSenescence) == int(NODATA))
+                if (currentDoy == doyStartSenescence || int(LAIstartSenescence) == int(NODATA))
                     LAIstartSenescence = myLai;
                 else
-                    myLai = leafDevelopment::getLAISenescence(LAImin, LAIstartSenescence, myDoy - doyStartSenescence);
+                    myLai = leafDevelopment::getLAISenescence(LAImin, LAIstartSenescence, currentDoy - doyStartSenescence);
             }
 
             myLai += LAIgrass;

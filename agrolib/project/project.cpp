@@ -652,9 +652,12 @@ bool Project::loadParameters(QString parametersFileName)
         //proxy variables (for interpolation)
         if (group.startsWith("proxy_"))
         {
+            QString name_;
+
             Crit3DProxy* myProxy = new Crit3DProxy();
 
-            myProxy->setName(group.right(group.size()-6).toStdString());
+            name_ = group.right(group.size()-6);
+            myProxy->setName(name_.toStdString());
 
             parameters->beginGroup(group);
 
@@ -665,6 +668,25 @@ bool Project::loadParameters(QString parametersFileName)
 
             if (parameters->contains("stddev_threshold"))
                 myProxy->setStdDevThreshold(parameters->value("stddev_threshold").toFloat());
+
+            if (parameters->contains("fitting_parameters"))
+            {
+                unsigned int nrParameters;
+
+                if (getProxyPragaName(name_.toStdString()) == height)
+                    nrParameters = 5;
+                else
+                    nrParameters = 1;
+
+                myList = parameters->value("fitting_parameters").toStringList();
+                if (myList.size() != nrParameters*2)
+                {
+                    errorString = "Incomplete fitting parameters for proxy " + name_;
+                    return  false;
+                }
+
+                myProxy->setFittingParametersRange(StringListToDouble(myList));
+            }
 
             if (! parameters->contains("active"))
             {
@@ -1001,11 +1023,12 @@ bool Project::loadDEM(QString myFileName)
 
 bool Project::loadMeteoPointsDB(QString fileName)
 {
-    if (fileName == "") return false;
-
-    logInfoGUI("Load meteo points DB = " + fileName);
+    if (fileName == "")
+        return false;
 
     closeMeteoPointsDB();
+
+    logInfoGUI("Load meteo points DB = " + fileName);
 
     dbPointsFileName = fileName;
     QString dbName = getCompleteFileName(fileName, PATH_METEOPOINT);
@@ -2032,7 +2055,7 @@ bool Project::interpolationOutputPoints(std::vector <Crit3DInterpolationDataPoin
 {
     if (! getComputeOnlyPoints()) return false;
 
-    std::vector <float> proxyValues;
+    std::vector <double> proxyValues;
     proxyValues.resize(unsigned(interpolationSettings.getProxyNr()));
 
     for (unsigned int i = 0; i < outputPoints.size(); i++)
@@ -2209,7 +2232,7 @@ bool Project::interpolationDemLocalDetrending(meteoVariable myVar, const Crit3DT
         return false;
     }
 
-    std::vector <float> proxyValues;
+    std::vector <double> proxyValues;
     proxyValues.resize(unsigned(interpolationSettings.getProxyNr()));
     double x, y;
 
@@ -2480,7 +2503,7 @@ bool Project::interpolationGrid(meteoVariable myVar, const Crit3DTime& myTime)
     frequencyType freq = getVarFrequency(myVar);
 
     float myX, myY, myZ;
-    std::vector <float> proxyValues;
+    std::vector <double> proxyValues;
     proxyValues.resize(unsigned(interpolationSettings.getProxyNr()));
 
     float interpolatedValue = NODATA;
@@ -2510,7 +2533,7 @@ bool Project::interpolationGrid(meteoVariable myVar, const Crit3DTime& myTime)
                             {
                                 float proxyValue = gis::getValueFromXY(*meteoGridProxies[proxyIndex], myX, myY);
                                 if (proxyValue != meteoGridProxies[proxyIndex]->header->flag)
-                                    proxyValues[i] = proxyValue;
+                                    proxyValues[i] = double(proxyValue);
                             }
 
                             proxyIndex++;
@@ -2852,6 +2875,7 @@ void Project::saveProxies()
             if (myProxy->getProxyField() != "") parameters->setValue("field", QString::fromStdString(myProxy->getProxyField()));
             if (myProxy->getGridName() != "") parameters->setValue("raster", getRelativePath(QString::fromStdString(myProxy->getGridName())));
             if (myProxy->getStdDevThreshold() != NODATA) parameters->setValue("stddev_threshold", QString::number(myProxy->getStdDevThreshold()));
+            if (myProxy->getFittingParametersRange().size() > 0) parameters->setValue("fitting_parameters", DoubleVectorToStringList(myProxy->getFittingParametersRange()));
         parameters->endGroup();
     }
 }
@@ -3367,7 +3391,7 @@ bool Project::parseMeteoPointsPropertiesCSV(QString csvFileName, QList<QString>*
 }
 
 
-bool Project::writeMeteoPointsProperties(QList<QString> joinedList)
+bool Project::writeMeteoPointsProperties(QList<QString> propertiesList)
 {
     QList<QString> header = importProperties->getHeader();
     QList<QList<QString>> dataFields = importProperties->getData();
@@ -3375,9 +3399,9 @@ bool Project::writeMeteoPointsProperties(QList<QString> joinedList)
     QList<QString> column;
     QList<int> posValues;
 
-    for (int i = 0; i<joinedList.size(); i++)
+    for (int i = 0; i < propertiesList.size(); i++)
     {
-        QList<QString> couple = joinedList[i].split("-->");
+        QList<QString> couple = propertiesList[i].split("-->");
         QString pragaProperties = couple[0];
         QString fileProperties = couple[1];
         int pos = header.indexOf(fileProperties);
@@ -3393,7 +3417,7 @@ bool Project::writeMeteoPointsProperties(QList<QString> joinedList)
     for (int row = 0; row<dataFields.size(); row++)
     {
         values.clear();
-        for (int j = 0; j<posValues.size(); j++)
+        for (int j = 0; j < posValues.size(); j++)
         {
             values << dataFields[row][posValues[j]];
         }
@@ -3402,6 +3426,7 @@ bool Project::writeMeteoPointsProperties(QList<QString> joinedList)
 
     return true;
 }
+
 
 void Project::showProxyGraph()
 {
@@ -3805,28 +3830,100 @@ bool Project::getComputeOnlyPoints()
 
 bool Project::exportMeteoGridToRasterFlt(QString fileName, double cellSize)
 {
-    if (fileName != "")
+    if (! meteoGridLoaded || meteoGridDbHandler == nullptr)
     {
-        gis::Crit3DRasterGrid myGrid;
-        if (!meteoGridDbHandler->MeteoGridToRasterFlt(cellSize, gisSettings, myGrid))
-        {
-            errorString = "initializeGrid failed";
-            return false;
-        }
-
-        std::string myError = errorString.toStdString();
-        QString fileWithoutExtension = QFileInfo(fileName).absolutePath() + QDir::separator() + QFileInfo(fileName).baseName();
-        if (!gis::writeEsriGrid(fileWithoutExtension.toStdString(), &myGrid, myError))
-        {
-            errorString = QString::fromStdString(myError);
-            return false;
-        }
-        return true;
-
+        logInfoGUI("No meteogrid open");
+        return false;
     }
-    return false;
+
+    if (fileName == "")
+    {
+        logInfoGUI("No filename provided");
+        return false;
+    }
+
+    if (cellSize < 0)
+    {
+        logInfoGUI("Incorrect cell size");
+        return false;
+    }
+
+    gis::Crit3DRasterGrid myGrid;
+    if (!meteoGridDbHandler->MeteoGridToRasterFlt(cellSize, gisSettings, myGrid))
+    {
+        errorString = "initializeGrid failed";
+        return false;
+    }
+
+    std::string myError = errorString.toStdString();
+    QString fileWithoutExtension = QFileInfo(fileName).absolutePath() + QDir::separator() + QFileInfo(fileName).baseName();
+    if (!gis::writeEsriGrid(fileWithoutExtension.toStdString(), &myGrid, myError))
+    {
+        errorString = QString::fromStdString(myError);
+        return false;
+    }
+
+    return true;
 }
 
+
+bool Project::loadAndExportMeteoGridToRasterFlt(QString outPath, double cellSize, meteoVariable myVar, QDate dateIni, QDate dateFin)
+{
+    if (! meteoGridLoaded || meteoGridDbHandler == nullptr)
+    {
+        logInfoGUI("No meteogrid open");
+        return false;
+    }
+
+    if (outPath == "")
+    {
+        logInfoGUI("No filename provided");
+        return false;
+    }
+
+    if (cellSize < 0)
+    {
+        logInfoGUI("Incorrect cell size");
+        return false;
+    }
+
+    if (myVar == noMeteoVar)
+    {
+        logInfoGUI("No meteo variable");
+        return false;
+    }
+
+    if (! dateIni.isValid() || ! dateFin.isValid())
+    {
+        logInfoGUI("Invalid dates");
+        return false;
+    }
+
+    QDate date_ = dateIni;
+    gis::Crit3DRasterGrid myGrid;
+    QString fileName;
+
+    if (! loadMeteoGridDailyData(dateIni, dateFin, false))
+        return false;
+
+   while (date_ <= dateFin)
+    {
+
+        meteoGridDbHandler->meteoGrid()->fillCurrentDailyValue(getCrit3DDate(date_), myVar, meteoSettings);
+        meteoGridDbHandler->meteoGrid()->fillMeteoRaster();
+
+        if (! meteoGridDbHandler->MeteoGridToRasterFlt(cellSize, gisSettings, myGrid))
+            return false;
+
+        fileName = outPath + QDir::separator() + QString::fromStdString(getVariableString(myVar)) + "_" + date_.toString("yyyyMMdd") + ".flt";
+        if (! exportMeteoGridToRasterFlt(fileName, cellSize))
+            return false;
+
+        date_ = date_.addDays(1);
+    }
+
+    return true;
+}
 
 bool Project::exportMeteoGridToCsv(QString fileName)
 {
