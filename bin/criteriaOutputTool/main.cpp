@@ -11,7 +11,7 @@
 
 void usage()
 {
-    std::cout << "\nUsage:\nCriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|PRECOMPUTE_DTX project.ini [date]\n" << std::endl;
+    std::cout << "\nUsage:\nCriteriaOutput DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION projectName.ini [computationDate]\n" << std::endl;
     std::cout << std::flush;
 }
 
@@ -28,11 +28,14 @@ int main(int argc, char *argv[])
     {
         #ifdef TEST
             QString dataPath;
-            if (! searchDataPath(&dataPath)) return -1;
+            if (! searchDataPath(&dataPath))
+                return -1;
 
-            settingsFileName = dataPath + "PROJECT/C5/C5_monthly.ini";
-            dateComputationStr = "2021-07-13"; // QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "NETCDF";
+            //settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
+            settingsFileName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/monthlyClimate/monthlyIrriObserved_C5.ini";
+            //dateComputationStr = "2022-06-01";
+            dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
+            myProject.operation = "AGGREGATION";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -69,10 +72,18 @@ int main(int argc, char *argv[])
         return ERROR_WRONGDATE;
     }
 
+    if (settingsFileName.isEmpty())
+    {
+        myProject.logger.writeError("Missing file .ini");
+        usage();
+        return ERROR_WRONGPARAMETER;
+    }
+
     // complete path
-    if (settingsFileName.left(1) == ".")
+    if (settingsFileName.at(0) == ".")
     {
         settingsFileName = appPath + settingsFileName;
+        QDir::cleanPath(settingsFileName);
     }
 
     // initialize
@@ -84,7 +95,7 @@ int main(int argc, char *argv[])
     }
     myProject.logger.writeInfo("computation date: " + dateComputationStr);
 
-    if (myProject.operation == "PRECOMPUTE_DTX")
+    if (myProject.operation == "DTX")
     {
         myResult = myProject.precomputeDtx();
     }
