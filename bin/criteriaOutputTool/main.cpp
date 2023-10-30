@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     }
 
     // complete path
-    if (settingsFileName.at(0) == ".")
+    if (settingsFileName.at(0) == '.')
     {
         settingsFileName = appPath + settingsFileName;
         QDir::cleanPath(settingsFileName);
