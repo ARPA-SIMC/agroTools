@@ -1,8 +1,8 @@
 [![Build Status](https://copr.fedorainfracloud.org/coprs/simc/stable/package/CRITERIA1D/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/simc/stable/package/agroTools/)
 
 ## CriteriaOutput tool
-CriteriaOutput is a shell command to manage the agro-hydrological output of [CRITERIA1D / GEO](https://github.com/ARPA-SIMC/criteria1d) 
-The output of CRITERIA_GEO is stored in a SQLite database and can be exported to CSV, shapefile or raster format, using this tool.
+CriteriaOutput is a shell command to manage the agro-hydrological output of [CRITERIA1D / GEO](https://github.com/ARPA-SIMC/criteria1d).  
+The output of CRITERIA is stored in a SQLite database and can be exported to CSV, shapefile or raster format, using this tool.
 
 #### Usage
 
