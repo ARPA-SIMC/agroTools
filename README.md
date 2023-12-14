@@ -5,7 +5,7 @@ CriteriaOutput is a shell command to manage the agro-hydrological output of [CRI
 
 #### Usage
 
-CriteriaOutput CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION projectName.ini [date]
+CriteriaOutput CSV | SHAPEFILE | MAPS | NETCDF | AGGREGATION projectName.ini [date]
 
 #### Example of project.ini
 
