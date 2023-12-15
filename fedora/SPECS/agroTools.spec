@@ -2,8 +2,8 @@
 %{!?srcarchivename: %global srcarchivename agroTools-%{version}}
 
 Name:           agroTools
-Version:        1.6.0
-Release:        2%{?dist}
+Version:        1.7.0
+Release:        1%{?dist}
 Summary:        Agro tools
 
 URL:            https://github.com/ARPA-SIMC/agroTools
@@ -67,6 +67,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Fri Dec 15 2023 Fausto Tomei <ftomei@arpae.it> - 1.7.0-1
+- Release 1.7.0
+
 * Tue Apr 18 2023 Fausto Tomei <ftomei@arpae.it> - 1.6.0-2
 - Release 1.6.0
 
