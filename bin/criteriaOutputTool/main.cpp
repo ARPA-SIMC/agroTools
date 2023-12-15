@@ -7,7 +7,7 @@
 #include <iostream>
 
 // uncomment to compute test
-//#define TEST
+#define TEST
 
 void usage()
 {
@@ -31,11 +31,9 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            //settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
-            settingsFileName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/monthlyClimate/monthlyIrriObserved_C5.ini";
-            //dateComputationStr = "2022-06-01";
+            settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "AGGREGATION";
+            myProject.operation = "CSV";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
