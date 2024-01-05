@@ -11,6 +11,8 @@
 
 void usage()
 {
+    std::cout << "CriteriaOutput V1.7.1" << std::endl;
+    std::cout << "Shell command to manage the agro-hydrological output of CRITERIA1D-GEO"<< std::endl;
     std::cout << "\nUsage:\nCriteriaOutput DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION projectName.ini [computationDate]\n" << std::endl;
     std::cout << std::flush;
 }
