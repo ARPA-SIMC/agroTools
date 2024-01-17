@@ -1,4 +1,5 @@
 #include "dbMeteoGrid.h"
+#include "crit3dDate.h"
 #include "meteoGrid.h"
 #include "basicMath.h"
 #include "utilities.h"
@@ -1261,8 +1262,8 @@ bool Crit3DMeteoGridDbHandler::newCellProperties(QString *myError)
     QSqlQuery qry(_db);
     QString table = "CellsProperties";
     QString statement = QString("CREATE TABLE `%1`"
-                                "(`Code` varchar(6) NOT NULL PRIMARY KEY, `SecondaryCode` TEXT, `Name` TEXT, "
-                                "`Notes` TEXT, `Row` INT, `Col` INT, `X` DOUBLE(16,2) DEFAULT 0.00, `Y` DOUBLE(16,2) DEFAULT 0.00, `Height` DOUBLE(16,2) DEFAULT 0.00, `Active` INT)").arg(table);
+                                "(`Code` varchar(6) NOT NULL PRIMARY KEY, `Name` varchar(50), "
+                                "`Row` INT, `Col` INT, `X` DOUBLE(16,2) DEFAULT 0.00, `Y` DOUBLE(16,2) DEFAULT 0.00, `Height` DOUBLE(16,2) DEFAULT 0.00, `Active` INT)").arg(table);
 
     if( !qry.exec(statement) )
     {
@@ -1657,7 +1658,7 @@ bool Crit3DMeteoGridDbHandler::updateMeteoGridDate(QString &myError)
         if (minPragaYear != NODATA && maxPragaYear != NODATA &&
                 minPragaMonth != NODATA && maxPragaMonth != NODATA) {
 
-            _lastMonthlyDate.setDate(maxPragaYear, maxPragaMonth, 1);
+            _lastMonthlyDate.setDate(maxPragaYear, maxPragaMonth, getDaysInMonth(maxPragaMonth, maxPragaYear));
             _firstMonthlyDate.setDate(minPragaYear, minPragaMonth, 1);
         }
     }
