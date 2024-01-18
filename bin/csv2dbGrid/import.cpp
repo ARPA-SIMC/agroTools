@@ -473,6 +473,7 @@ int Import::writeMultiTimeValues()
                 else
                 {
                     // time interpolation (linear) check rad potent
+                    Crit3DRadiationSettings radSettings;
                     for(int j=0; j<hoursList.size(); j++)
                     {
                         /* * */
@@ -483,8 +484,7 @@ int Import::writeMultiTimeValues()
                         grid.meteoGrid()->getXYZFromId(key.toStdString(), &x, &y, &z);
                         grid.meteoGrid()->getLatLonFromId(key.toStdString(), &lat, &lon);
                         TsunPosition mySunPosition;
-                        TradPoint myRadPoint;
-                        Crit3DRadiationSettings radSettings;
+                        TradPoint myRadPoint;  
                         gis::Crit3DRasterGrid myDEM;
                         gis::Crit3DPoint myPoint;
                         radSettings.gisSettings = &gisSettings;
