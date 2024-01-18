@@ -487,7 +487,7 @@ int Import::writeMultiTimeValues()
                         TradPoint myRadPoint;  
                         gis::Crit3DRasterGrid myDEM;
                         gis::Crit3DPoint myPoint;
-                        radSettings.gisSettings = &gisSettings;
+                        radSettings.setGisSettings(&gisSettings);
                         /*! assign topographic height and coordinates */
                         myRadPoint.x = x;
                         myRadPoint.y = y;
