@@ -39,6 +39,8 @@ public:
     int createCsvFile(QString id);
     QList<QString> getIdList() const;
 
+    int getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, unsigned monthIni, unsigned monthFin);
+
 private:
     gis::Crit3DGisSettings gisSettings;
     QString settingsFileName;

@@ -301,7 +301,7 @@ int Frost::getForecastData(QString id, int posIdList)
     //TradPoint myRadPoint;
     Crit3DRadiationSettings radSettings;
 
-    radSettings.gisSettings = &gisSettings;
+    //radSettings.gisSettings = &gisSettings;
     /*! assign topographic height and coordinates */
     //myRadPoint.x = meteoPointsList[meteoPointListpos].point.utm.x;
     //myRadPoint.y = meteoPointsList[meteoPointListpos].point.utm.y;
@@ -547,4 +547,108 @@ int Frost::createCsvFile(QString id)
 QList<QString> Frost::getIdList() const
 {
     return idList;
+}
+
+int Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, unsigned monthIni, unsigned monthFin)
+{
+    std::vector <float> myDateArray(24);
+    std::vector <float> myArray;
+
+    unsigned pos = 0;
+    bool found = false;
+    for (; pos< meteoPointsList.size(); pos++)
+    {
+        if (meteoPointsList[pos].id == id.toStdString())
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        logger.writeError ("missing id "+id+" into point_properties table");
+        return ERROR_DBPOINT;
+    }
+
+    Crit3DMeteoPoint* point = &meteoPointsList[pos];
+
+    QDateTime firstTime = meteoPointsDbHandler.getFirstDate(hourly, id.toStdString());
+    QDateTime lastTime = meteoPointsDbHandler.getLastDate(hourly, id.toStdString());
+
+    // load meteo point observed data
+    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(firstTime.date()), getCrit3DDate(lastTime.date()), point))
+    {
+        logger.writeError ("id: "+id+" meteo point load hourly data error");
+        return ERROR_DBPOINT;
+    }
+
+    // load meteo point observed data
+    if (!meteoPointsDbHandler.loadDailyData(getCrit3DDate(firstTime.date()), getCrit3DDate(lastTime.date()), point))
+    {
+        logger.writeError ("id: "+id+" meteo point load daily data error");
+        return ERROR_DBPOINT;
+    }
+
+    float tmin = NODATA, tmax = NODATA;
+
+    std::vector <QDate> coolingDates;
+    TObsDataH* hourlyData = point->getObsDataH();
+    TObsDataH* todayHourlyData;
+    TObsDataH* yesterdayHourlyData;
+    Crit3DDate today, yesterday;
+    TsunPosition sunPosition;
+    float temperature = 25;
+    float pressure =  1013;
+    float radAspect = 0;
+    float radSlope = 0;
+
+    for (unsigned i = 1; i < point->nrObsDataDaysH; i++)
+    {
+        today = hourlyData[i].date;
+        yesterday = hourlyData[i].date.addDays(-1);
+
+        if (point->getMeteoPointValueDayH(today, todayHourlyData) && point->getMeteoPointValueDayH(yesterday, yesterdayHourlyData))
+        {
+            if (radiation::computeSunPosition(float(point->longitude), float(point->latitude), gisSettings.timeZone,
+                                              today.year, today.month, today.day, 0, 0, 0,
+                                              temperature, pressure, radAspect, radSlope, &sunPosition))
+            {
+                int myHourSunSetInteger = round(sunPosition.set/3600);
+                int myHourSunRiseInteger = round(sunPosition.rise/3600);
+
+                /*
+                indexSunSet = myHourSunSetInteger;
+                indexSunRise = 24 + myHourSunRiseInteger;
+
+                QDate firstDate = getQDate(meteoPointsList[meteoPointListpos].getMeteoPointHourlyValuesDate(0));
+                int myDateIndex = firstDate.daysTo(runDate);
+                int myHour = myHourSunSetInteger - timeZone;
+
+                if (myHour < 0)
+                {
+                     myDateIndex = myDateIndex - 1;
+                     myHour = myHourSunSetInteger + 24;
+                }
+                else if (myHour > 23)
+                {
+                     myDateIndex = myDateIndex + 1;
+                     myHour = myHourSunSetInteger - 24;
+                }
+                if (myDateIndex > meteoPointsList[meteoPointListpos].nrObsDataDaysH || myDateIndex < 0)
+                {
+                     logger.writeError ("Sunset hour: " + QString::number(myHourSunSetInteger) + " data not available");
+                     return ERROR_SUNSET;
+                }
+                QDate newDate = firstDate.addDays(myDateIndex);
+                float myTSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
+                float myRHSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
+                */
+
+            }
+        }
+    }
+
+
+
 }
