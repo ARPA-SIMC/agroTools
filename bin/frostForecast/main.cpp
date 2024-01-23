@@ -66,19 +66,22 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    result = frost.downloadMeteoPointsData();
+    /*result = frost.downloadMeteoPointsData();
     if (result!=FROSTFORECAST_OK)
     {
         return result;
-    }
+    }*/
 
     QList<QString> idList = frost.getIdList();
     for (int i = 0; i< idList.size(); i++)
     {
+        std::vector <std::vector <float>> outData;
+        frost.getRadiativeCoolingHistory(idList[i], 5, 6, 3, 4, 1, outData);
+        /*
         result = frost.getForecastData(idList[i], i);
         if (result == FROSTFORECAST_OK)
         {
             frost.createCsvFile(idList[i]);
-        }
+        }*/
     }
 }

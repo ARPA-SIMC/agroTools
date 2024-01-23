@@ -1,4 +1,5 @@
 #include "frost.h"
+#include "basicMath.h"
 #include "download.h"
 #include "commonConstants.h"
 #include "utilities.h"
@@ -583,15 +584,6 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
         return false;
     }
 
-    // load meteo point observed data
-    if (!meteoPointsDbHandler.loadDailyData(getCrit3DDate(firstTime.date()), getCrit3DDate(lastTime.date()), point))
-    {
-        logger.writeError ("id: "+id+" meteo point load daily data error");
-        return false;
-    }
-
-    float tmin = NODATA;
-
     TObsDataH* hourlyData = point->getObsDataH();
 
     Crit3DDate today;
@@ -609,13 +601,13 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
     std::vector <float> hourlyT;
     float T;
     float minT, maxT;
+    bool dataPresent;
 
     for (int i = 0; i < point->nrObsDataDaysH; i++)
     {
         today = hourlyData[i].date;
-        tmin = point->getMeteoPointValueD(today, dailyAirTemperatureMin);
 
-        if (today.month <= monthIni && today.month >= monthFin && tmin != NODATA && tmin < thresholdTmin)
+        if (today.month <= monthFin && today.month >= monthIni)
         {
             if (radiation::computeSunPosition(float(point->longitude), float(point->latitude), gisSettings.timeZone,
                                               today.year, today.month, today.day, 0, 0, 0,
@@ -643,6 +635,8 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
                 bool isSunRise = false;
                 minT = NODATA;
                 maxT = NODATA;
+                dataPresent = false;
+                hourlyT.clear();
                 while (! isSunRise)
                 {
                     if (h < 1)
@@ -664,13 +658,25 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
                     }
                     hourlyT.push_back(T);
 
-                    minT = (minT == NODATA ? minT : MINVALUE(minT, T));
-                    maxT = (maxT == NODATA ? maxT : MAXVALUE(maxT, T));
+                    if (! isEqual(T, NODATA))
+                    {
+                        dataPresent = true;
+
+                        if (isEqual(minT, NODATA))
+                            minT = T;
+                        else
+                            minT = MINVALUE(minT, T);
+
+                        if (isEqual(maxT, NODATA))
+                            maxT = T;
+                        else
+                            maxT = MAXVALUE(maxT, T);
+                    }
 
                     if (h == hourSunRiseUtc && d == dateIndexSunRiseUtc)
                     {
                         isSunRise = true;
-                        if (minT != NODATA && maxT != NODATA && (maxT - minT < thresholdTRange))
+                        if (dataPresent && minT < thresholdTmin && (maxT - minT >= thresholdTRange))
                             outData.push_back(hourlyT);
                     }
                     else
