@@ -689,3 +689,48 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
 
     return (myObsData.size() > 0);
 }
+
+
+void Frost::fitCoolingCoefficient(std::vector <std::vector <float>> hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float> coeff)
+{
+    float myMin, myMax;
+    float mySum1, mySum2;
+    float myFirstError = 0;
+    float mySecondError = 0;;
+    int iteration;
+    float Tsunset;
+    int time;
+
+    for(std::vector <float> hourlyT : hourly_series)
+    {
+
+        myMin = minValue;
+        myMax = maxValue;
+        iteration = 0;
+        time = 0;
+        do {
+
+            mySum1 = 0;
+            mySum2 = 0;
+            Tsunset = hourlyT[0];
+            for (float T : hourlyT)
+            {
+                mySum1 += pow((Tsunset - myMin * sqrt(time) - T), 2);
+                mySum2 += pow((Tsunset - myMax * sqrt(time) - T), 2);
+            }
+
+            myFirstError = sqrt(mySum1);
+            mySecondError = sqrt(mySum2);
+
+            if (myFirstError < mySecondError)
+                myMax = (myMin + myMax) / 2;
+            else
+                myMin = (myMin + myMax) / 2;
+
+            time++;
+
+        } while (fabs(myFirstError - mySecondError) > tolerance && iteration <= nrIterations);
+
+        coeff.push_back((myMin + myMax) / 2);
+    }
+}
