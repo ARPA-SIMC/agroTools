@@ -39,7 +39,7 @@ public:
     int createCsvFile(QString id);
     QList<QString> getIdList() const;
 
-    int getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, unsigned monthIni, unsigned monthFin);
+    bool getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, int monthIni, int monthFin, int timeZone, std::vector <std::vector <float>> outData);
 
 private:
     gis::Crit3DGisSettings gisSettings;

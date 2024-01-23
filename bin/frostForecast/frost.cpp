@@ -549,7 +549,7 @@ QList<QString> Frost::getIdList() const
     return idList;
 }
 
-int Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, unsigned monthIni, unsigned monthFin)
+bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, int monthIni, int monthFin, int timeZone, std::vector<std::vector<float> > outData)
 {
     std::vector <float> myDateArray(24);
     std::vector <float> myArray;
@@ -568,7 +568,7 @@ int Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thr
     if (!found)
     {
         logger.writeError ("missing id "+id+" into point_properties table");
-        return ERROR_DBPOINT;
+        return false;
     }
 
     Crit3DMeteoPoint* point = &meteoPointsList[pos];
@@ -580,75 +580,106 @@ int Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thr
     if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(firstTime.date()), getCrit3DDate(lastTime.date()), point))
     {
         logger.writeError ("id: "+id+" meteo point load hourly data error");
-        return ERROR_DBPOINT;
+        return false;
     }
 
     // load meteo point observed data
     if (!meteoPointsDbHandler.loadDailyData(getCrit3DDate(firstTime.date()), getCrit3DDate(lastTime.date()), point))
     {
         logger.writeError ("id: "+id+" meteo point load daily data error");
-        return ERROR_DBPOINT;
+        return false;
     }
 
-    float tmin = NODATA, tmax = NODATA;
+    float tmin = NODATA;
 
-    std::vector <QDate> coolingDates;
     TObsDataH* hourlyData = point->getObsDataH();
-    TObsDataH* todayHourlyData;
-    TObsDataH* yesterdayHourlyData;
-    Crit3DDate today, yesterday;
+
+    Crit3DDate today;
     TsunPosition sunPosition;
     float temperature = 25;
     float pressure =  1013;
     float radAspect = 0;
     float radSlope = 0;
+    int hourSunSetLocal;
+    int hourSunRiseLocal;
+    int hourSunRiseUtc;
+    int dateIndexSunRiseUtc;
+    QDate dateTmp;
+    int h, d;
+    std::vector <float> hourlyT;
+    float T;
+    float minT, maxT;
 
-    for (unsigned i = 1; i < point->nrObsDataDaysH; i++)
+    for (int i = 0; i < point->nrObsDataDaysH; i++)
     {
         today = hourlyData[i].date;
-        yesterday = hourlyData[i].date.addDays(-1);
+        tmin = point->getMeteoPointValueD(today, dailyAirTemperatureMin);
 
-        if (point->getMeteoPointValueDayH(today, todayHourlyData) && point->getMeteoPointValueDayH(yesterday, yesterdayHourlyData))
+        if (today.month <= monthIni && today.month >= monthFin && tmin != NODATA && tmin < thresholdTmin)
         {
             if (radiation::computeSunPosition(float(point->longitude), float(point->latitude), gisSettings.timeZone,
                                               today.year, today.month, today.day, 0, 0, 0,
                                               temperature, pressure, radAspect, radSlope, &sunPosition))
             {
-                int myHourSunSetInteger = round(sunPosition.set/3600);
-                int myHourSunRiseInteger = round(sunPosition.rise/3600);
+                hourSunSetLocal = round(sunPosition.set/3600);
+                hourSunRiseLocal = round(sunPosition.rise/3600);
+                hourSunRiseUtc = hourSunRiseLocal - timeZone;
+                dateIndexSunRiseUtc = i;
 
-                /*
-                indexSunSet = myHourSunSetInteger;
-                indexSunRise = 24 + myHourSunRiseInteger;
-
-                QDate firstDate = getQDate(meteoPointsList[meteoPointListpos].getMeteoPointHourlyValuesDate(0));
-                int myDateIndex = firstDate.daysTo(runDate);
-                int myHour = myHourSunSetInteger - timeZone;
-
-                if (myHour < 0)
+                if (hourSunRiseUtc < 1)
                 {
-                     myDateIndex = myDateIndex - 1;
-                     myHour = myHourSunSetInteger + 24;
+                    hourSunRiseUtc += 24;
+                    dateIndexSunRiseUtc++;
                 }
-                else if (myHour > 23)
+                else if (hourSunRiseUtc > 24)
                 {
-                     myDateIndex = myDateIndex + 1;
-                     myHour = myHourSunSetInteger - 24;
+                    hourSunRiseUtc -= 24;
+                    dateIndexSunRiseUtc--;
                 }
-                if (myDateIndex > meteoPointsList[meteoPointListpos].nrObsDataDaysH || myDateIndex < 0)
-                {
-                     logger.writeError ("Sunset hour: " + QString::number(myHourSunSetInteger) + " data not available");
-                     return ERROR_SUNSET;
-                }
-                QDate newDate = firstDate.addDays(myDateIndex);
-                float myTSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
-                float myRHSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
-                */
 
+                h = hourSunSetLocal - timeZone;
+                d = i-1;
+
+                bool isSunRise = false;
+                minT = NODATA;
+                maxT = NODATA;
+                while (! isSunRise)
+                {
+                    if (h < 1)
+                    {
+                         d--;
+                         h += 24;
+                    }
+                    else if (h > 24)
+                    {
+                         d++;
+                         h -= 24;
+                    }
+
+                    T = NODATA;
+                    if (d <= point->nrObsDataDaysH && d >= 0)
+                    {
+                        dateTmp = firstTime.date().addDays(d);
+                        T = point->getMeteoPointValueH(getCrit3DDate(dateTmp), h, 0, airTemperature);
+                    }
+                    hourlyT.push_back(T);
+
+                    minT = (minT == NODATA ? minT : MINVALUE(minT, T));
+                    maxT = (maxT == NODATA ? maxT : MAXVALUE(maxT, T));
+
+                    if (h == hourSunRiseUtc && d == dateIndexSunRiseUtc)
+                    {
+                        isSunRise = true;
+                        if (minT != NODATA && maxT != NODATA && (maxT - minT < thresholdTRange))
+                            outData.push_back(hourlyT);
+                    }
+                    else
+                        h++;
+
+                }
             }
         }
     }
 
-
-
+    return (myObsData.size() > 0);
 }
