@@ -550,11 +550,9 @@ QList<QString> Frost::getIdList() const
     return idList;
 }
 
-bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, int monthIni, int monthFin, int timeZone, std::vector<std::vector<float> > outData)
+bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, int monthIni, int monthFin, int timeZone,
+                                       std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData)
 {
-    std::vector <float> myDateArray(24);
-    std::vector <float> myArray;
-
     unsigned pos = 0;
     bool found = false;
     for (; pos< meteoPointsList.size(); pos++)
@@ -602,6 +600,9 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
     float T;
     float minT, maxT;
     bool dataPresent;
+    std::vector <float> ssData;
+    float RH_SS;
+    bool isSunRise, isSunset;
 
     for (int i = 0; i < point->nrObsDataDaysH; i++)
     {
@@ -632,11 +633,13 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
                 h = hourSunSetLocal - timeZone;
                 d = i-1;
 
-                bool isSunRise = false;
+                isSunRise = false;
+                isSunset = true;
                 minT = NODATA;
                 maxT = NODATA;
                 dataPresent = false;
                 hourlyT.clear();
+
                 while (! isSunRise)
                 {
                     if (h < 1)
@@ -658,6 +661,18 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
                     }
                     hourlyT.push_back(T);
 
+                    // sunset vector
+                    if (isSunset)
+                    {
+                        ssData.clear();
+                        RH_SS = point->getMeteoPointValueH(getCrit3DDate(dateTmp), h, 0, airRelHumidity);
+                        if (! isEqual(T, NODATA) && ! isEqual(RH_SS, NODATA))
+                        {
+                            ssData.push_back(T);
+                            ssData.push_back(RH_SS);
+                        }
+                    }
+
                     if (! isEqual(T, NODATA))
                     {
                         dataPresent = true;
@@ -677,21 +692,25 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
                     {
                         isSunRise = true;
                         if (dataPresent && minT < thresholdTmin && (maxT - minT >= thresholdTRange))
+                        {
                             outData.push_back(hourlyT);
+                            sunsetData.push_back(ssData);
+                        }
                     }
                     else
                         h++;
 
+                    isSunset = false;
                 }
             }
         }
     }
 
-    return (myObsData.size() > 0);
+    return (outData.size() > 0);
 }
 
 
-void Frost::fitCoolingCoefficient(std::vector <std::vector <float>> hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float> coeff)
+void Frost::fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float> coeff)
 {
     float myMin, myMax;
     float mySum1, mySum2;
@@ -713,10 +732,12 @@ void Frost::fitCoolingCoefficient(std::vector <std::vector <float>> hourly_serie
             mySum1 = 0;
             mySum2 = 0;
             Tsunset = hourlyT[0];
+            time = 0;
             for (float T : hourlyT)
             {
                 mySum1 += pow((Tsunset - myMin * sqrt(time) - T), 2);
                 mySum2 += pow((Tsunset - myMax * sqrt(time) - T), 2);
+                time++;
             }
 
             myFirstError = sqrt(mySum1);
@@ -725,9 +746,7 @@ void Frost::fitCoolingCoefficient(std::vector <std::vector <float>> hourly_serie
             if (myFirstError < mySecondError)
                 myMax = (myMin + myMax) / 2;
             else
-                myMin = (myMin + myMax) / 2;
-
-            time++;
+                myMin = (myMin + myMax) / 2;  
 
         } while (fabs(myFirstError - mySecondError) > tolerance && iteration <= nrIterations);
 

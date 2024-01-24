@@ -76,12 +76,18 @@ int main(int argc, char *argv[])
     for (int i = 0; i< idList.size(); i++)
     {
         std::vector <std::vector <float>> outData;
-        frost.getRadiativeCoolingHistory(idList[i], 5, 6, 3, 4, 1, outData);
+        std::vector <std::vector <float>> sunsetData;
+        std::vector <float> outCoeff;
+        if (frost.getRadiativeCoolingHistory(idList[i], 5, 6, 3, 4, 1, outData, sunsetData))
+        {
+            frost.fitCoolingCoefficient(outData, 10000, float(0.001), float(0), float(10), outCoeff);
+            //statistics::weightedMultiRegressionLinear()
         /*
         result = frost.getForecastData(idList[i], i);
         if (result == FROSTFORECAST_OK)
         {
             frost.createCsvFile(idList[i]);
         }*/
+        }
     }
 }
