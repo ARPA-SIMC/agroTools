@@ -1,7 +1,8 @@
 #include "dialogComputeDroughtIndex.h"
 
 DialogComputeDroughtIndex::DialogComputeDroughtIndex(bool isMeteoGridLoaded, bool isMeteoPointLoaded, int yearPointsFrom, int yearPointsTo, int yearGridFrom, int yearGridTo)
-    : isMeteoGridLoaded(isMeteoGridLoaded), isMeteoPointLoaded(isMeteoPointLoaded)
+    : isMeteoGridLoaded(isMeteoGridLoaded), isMeteoPointLoaded(isMeteoPointLoaded),
+    yearPointsFrom(yearPointsFrom), yearPointsTo(yearPointsTo), yearGridFrom(yearGridFrom), yearGridTo(yearGridTo)
 {
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
@@ -50,20 +51,17 @@ DialogComputeDroughtIndex::DialogComputeDroughtIndex(bool isMeteoGridLoaded, boo
     if (pointsButton.isChecked())
     {
         isMeteoGrid = false;
-        yearFrom.setText(QString::number(yearPointsFrom));
-        yearTo.setText(QString::number(yearPointsTo));
-        yearFrom.setValidator(new QIntValidator(yearPointsFrom, yearPointsTo));
-        yearTo.setValidator(new QIntValidator(yearPointsFrom, yearPointsTo));
+        yearFrom.setText(QString("%1").arg(yearPointsFrom));
+        yearTo.setText(QString("%1").arg(yearPointsTo));
     }
     else if (gridButton.isChecked())
     {
         isMeteoGrid = true;
-        yearFrom.setText(QString::number(yearGridFrom));
-        yearTo.setText(QString::number(yearGridTo));
-        yearFrom.setValidator(new QIntValidator(yearGridFrom, yearGridTo));
-        yearTo.setValidator(new QIntValidator(yearGridFrom, yearGridTo));
+        yearFrom.setText(QString("%1").arg(yearGridFrom));
+        yearTo.setText(QString("%1").arg(yearGridTo));
     }
-
+    yearFrom.setValidator(new QIntValidator(100, 3000));
+    yearTo.setValidator(new QIntValidator(100, 3000));
     targetLayout.addWidget(&pointsButton);
     targetLayout.addWidget(&gridButton);
     targetGroupBox->setLayout(&targetLayout);
@@ -90,6 +88,8 @@ DialogComputeDroughtIndex::DialogComputeDroughtIndex(bool isMeteoGridLoaded, boo
 
     connect(&buttonBox, &QDialogButtonBox::accepted, [=](){ this->done(true); });
     connect(&buttonBox, &QDialogButtonBox::rejected, [=](){ this->done(false); });
+    connect(&pointsButton, &QRadioButton::clicked, [=](){ this->targetChange(); });
+    connect(&gridButton, &QRadioButton::clicked, [=](){ this->targetChange(); });
     connect(&listIndex, &QListWidget::itemClicked, [=](QListWidgetItem* item){ this->indexClicked(item); });
 
     layoutOk->addWidget(&buttonBox);
@@ -114,6 +114,24 @@ void DialogComputeDroughtIndex::indexClicked(QListWidgetItem* item)
     Q_UNUSED(item);
 }
 
+void DialogComputeDroughtIndex::targetChange()
+{
+    if (pointsButton.isChecked())
+    {
+        isMeteoGrid = false;
+        yearFrom.setText(QString("%1").arg(yearPointsFrom));
+        yearTo.setText(QString("%1").arg(yearPointsTo));
+
+    }
+    else if (gridButton.isChecked())
+    {
+        isMeteoGrid = true;
+        yearFrom.setText(QString("%1").arg(yearGridFrom));
+        yearTo.setText(QString("%1").arg(yearGridTo));
+
+    }
+}
+
 void DialogComputeDroughtIndex::done(bool res)
 {
     if (res) // ok
@@ -127,6 +145,22 @@ void DialogComputeDroughtIndex::done(bool res)
         {
             QMessageBox::information(nullptr, "Invalid interval", "First reference year should be <= last reference year ");
             return;
+        }
+        if (!isMeteoGrid)
+        {
+            if (yearFrom.text().toInt() < yearPointsFrom || yearTo.text().toInt() > yearPointsTo)
+            {
+                QMessageBox::information(nullptr, "Invalid interval", QString("Meteo Point reference years outside interval %1 - %2").arg(yearPointsFrom).arg(yearPointsTo));
+                return;
+            }
+        }
+        else
+        {
+            if (yearFrom.text().toInt() < yearGridFrom || yearTo.text().toInt() > yearGridTo)
+            {
+                QMessageBox::information(nullptr, "Invalid interval", QString("Meteo Grid reference years outside interval %1 - %2").arg(yearGridFrom).arg(yearGridTo));
+                return;
+            }
         }
         QDialog::done(QDialog::Accepted);
         return;

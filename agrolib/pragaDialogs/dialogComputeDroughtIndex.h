@@ -12,6 +12,7 @@ public:
     ~DialogComputeDroughtIndex();
 
     void indexClicked(QListWidgetItem* item);
+    void targetChange();
     void done(bool res);
     QString getIndex() const;
     int getYearFrom() const;
@@ -21,6 +22,10 @@ private:
     bool isMeteoPointLoaded;
     bool isMeteoGridLoaded;
     bool isMeteoGrid;
+    int yearPointsFrom;
+    int yearPointsTo;
+    int yearGridFrom;
+    int yearGridTo;
     QRadioButton pointsButton;
     QRadioButton gridButton;
     QListWidget listIndex;
