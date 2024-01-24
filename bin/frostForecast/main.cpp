@@ -78,10 +78,19 @@ int main(int argc, char *argv[])
         std::vector <std::vector <float>> outData;
         std::vector <std::vector <float>> sunsetData;
         std::vector <float> outCoeff;
+        std::vector <float> weights;
+        float regrConst, R2, stdError;
+        std::vector <float> regrCoeff;
+
         if (frost.getRadiativeCoolingHistory(idList[i], 5, 6, 3, 4, 1, outData, sunsetData))
         {
             frost.fitCoolingCoefficient(outData, 10000, float(0.001), float(0), float(10), outCoeff);
-            //statistics::weightedMultiRegressionLinear()
+
+            for (int j=0; j < sunsetData.size(); j++)
+                weights.push_back(1);
+
+            statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, sunsetData.size(), &regrConst, regrCoeff, sunsetData[0].size(), false, true, &R2, &stdError);
+
         /*
         result = frost.getForecastData(idList[i], i);
         if (result == FROSTFORECAST_OK)
