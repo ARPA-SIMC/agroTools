@@ -39,9 +39,8 @@ public:
     int createCsvFile(QString id);
     QList<QString> getIdList() const;
 
-    // calibration functions
-    bool getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, int monthIni, int monthFin, int timeZone, std::vector<std::vector<float> > &outData, std::vector<std::vector<float> > &sunsetData);
-    void fitCoolingCoefficient(std::vector<std::vector<float> > &hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector<float> &coeff);
+    bool getRadiativeCoolingHistory(QString id, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData);
+    bool calibrateModel(QString id);
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -58,15 +57,23 @@ private:
     QList<Crit3DMeteoPoint> meteoPointsList;
     QList<QString> idList;
     QList<QString> varList;
-    QList<QString> intercept;
-    QList<QString> parTss;
-    QList<QString> parRHss;
-    QList<QString> SE_intercept;
-    QList<QString> SE_parTss;
-    QList<QString> SE_parRHss;
+
+    std::vector <float> intercept;
+    std::vector <float> parTss;
+    std::vector <float> parRHss;
+    std::vector <float> SE_intercept;
+    std::vector <float> SE_parTss;
+    std::vector <float> SE_parRHss;
+
     int indexSunSet;
     int indexSunRise;
     QString errorString;
+
+    //calibration parameters
+    int monthIni;
+    int monthFin;
+    float thresholdTmin;
+    float thresholdTrange;
 
     QList<float> myForecast;
     QList<float> myForecastMin;

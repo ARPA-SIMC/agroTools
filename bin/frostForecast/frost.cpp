@@ -30,6 +30,11 @@ void Frost::initialize()
     SE_intercept.clear();
     SE_parTss.clear();
     SE_parRHss.clear();
+
+    monthIni = 1;
+    monthFin = 12;
+    thresholdTmin = 0;
+    thresholdTrange = 10;
 }
 
 void Frost::setSettingsFileName(const QString &value)
@@ -143,92 +148,101 @@ int Frost::readSettings()
         csvFilePath = path + QDir::cleanPath(csvFilePath);
     }
 
-    QString idTemp = projectSettings->value("id","").toString();
-    if (idTemp.isEmpty())
+    idList = projectSettings->value("id").toStringList();
+    if (idList.isEmpty())
     {
         logger.writeError ("missing id station");
         return ERROR_MISSINGPARAMETERS;
     }
-    else
-    {
-        idList = idTemp.split(",");
-    }
 
-    QString varTemp = projectSettings->value("var","").toString();
-    if (varTemp.isEmpty())
+    varList = projectSettings->value("var").toStringList();
+    if (varList.isEmpty())
     {
         logger.writeError ("missing var");
         return ERROR_MISSINGPARAMETERS;
     }
-    else
-    {
-        varList = varTemp.split(",");
-    }
 
     projectSettings->endGroup();
 
+    QStringList myList;
+
     // reuter_param
     projectSettings->beginGroup("reuter_param");
-    QString interceptTemp = projectSettings->value("intercept","").toString();
-    if (interceptTemp.isEmpty())
+
+    myList = projectSettings->value("intercept").toStringList();
+    if (myList.isEmpty())
     {
         logger.writeError ("missing reuter param intercept");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        intercept = interceptTemp.split(",");
+        intercept = StringListToFloat(myList);
     }
-    QString parTssTemp = projectSettings->value("parTss","").toString();
-    if (parTssTemp.isEmpty())
+
+    myList = projectSettings->value("parTss").toStringList();
+    if (myList.isEmpty())
     {
         logger.writeError ("missing reuter param parTss");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        parTss = parTssTemp.split(",");
+        parTss = StringListToFloat(myList);
     }
-    QString parRHssTemp = projectSettings->value("parRHss","").toString();
-    if (parRHssTemp.isEmpty())
+
+    myList = projectSettings->value("parRHss").toStringList();
+    if (myList.isEmpty())
     {
         logger.writeError ("missing reuter param parRHss");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        parRHss = parRHssTemp.split(",");
+        parRHss = StringListToFloat(myList);
     }
-    QString SEinterceptTemp = projectSettings->value("SE_intercept","").toString();
-    if (SEinterceptTemp.isEmpty())
+
+    myList = projectSettings->value("SE_intercept").toStringList();
+    if (myList.isEmpty())
     {
         logger.writeError ("missing reuter param SE_intercept");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        SE_intercept = SEinterceptTemp.split(",");
+        SE_intercept = StringListToFloat(myList);
     }
-    QString SEparTssTemp = projectSettings->value("SE_parTss","").toString();
-    if (SEparTssTemp.isEmpty())
+
+    myList = projectSettings->value("SE_parTss").toStringList();
+    if (myList.isEmpty())
     {
         logger.writeError ("missing reuter param SE_parTss");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        SE_parTss = SEparTssTemp.split(",");
+        SE_parTss = StringListToFloat(myList);
     }
-    QString SEparRHssTemp = projectSettings->value("SE_parRHss","").toString();
-    if (SEparRHssTemp.isEmpty())
+
+    myList = projectSettings->value("SE_parRHss").toStringList();
+    if (myList.isEmpty())
     {
         logger.writeError ("missing reuter param SE_parRHss");
         return ERROR_MISSINGPARAMETERS;
     }
     else
     {
-        SE_parRHss = SEparRHssTemp.split(",");
+        SE_parRHss = StringListToFloat(myList);
     }
+    projectSettings->endGroup();
+
+    // calibration
+    projectSettings->beginGroup("calibration");
+    monthIni = projectSettings->value("monthIni").toInt();
+    monthFin = projectSettings->value("monthFin").toInt();
+    thresholdTmin = projectSettings->value("thresholdTmin").toFloat();
+    thresholdTrange = projectSettings->value("thresholdTrange").toFloat();
+    projectSettings->endGroup();
 
     return FROSTFORECAST_OK;
 }
@@ -385,12 +399,12 @@ int Frost::getForecastData(QString id, int posIdList)
         int myTmpHour;
         QDateTime dateTimeTmp;
 
-        float myIntercept = intercept[posIdList].toFloat();
-        float myParTss = parTss[posIdList].toFloat();
-        float myParRHss = parRHss[posIdList].toFloat();
-        float mySEintercept = SE_intercept[posIdList].toFloat();
-        float mySEparTss = SE_parTss[posIdList].toFloat();
-        float mySEparRHss = SE_parRHss[posIdList].toFloat();
+        float myIntercept = intercept[posIdList];
+        float myParTss = parTss[posIdList];
+        float myParRHss = parRHss[posIdList];
+        float mySEintercept = SE_intercept[posIdList];
+        float mySEparTss = SE_parTss[posIdList];
+        float mySEparRHss = SE_parRHss[posIdList];
 
         for (int i = 0; i <= 1; i++)
         {
@@ -550,8 +564,51 @@ QList<QString> Frost::getIdList() const
     return idList;
 }
 
-bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, int monthIni, int monthFin, int timeZone,
-                                       std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData)
+void fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float>& coeff)
+{
+    float myMin, myMax;
+    float mySum1, mySum2;
+    float myFirstError = 0;
+    float mySecondError = 0;;
+    int iteration;
+    float Tsunset;
+    int time;
+
+    for(std::vector <float> hourlyT : hourly_series)
+    {
+
+        myMin = minValue;
+        myMax = maxValue;
+        iteration = 0;
+        time = 0;
+        do {
+
+            mySum1 = 0;
+            mySum2 = 0;
+            Tsunset = hourlyT[0];
+            time = 0;
+            for (float T : hourlyT)
+            {
+                mySum1 += pow((Tsunset - myMin * sqrt(time) - T), 2);
+                mySum2 += pow((Tsunset - myMax * sqrt(time) - T), 2);
+                time++;
+            }
+
+            myFirstError = sqrt(mySum1);
+            mySecondError = sqrt(mySum2);
+
+            if (myFirstError < mySecondError)
+                myMax = (myMin + myMax) / 2;
+            else
+                myMin = (myMin + myMax) / 2;
+
+        } while (fabs(myFirstError - mySecondError) > tolerance && iteration <= nrIterations);
+
+        coeff.push_back((myMin + myMax) / 2);
+    }
+}
+
+bool Frost::getRadiativeCoolingHistory(QString id, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData)
 {
     unsigned pos = 0;
     bool found = false;
@@ -616,7 +673,7 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
             {
                 hourSunSetLocal = round(sunPosition.set/3600);
                 hourSunRiseLocal = round(sunPosition.rise/3600);
-                hourSunRiseUtc = hourSunRiseLocal - timeZone;
+                hourSunRiseUtc = hourSunRiseLocal - gisSettings.timeZone;
                 dateIndexSunRiseUtc = i;
 
                 if (hourSunRiseUtc < 1)
@@ -630,7 +687,7 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
                     dateIndexSunRiseUtc--;
                 }
 
-                h = hourSunSetLocal - timeZone;
+                h = hourSunSetLocal - gisSettings.timeZone;
                 d = i-1;
 
                 isSunRise = false;
@@ -691,7 +748,7 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
                     if (h == hourSunRiseUtc && d == dateIndexSunRiseUtc)
                     {
                         isSunRise = true;
-                        if (dataPresent && minT < thresholdTmin && (maxT - minT >= thresholdTRange))
+                        if (dataPresent && minT < thresholdTmin && (maxT - minT >= thresholdTrange))
                         {
                             outData.push_back(hourlyT);
                             sunsetData.push_back(ssData);
@@ -709,47 +766,26 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
     return (outData.size() > 0);
 }
 
-
-void Frost::fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float>& coeff)
+bool Frost::calibrateModel(QString id)
 {
-    float myMin, myMax;
-    float mySum1, mySum2;
-    float myFirstError = 0;
-    float mySecondError = 0;;
-    int iteration;
-    float Tsunset;
-    int time;
+    std::vector <std::vector <float>> outData;
+    std::vector <std::vector <float>> sunsetData;
+    std::vector <float> outCoeff;
+    std::vector <float> weights;
+    float regrConst, R2, stdError;
+    std::vector <float> regrCoeff;
 
-    for(std::vector <float> hourlyT : hourly_series)
+    if (getRadiativeCoolingHistory(id, outData, sunsetData))
     {
+        fitCoolingCoefficient(outData, 10000, float(0.001), float(0), float(10), outCoeff);
 
-        myMin = minValue;
-        myMax = maxValue;
-        iteration = 0;
-        time = 0;
-        do {
+        for (int j=0; j < sunsetData.size(); j++)
+            weights.push_back(1);
 
-            mySum1 = 0;
-            mySum2 = 0;
-            Tsunset = hourlyT[0];
-            time = 0;
-            for (float T : hourlyT)
-            {
-                mySum1 += pow((Tsunset - myMin * sqrt(time) - T), 2);
-                mySum2 += pow((Tsunset - myMax * sqrt(time) - T), 2);
-                time++;
-            }
+        statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, &regrConst, regrCoeff, false, true, &R2, &stdError);
 
-            myFirstError = sqrt(mySum1);
-            mySecondError = sqrt(mySum2);
-
-            if (myFirstError < mySecondError)
-                myMax = (myMin + myMax) / 2;
-            else
-                myMin = (myMin + myMax) / 2;  
-
-        } while (fabs(myFirstError - mySecondError) > tolerance && iteration <= nrIterations);
-
-        coeff.push_back((myMin + myMax) / 2);
+        return true;
     }
+
+    return false;
 }

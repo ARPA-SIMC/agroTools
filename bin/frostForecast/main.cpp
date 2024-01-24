@@ -66,37 +66,24 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    /*result = frost.downloadMeteoPointsData();
+    /*
+    result = frost.downloadMeteoPointsData();
     if (result!=FROSTFORECAST_OK)
     {
         return result;
     }*/
 
+    bool calibrate = true;
+
     QList<QString> idList = frost.getIdList();
     for (int i = 0; i< idList.size(); i++)
     {
-        std::vector <std::vector <float>> outData;
-        std::vector <std::vector <float>> sunsetData;
-        std::vector <float> outCoeff;
-        std::vector <float> weights;
-        float regrConst, R2, stdError;
-        std::vector <float> regrCoeff;
+        if (calibrate) frost.calibrateModel(idList[i]);
 
-        if (frost.getRadiativeCoolingHistory(idList[i], 5, 6, 3, 4, 1, outData, sunsetData))
-        {
-            frost.fitCoolingCoefficient(outData, 10000, float(0.001), float(0), float(10), outCoeff);
-
-            for (int j=0; j < sunsetData.size(); j++)
-                weights.push_back(1);
-
-            statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, &regrConst, regrCoeff, false, true, &R2, &stdError);
-
-        /*
-        result = frost.getForecastData(idList[i], i);
+        /*result = frost.getForecastData(idList[i], i);
         if (result == FROSTFORECAST_OK)
         {
             frost.createCsvFile(idList[i]);
         }*/
-        }
     }
 }
