@@ -41,7 +41,7 @@ public:
 
     // calibration functions
     bool getRadiativeCoolingHistory(QString id, float thresholdTmin, float thresholdTRange, int monthIni, int monthFin, int timeZone, std::vector<std::vector<float> > &outData, std::vector<std::vector<float> > &sunsetData);
-    void fitCoolingCoefficient(std::vector<std::vector<float> > &hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float> coeff);
+    void fitCoolingCoefficient(std::vector<std::vector<float> > &hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector<float> &coeff);
 
 private:
     gis::Crit3DGisSettings gisSettings;

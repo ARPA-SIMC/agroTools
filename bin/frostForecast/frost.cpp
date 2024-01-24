@@ -710,7 +710,7 @@ bool Frost::getRadiativeCoolingHistory(QString id, float thresholdTmin, float th
 }
 
 
-void Frost::fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float> coeff)
+void Frost::fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int nrIterations, float tolerance, float minValue, float maxValue, std::vector <float>& coeff)
 {
     float myMin, myMax;
     float mySum1, mySum2;

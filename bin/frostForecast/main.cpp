@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
             for (int j=0; j < sunsetData.size(); j++)
                 weights.push_back(1);
 
-            statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, sunsetData.size(), &regrConst, regrCoeff, sunsetData[0].size(), false, true, &R2, &stdError);
+            statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, &regrConst, regrCoeff, false, true, &R2, &stdError);
 
         /*
         result = frost.getForecastData(idList[i], i);
