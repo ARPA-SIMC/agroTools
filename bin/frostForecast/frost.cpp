@@ -132,7 +132,10 @@ int Frost::readParameters()
     {
         SE_parRHss = StringListToFloat(myList);
     }
+
     projectSettings->endGroup();
+
+    return FROSTFORECAST_OK;
 }
 
 int Frost::readSettings()
@@ -249,8 +252,6 @@ int Frost::readSettings()
     }
 
     projectSettings->endGroup();
-
-
 
     // calibration
     projectSettings->beginGroup("calibration");
