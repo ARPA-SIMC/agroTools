@@ -17,6 +17,9 @@ public:
     QString getIndex() const;
     int getYearFrom() const;
     int getYearTo() const;
+    int getTimescale() const;
+
+    bool getIsMeteoGrid() const;
 
 private:
     bool isMeteoPointLoaded;
@@ -31,6 +34,8 @@ private:
     QListWidget listIndex;
     QLineEdit yearFrom;
     QLineEdit yearTo;
+    QComboBox timescaleList;
+    QLabel timescaleLabel;
 };
 
 #endif // DIALOGCOMPUTEDROUGHTINDEX_H
