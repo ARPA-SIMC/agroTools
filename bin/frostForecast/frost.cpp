@@ -23,13 +23,8 @@ void Frost::initialize()
     //xmlDbGrid = "";
     dbMeteoPointsName = "";
     errorString = "";
-    idList.clear();
-    intercept.clear();
-    parTss.clear();
-    parRHss.clear();
-    SE_intercept.clear();
-    SE_parTss.clear();
-    SE_parRHss.clear();
+
+    initializeFrostParam();
 
     monthIni = 1;
     monthFin = 12;
@@ -37,9 +32,107 @@ void Frost::initialize()
     thresholdTrange = 10;
 }
 
+void Frost::initializeFrostParam()
+{
+    idList.clear();
+
+    intercept.clear();
+    parTss.clear();
+    parRHss.clear();
+    SE_intercept.clear();
+    SE_parTss.clear();
+    SE_parRHss.clear();
+}
+
 void Frost::setSettingsFileName(const QString &value)
 {
     settingsFileName = value;
+}
+
+int Frost::readParameters()
+{
+    QSettings* projectSettings = new QSettings(settingsFileName, QSettings::IniFormat);
+
+    projectSettings->beginGroup("project");
+    idList = projectSettings->value("id").toStringList();
+    if (idList.isEmpty())
+    {
+        logger.writeError ("missing id station");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    projectSettings->endGroup();
+
+    QStringList myList;
+
+    // reuter_param
+    projectSettings->beginGroup("reuter_param");
+
+    myList = projectSettings->value("intercept").toStringList();
+    if (myList.isEmpty())
+    {
+        logger.writeError ("missing reuter param intercept");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        intercept = StringListToFloat(myList);
+    }
+
+    myList = projectSettings->value("parTss").toStringList();
+    if (myList.isEmpty())
+    {
+        logger.writeError ("missing reuter param parTss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        parTss = StringListToFloat(myList);
+    }
+
+    myList = projectSettings->value("parRHss").toStringList();
+    if (myList.isEmpty())
+    {
+        logger.writeError ("missing reuter param parRHss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        parRHss = StringListToFloat(myList);
+    }
+
+    myList = projectSettings->value("SE_intercept").toStringList();
+    if (myList.isEmpty())
+    {
+        logger.writeError ("missing reuter param SE_intercept");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        SE_intercept = StringListToFloat(myList);
+    }
+
+    myList = projectSettings->value("SE_parTss").toStringList();
+    if (myList.isEmpty())
+    {
+        logger.writeError ("missing reuter param SE_parTss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        SE_parTss = StringListToFloat(myList);
+    }
+
+    myList = projectSettings->value("SE_parRHss").toStringList();
+    if (myList.isEmpty())
+    {
+        logger.writeError ("missing reuter param SE_parRHss");
+        return ERROR_MISSINGPARAMETERS;
+    }
+    else
+    {
+        SE_parRHss = StringListToFloat(myList);
+    }
+    projectSettings->endGroup();
 }
 
 int Frost::readSettings()
@@ -148,13 +241,6 @@ int Frost::readSettings()
         csvFilePath = path + QDir::cleanPath(csvFilePath);
     }
 
-    idList = projectSettings->value("id").toStringList();
-    if (idList.isEmpty())
-    {
-        logger.writeError ("missing id station");
-        return ERROR_MISSINGPARAMETERS;
-    }
-
     varList = projectSettings->value("var").toStringList();
     if (varList.isEmpty())
     {
@@ -164,77 +250,7 @@ int Frost::readSettings()
 
     projectSettings->endGroup();
 
-    QStringList myList;
 
-    // reuter_param
-    projectSettings->beginGroup("reuter_param");
-
-    myList = projectSettings->value("intercept").toStringList();
-    if (myList.isEmpty())
-    {
-        logger.writeError ("missing reuter param intercept");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    else
-    {
-        intercept = StringListToFloat(myList);
-    }
-
-    myList = projectSettings->value("parTss").toStringList();
-    if (myList.isEmpty())
-    {
-        logger.writeError ("missing reuter param parTss");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    else
-    {
-        parTss = StringListToFloat(myList);
-    }
-
-    myList = projectSettings->value("parRHss").toStringList();
-    if (myList.isEmpty())
-    {
-        logger.writeError ("missing reuter param parRHss");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    else
-    {
-        parRHss = StringListToFloat(myList);
-    }
-
-    myList = projectSettings->value("SE_intercept").toStringList();
-    if (myList.isEmpty())
-    {
-        logger.writeError ("missing reuter param SE_intercept");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    else
-    {
-        SE_intercept = StringListToFloat(myList);
-    }
-
-    myList = projectSettings->value("SE_parTss").toStringList();
-    if (myList.isEmpty())
-    {
-        logger.writeError ("missing reuter param SE_parTss");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    else
-    {
-        SE_parTss = StringListToFloat(myList);
-    }
-
-    myList = projectSettings->value("SE_parRHss").toStringList();
-    if (myList.isEmpty())
-    {
-        logger.writeError ("missing reuter param SE_parRHss");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    else
-    {
-        SE_parRHss = StringListToFloat(myList);
-    }
-    projectSettings->endGroup();
 
     // calibration
     projectSettings->beginGroup("calibration");
@@ -286,7 +302,7 @@ int Frost::downloadMeteoPointsData()
     return FROSTFORECAST_OK;
 }
 
-int Frost::getForecastData(QString id, int posIdList)
+int Frost::getForecastData(int paramPos)
 {
     myForecast.clear();
     myForecastMax.clear();
@@ -298,18 +314,27 @@ int Frost::getForecastData(QString id, int posIdList)
     bool found = false;
     for (; meteoPointListpos< meteoPointsList.size(); meteoPointListpos++)
     {
-        if (meteoPointsList[meteoPointListpos].id == id.toStdString())
+        if (meteoPointsList[meteoPointListpos].id == idList[paramPos].toStdString())
         {
             found = true;
             break;
         }
     }
+
+    if (!found)
+    {
+        logger.writeError ("missing id " + QString::fromStdString(meteoPointsList[meteoPointListpos].id) +" into point_properties table");
+        return ERROR_DBPOINT;
+    }
+
+    Crit3DMeteoPoint* point = &meteoPointsList[meteoPointListpos];
+
     // get row and col
     //int row;
     //int col;
 
-    double lat = meteoPointsList[meteoPointListpos].latitude;
-    double lon = meteoPointsList[meteoPointListpos].longitude;
+    double lat = point->latitude;
+    double lon = point->longitude;
 
     //gis::getGridRowColFromXY(grid.gridStructure().header(), lon, lat, &row, &col);
 
@@ -322,15 +347,10 @@ int Frost::getForecastData(QString id, int posIdList)
     //myRadPoint.y = meteoPointsList[meteoPointListpos].point.utm.y;
     //myRadPoint.height = meteoPointsList[meteoPointListpos].point.z;
 
-    if (!found)
-    {
-        logger.writeError ("missing id "+id+" into point_properties table");
-        return ERROR_DBPOINT;
-    }
     // load meteo point observed data
-    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(runDate.addDays(-1)), getCrit3DDate(runDate.addDays(2)), &meteoPointsList[meteoPointListpos]))
+    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(runDate.addDays(-1)), getCrit3DDate(runDate.addDays(2)), point))
     {
-        logger.writeError ("id: "+id+" meteo point load hourly data error");
+        logger.writeError ("id: " + QString::fromStdString(point->id) + " meteo point load hourly data error");
         return ERROR_DBPOINT;
     }
     // load meteoGrid forecast data
@@ -366,7 +386,7 @@ int Frost::getForecastData(QString id, int posIdList)
         indexSunSet = myHourSunSetInteger;
         indexSunRise = 24 + myHourSunRiseInteger;
 
-        QDate firstDate = getQDate(meteoPointsList[meteoPointListpos].getMeteoPointHourlyValuesDate(0));
+        QDate firstDate = getQDate(point->getMeteoPointHourlyValuesDate(0));
         int myDateIndex = firstDate.daysTo(runDate);
         int myHour = myHourSunSetInteger - timeZone;
 
@@ -380,14 +400,14 @@ int Frost::getForecastData(QString id, int posIdList)
             myDateIndex = myDateIndex + 1;
             myHour = myHourSunSetInteger - 24;
         }
-        if (myDateIndex > meteoPointsList[meteoPointListpos].nrObsDataDaysH || myDateIndex < 0)
+        if (myDateIndex > point->nrObsDataDaysH || myDateIndex < 0)
         {
             logger.writeError ("Sunset hour: " + QString::number(myHourSunSetInteger) + " data not available");
             return ERROR_SUNSET;
         }
         QDate newDate = firstDate.addDays(myDateIndex);
-        float myTSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
-        float myRHSunSet = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
+        float myTSunSet = point->getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airTemperature);
+        float myRHSunSet = point->getMeteoPointValueH(getCrit3DDate(newDate), myHour, 0, airRelHumidity);
 
         if (myTSunSet == NODATA || myRHSunSet == NODATA)
         {
@@ -399,12 +419,12 @@ int Frost::getForecastData(QString id, int posIdList)
         int myTmpHour;
         QDateTime dateTimeTmp;
 
-        float myIntercept = intercept[posIdList];
-        float myParTss = parTss[posIdList];
-        float myParRHss = parRHss[posIdList];
-        float mySEintercept = SE_intercept[posIdList];
-        float mySEparTss = SE_parTss[posIdList];
-        float mySEparRHss = SE_parRHss[posIdList];
+        float myIntercept = intercept[paramPos];
+        float myParTss = parTss[paramPos];
+        float myParRHss = parRHss[paramPos];
+        float mySEintercept = SE_intercept[paramPos];
+        float mySEparTss = SE_parTss[paramPos];
+        float mySEparRHss = SE_parRHss[paramPos];
 
         for (int i = 0; i <= 1; i++)
         {
@@ -423,12 +443,12 @@ int Frost::getForecastData(QString id, int posIdList)
                     myTmpHour = myTmpHour - 24;
                 }
                 // observed values (local time)
-                if (myDateTmpIndex <= meteoPointsList[meteoPointListpos].nrObsDataDaysH && myDateTmpIndex >= 0)
+                if (myDateTmpIndex <= point->nrObsDataDaysH && myDateTmpIndex >= 0)
                 {
                     QDate dateTmp = firstDate.addDays(myDateTmpIndex);
                     dateTimeTmp = QDateTime(dateTmp,QTime(myTmpHour,0,0));
                     myDate.append(QDateTime(runDate.addDays(i),QTime(j,0,0)));
-                    float myT = meteoPointsList[meteoPointListpos].getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
+                    float myT = point->getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
                     if (myT != NODATA)
                     {
                         myObsData.append(myT);
@@ -608,34 +628,17 @@ void fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int
     }
 }
 
-bool Frost::getRadiativeCoolingHistory(QString id, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData)
+bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData)
 {
-    unsigned pos = 0;
-    bool found = false;
-    for (; pos< meteoPointsList.size(); pos++)
-    {
-        if (meteoPointsList[pos].id == id.toStdString())
-        {
-            found = true;
-            break;
-        }
-    }
-
-    if (!found)
-    {
-        logger.writeError ("missing id "+id+" into point_properties table");
-        return false;
-    }
-
     Crit3DMeteoPoint* point = &meteoPointsList[pos];
 
-    QDateTime firstTime = meteoPointsDbHandler.getFirstDate(hourly, id.toStdString());
-    QDateTime lastTime = meteoPointsDbHandler.getLastDate(hourly, id.toStdString());
+    QDateTime firstTime = meteoPointsDbHandler.getFirstDate(hourly, point->id);
+    QDateTime lastTime = meteoPointsDbHandler.getLastDate(hourly, point->id);
 
     // load meteo point observed data
     if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(firstTime.date()), getCrit3DDate(lastTime.date()), point))
     {
-        logger.writeError ("id: "+id+" meteo point load hourly data error");
+        logger.writeError ("id: " + QString::fromStdString(point->id) +" meteo point load hourly data error");
         return false;
     }
 
@@ -766,26 +769,45 @@ bool Frost::getRadiativeCoolingHistory(QString id, std::vector<std::vector<float
     return (outData.size() > 0);
 }
 
-bool Frost::calibrateModel(QString id)
+bool Frost::calibrateModel(int idPos)
 {
     std::vector <std::vector <float>> outData;
     std::vector <std::vector <float>> sunsetData;
     std::vector <float> outCoeff;
     std::vector <float> weights;
-    float regrConst, R2, stdError;
-    std::vector <float> regrCoeff;
+    float regrConst, R2, stdError, regrConstStdError;
+    std::vector <float> regrCoeff, regrCoeffStdError;
 
-    if (getRadiativeCoolingHistory(id, outData, sunsetData))
+    if (getRadiativeCoolingHistory(idPos, outData, sunsetData))
     {
         fitCoolingCoefficient(outData, 10000, float(0.001), float(0), float(10), outCoeff);
 
         for (int j=0; j < sunsetData.size(); j++)
             weights.push_back(1);
 
-        statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, &regrConst, regrCoeff, false, true, &R2, &stdError);
+        statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, &regrConst, regrCoeff, false, true, &R2, &stdError, &regrConstStdError, regrCoeffStdError);
+
+        idList.push_back(QString::fromStdString(meteoPointsList[idPos].id));
+
+        intercept.push_back(regrConst);
+        parTss.push_back(regrCoeff[0]);
+        parRHss.push_back(regrCoeff[1]);
+        SE_intercept.push_back(regrConstStdError);
+        SE_parTss.push_back(regrCoeffStdError[0]);
+        SE_parRHss.push_back(regrCoeffStdError[1]);
 
         return true;
     }
 
     return false;
+}
+
+QList<Crit3DMeteoPoint> Frost::getMeteoPointsList() const
+{
+    return meteoPointsList;
+}
+
+void Frost::setMeteoPointsList(const QList<Crit3DMeteoPoint> &newMeteoPointsList)
+{
+    meteoPointsList = newMeteoPointsList;
 }

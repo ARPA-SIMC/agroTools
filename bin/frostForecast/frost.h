@@ -29,18 +29,23 @@ public:
     Logger logger;
 
     void initialize();
+    void initializeFrostParam();
     int readSettings();
+    int readParameters();
     void setSettingsFileName(const QString &value);
     int downloadMeteoPointsData();
     void setRunDate(const QDate &value);
-    int getForecastData(QString id, int posIdList);
+    int getForecastData(int paramPos);
     float coeffReuter(float a0, float a1, float a2, float t, float RH);
     float t_Reuter(float d, float deltaTime, float tIni);
     int createCsvFile(QString id);
     QList<QString> getIdList() const;
 
-    bool getRadiativeCoolingHistory(QString id, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData);
-    bool calibrateModel(QString id);
+    bool getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData);
+    bool calibrateModel(int idPos);
+
+    QList<Crit3DMeteoPoint> getMeteoPointsList() const;
+    void setMeteoPointsList(const QList<Crit3DMeteoPoint> &newMeteoPointsList);
 
 private:
     gis::Crit3DGisSettings gisSettings;

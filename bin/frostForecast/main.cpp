@@ -66,6 +66,12 @@ int main(int argc, char *argv[])
         return result;
     }
 
+    result = frost.readParameters();
+    if (result!=FROSTFORECAST_OK)
+    {
+        return result;
+    }
+
     /*
     result = frost.downloadMeteoPointsData();
     if (result!=FROSTFORECAST_OK)
@@ -75,15 +81,28 @@ int main(int argc, char *argv[])
 
     bool calibrate = true;
 
-    QList<QString> idList = frost.getIdList();
-    for (int i = 0; i< idList.size(); i++)
-    {
-        if (calibrate) frost.calibrateModel(idList[i]);
+    int i = 0;
 
-        /*result = frost.getForecastData(idList[i], i);
+    for (int i=0; i < frost.getMeteoPointsList().size(); i++)
+    {
+
+        if (calibrate)
+        {
+            frost.initializeFrostParam();
+            frost.calibrateModel(i);
+            result = frost.readParameters();
+            if (result!=FROSTFORECAST_OK) return result;
+        }
+    }
+
+    QList<QString> idList = frost.getIdList();
+
+    for (i=0; i < idList.size(); i++)
+    {
+        result = frost.getForecastData(i);
         if (result == FROSTFORECAST_OK)
         {
             frost.createCsvFile(idList[i]);
-        }*/
+        }
     }
 }
