@@ -138,6 +138,24 @@ int Frost::readParameters()
     return FROSTFORECAST_OK;
 }
 
+void Frost::saveParameters()
+{
+    QSettings* projectSettings = new QSettings(settingsFileName, QSettings::IniFormat);
+
+    projectSettings->beginGroup("project");
+    projectSettings->setValue("id", idList);
+    projectSettings->endGroup();
+
+    projectSettings->beginGroup("reuter_param");
+    projectSettings->setValue("intercept", FloatVectorToStringList(intercept));
+    projectSettings->setValue("parTss", FloatVectorToStringList(parTss));
+    projectSettings->setValue("parRHss", FloatVectorToStringList(parRHss));
+    projectSettings->setValue("SE_intercept", FloatVectorToStringList(SE_intercept));
+    projectSettings->setValue("SE_parTss", FloatVectorToStringList(SE_parTss));
+    projectSettings->setValue("SE_parRHss", FloatVectorToStringList(SE_parRHss));
+    projectSettings->endGroup();
+}
+
 int Frost::readSettings()
 {
     QSettings* projectSettings;

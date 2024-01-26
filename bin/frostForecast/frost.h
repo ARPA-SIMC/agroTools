@@ -32,6 +32,7 @@ public:
     void initializeFrostParam();
     int readSettings();
     int readParameters();
+    void saveParameters();
     void setSettingsFileName(const QString &value);
     int downloadMeteoPointsData();
     void setRunDate(const QDate &value);

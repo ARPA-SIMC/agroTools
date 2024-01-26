@@ -6,11 +6,12 @@
 
 // uncomment to execute test
 #define TEST
+#define TEST_CALIBRATE
 
 void usage()
 {
     std::cout << "frostForecast" << std::endl
-              << "Usage: frostForecast <project.ini> [date]" << std::endl;
+              << "Usage: frostForecast <project.ini> [date] [-calibrate]" << std::endl;
     std::cout << std::flush;
 }
 
@@ -20,6 +21,7 @@ int main(int argc, char *argv[])
     QString settingsFileName;
     QString runDateStr;
     Frost frost;
+    bool calibrateModel = false;
 
     if (argc <= 2)
     {
@@ -34,6 +36,10 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGFILE;
         #endif
+
+        #ifdef TEST_CALIBRATE
+            calibrateModel = true;
+        #endif
     }
     else
     {
@@ -45,6 +51,9 @@ int main(int argc, char *argv[])
             return ERROR_MISSINGFILE;
         }
         runDateStr = argv[2];
+
+        if (argc == 3 && strcmp(argv[3], "-calibrate") == 0)
+            calibrateModel = true;
     }
 
     // check date
@@ -61,16 +70,7 @@ int main(int argc, char *argv[])
     frost.logger.writeInfo ("settingsFileName: " + settingsFileName);
 
     int result = frost.readSettings();
-    if (result!=FROSTFORECAST_OK)
-    {
-        return result;
-    }
-
-    result = frost.readParameters();
-    if (result!=FROSTFORECAST_OK)
-    {
-        return result;
-    }
+    if (result!=FROSTFORECAST_OK) return result;
 
     /*
     result = frost.downloadMeteoPointsData();
@@ -79,21 +79,21 @@ int main(int argc, char *argv[])
         return result;
     }*/
 
-    bool calibrate = true;
-
     int i = 0;
+    bool calibrationOk = false;
 
-    for (int i=0; i < frost.getMeteoPointsList().size(); i++)
+    if (calibrateModel)
     {
+        frost.initializeFrostParam();
 
-        if (calibrate)
-        {
-            frost.initializeFrostParam();
-            frost.calibrateModel(i);
-            result = frost.readParameters();
-            if (result!=FROSTFORECAST_OK) return result;
-        }
+        for (int i=0; i < frost.getMeteoPointsList().size(); i++)
+            calibrationOk = (frost.calibrateModel(i) || calibrationOk);
+
+        if (calibrationOk) frost.saveParameters();
     }
+
+    result = frost.readParameters();
+    if (result != FROSTFORECAST_OK) return result;
 
     QList<QString> idList = frost.getIdList();
 
@@ -101,8 +101,11 @@ int main(int argc, char *argv[])
     {
         result = frost.getForecastData(i);
         if (result == FROSTFORECAST_OK)
-        {
             frost.createCsvFile(idList[i]);
-        }
+        else
+            return result;
     }
+
+    return FROSTFORECAST_OK;
+
 }
