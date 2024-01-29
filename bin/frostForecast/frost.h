@@ -61,8 +61,8 @@ private:
     //Crit3DMeteoGridDbHandler grid;
     Crit3DMeteoPointsDbHandler meteoPointsDbHandler;
     QList<Crit3DMeteoPoint> meteoPointsList;
-    QList<QString> idList;
-    QList<QString> varList;
+    QStringList idList;
+    QStringList varList;
 
     std::vector <float> intercept;
     std::vector <float> parTss;

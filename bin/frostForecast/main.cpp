@@ -5,8 +5,8 @@
 #include "frost.h"
 
 // uncomment to execute test
-#define TEST
-#define TEST_CALIBRATE
+// #define TEST
+// #define TEST_CALIBRATE
 
 void usage()
 {
