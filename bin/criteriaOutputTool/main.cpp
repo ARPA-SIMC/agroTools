@@ -11,9 +11,9 @@
 
 void usage()
 {
-    std::cout << "CriteriaOutput V1.7.1" << std::endl;
-    std::cout << "Shell command to manage the agro-hydrological output of CRITERIA1D-GEO"<< std::endl;
-    std::cout << "\nUsage:\nCriteriaOutput DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION projectName.ini [computationDate]\n" << std::endl;
+    std::cout << std::endl << "Usage:" << std::endl
+              << "CriteriaOutput DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION projectName.ini [computationDate]" << std::endl
+              << "- computationDate must be in YYYY-MM-DD format" << std::endl << std::endl;
     std::cout << std::flush;
 }
 
@@ -21,6 +21,9 @@ void usage()
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
+    std::cout << "CriteriaOutput V1.7.2" << std::endl;
+    std::cout << "*** Shell command to manage the agro-hydrological output of CRITERIA1D-GEO" << std::endl;
+
     CriteriaOutputProject myProject;
 
     QString appPath = myApp.applicationDirPath() + "/";
