@@ -120,7 +120,7 @@ Crit3DHomogeneityWidget::Crit3DHomogeneityWidget(Crit3DMeteoPointsDbHandler* met
 
     for (int i = 0; i<jointStationsMyMp.size(); i++)
     {
-        int indexMp;
+        int indexMp = -1;
         for (int j = 0; j<this->meteoPointsNearDistanceList.size(); j++)
         {
             if (this->meteoPointsNearDistanceList[j].id == jointStationsMyMp[i].toStdString())
@@ -129,11 +129,14 @@ Crit3DHomogeneityWidget::Crit3DHomogeneityWidget(Crit3DMeteoPointsDbHandler* met
                 break;
             }
         }
-        jointStationsSelected.addItem(QString::fromStdString(this->meteoPointsNearDistanceList[indexMp].id)+" "+QString::fromStdString(this->meteoPointsNearDistanceList[indexMp].name));
         // load all Data
         QDate firstDaily = meteoPointsDbHandler->getFirstDate(daily, jointStationsMyMp[i].toStdString()).date();
         QDate lastDaily = meteoPointsDbHandler->getLastDate(daily, jointStationsMyMp[i].toStdString()).date();
-        meteoPointsDbHandler->loadDailyData(getCrit3DDate(firstDaily), getCrit3DDate(lastDaily), &this->meteoPointsNearDistanceList[indexMp]);
+        if (indexMp != -1)
+        {
+            jointStationsSelected.addItem(QString::fromStdString(this->meteoPointsNearDistanceList[indexMp].id)+" "+QString::fromStdString(this->meteoPointsNearDistanceList[indexMp].name));
+            meteoPointsDbHandler->loadDailyData(getCrit3DDate(firstDaily), getCrit3DDate(lastDaily), &this->meteoPointsNearDistanceList[indexMp]);
+        }
     }
 
     for (int i = 1; i<this->meteoPointsNearDistanceList.size(); i++)
@@ -345,7 +348,86 @@ void Crit3DHomogeneityWidget::plotAnnualSeries()
     meteoPointTemp.latitude = meteoPointsNearDistanceList[0].latitude;
     meteoPointTemp.elaboration = meteoPointsNearDistanceList[0].elaboration;
     QDate lastDateCopyed = meteoPointsDbHandler->getLastDate(daily, meteoPointsNearDistanceList[0].id).date();
-    bool dataAlreadyLoaded;
+    meteoPointTemp.nrObsDataDaysD = 0;
+    bool dataAlreadyLoaded = false;
+    int validYears = 0;
+    std::vector<int> vectorYears;
+    validYears = computeAnnualSeriesOnPointFromDaily(&myError, meteoPointsDbHandler, nullptr,
+                                                         &meteoPointTemp, &clima, false, isAnomaly, meteoSettings, myAnnualSeries, vectorYears, dataAlreadyLoaded);
+
+    if (validYears == 0)
+    {
+        myAnnualSeries.clear();
+        return;
+    }
+    bool yearsMissing = false;
+    if (vectorYears[vectorYears.size()-1] - vectorYears[0] + 1 != vectorYears.size()-1)
+    {
+        yearsMissing = true;
+    }
+
+    QDate endDate(QDate(lastYear, 12, 31));
+    int numberOfDays = meteoPointsNearDistanceList[0].obsDataD[0].date.daysTo(getCrit3DDate(endDate))+1;
+    meteoPointTemp.initializeObsDataD(numberOfDays, meteoPointsNearDistanceList[0].obsDataD[0].date);
+    meteoPointTemp.initializeObsDataDFromMp(meteoPointsNearDistanceList[0].nrObsDataDaysD, meteoPointsNearDistanceList[0].obsDataD[0].date, meteoPointsNearDistanceList[0]);
+    if (idPointsJointed.size() != 1 && (lastDateCopyed < lastDate || yearsMissing))
+    {
+        // mancano dei dati, controllare joint stations
+        if (yearsMissing)
+        {
+            std::vector<int> vectorMissing;
+            int posMissing, n;
+            for (int y = 0; y<vectorYears.size()-1; y++)
+            {
+                posMissing = vectorYears[y+1]-vectorYears[y]-1;
+                n = 1;
+                while (posMissing != 0)
+                {
+                    vectorMissing.push_back(vectorYears[y]+n);
+                    posMissing = posMissing - 1;
+                    n = n + 1;
+                }
+            }
+            for (int y = 0; y < vectorMissing.size(); y++)
+            {
+                for (int i = 1; i<idPointsJointed.size(); i++)
+                {
+                    // TO DO
+                }
+            }
+        }
+        if (lastDateCopyed < lastDate)
+        {
+            for (int i = 1; i<idPointsJointed.size(); i++)
+            {
+                QDate lastDateNew = meteoPointsDbHandler->getLastDate(daily, idPointsJointed[i]).date();
+                if (lastDateNew > lastDateCopyed)
+                {
+                    int indexMp;
+                    for (int j = 0; j<meteoPointsNearDistanceList.size(); j++)
+                    {
+                        if (meteoPointsNearDistanceList[j].id == idPointsJointed[i])
+                        {
+                            indexMp = j;
+                            break;
+                        }
+                    }
+                    for (QDate myDate=lastDateCopyed.addDays(1); myDate<=lastDateNew; myDate=myDate.addDays(1))
+                    {
+                        setMpValues(meteoPointsNearDistanceList[indexMp], &meteoPointTemp, myDate, myVar, meteoSettings);
+                    }
+                }
+                lastDateCopyed = lastDateNew;
+            }
+        }
+        dataAlreadyLoaded = true;
+        vectorYears.clear();
+        validYears = computeAnnualSeriesOnPointFromDaily(&myError, meteoPointsDbHandler, nullptr,
+                                                             &meteoPointTemp, &clima, false, isAnomaly, meteoSettings, myAnnualSeries, vectorYears, dataAlreadyLoaded);
+    }
+
+
+    /*
     if (idPointsJointed.size() == 1 || lastDateCopyed >= lastDate)
     {
         // no joint station inside date interval
@@ -386,8 +468,10 @@ void Crit3DHomogeneityWidget::plotAnnualSeries()
         dataAlreadyLoaded = true;
     }
 
+    std::vector<int> vectorYears;
     int validYears = computeAnnualSeriesOnPointFromDaily(&myError, meteoPointsDbHandler, nullptr,
-                                             &meteoPointTemp, &clima, false, isAnomaly, meteoSettings, myAnnualSeries, dataAlreadyLoaded);
+                                             &meteoPointTemp, &clima, false, isAnomaly, meteoSettings, myAnnualSeries, vectorYears, dataAlreadyLoaded);
+*/
     formInfo.close();
 
     if (validYears > 0)
@@ -396,7 +480,7 @@ void Crit3DHomogeneityWidget::plotAnnualSeries()
         int count = 0;
         int validData = 0;
         int yearsLength = lastYear - firstYear;
-        int nYearsToAdd;
+        int nYearsToAdd = 0;
         std::vector<float> seriesToView = myAnnualSeries;
         if (yearsLength > 15)
         {
@@ -437,6 +521,7 @@ void Crit3DHomogeneityWidget::plotAnnualSeries()
         averageValue = sum / validYears;
         // draw
         annualSeriesChartView->draw(years, seriesToView);
+        return;
     }
     else
     {
@@ -801,8 +886,9 @@ void Crit3DHomogeneityWidget::findReferenceStations()
             dataAlreadyLoaded = true;
         }
         std::vector<float> mpToBeComputedAnnualSeries;
+        std::vector<int> vectorYears;
         int validYears = computeAnnualSeriesOnPointFromDaily(&myError, meteoPointsDbHandler, nullptr,
-                                                 &meteoPointTemp, &clima, false, false, meteoSettings, mpToBeComputedAnnualSeries, dataAlreadyLoaded);
+                                                 &meteoPointTemp, &clima, false, false, meteoSettings, mpToBeComputedAnnualSeries, vectorYears, dataAlreadyLoaded);
         if (validYears != 0)
         {
             if ( (float)validYears / (float)(lastYear - firstYear + 1) > meteoSettings->getMinimumPercentage() / 100.f)
