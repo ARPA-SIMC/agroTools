@@ -1,7 +1,6 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <iostream>
-#include "utilities.h"
 #include "frost.h"
 
 // uncomment to execute test
