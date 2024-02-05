@@ -11,8 +11,8 @@
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
-              << "CriteriaOutput DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION projectName.ini [computationDate]" << std::endl
-              << "- computationDate must be in YYYY-MM-DD format" << std::endl << std::endl;
+              << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
+              << "Notes: computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
     std::cout << std::flush;
 }
 
