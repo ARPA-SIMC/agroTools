@@ -2,34 +2,36 @@
 
 ## CriteriaOutput tool
 CriteriaOutput is a shell command to manage the agro-hydrological output of [CRITERIA1D / GEO](https://github.com/ARPA-SIMC/criteria1d).  
-The output of CRITERIA is stored in a SQLite database and can be exported to CSV, shapefile or raster format, using this tool.
+The output of CRITERIA is stored in a SQLite database and can be exported to CSV, shapefile, NetCDF or geo-raster format, using this tool.
 
 #### Usage
 
-CriteriaOutput CSV | SHAPEFILE | MAPS | NETCDF | AGGREGATION projectName.ini [date]
+>CriteriaOutput <DTX | CSV | SHAPEFILE | MAPS | NETCDF | AGGREGATION> <projectName.ini> [computationDate]
+
+ComputationDate must be in YYYY-MM-DD format, default date is today.
 
 #### Example of project.ini
 
-[software]  
+>[software]  
 software="CriteriaOutput"
 
-[project]  
+>[project]  
 name=DEFICIT MACRO AREE  
 db_units=./data/units.db  
 db_crop=./data/crop.db  
 db_data=./output/incolto.db  
 add_date_to_log=false  
 
-[csv]  
+>[csv]  
 variable_list=./csvOutputList/nitrati.csv  
 csv_output=./output/nitrati  
-add_date_to_filename = false  
+add_date_to_filename = false 
 
-[shapefile]  
+>[shapefile]  
 UCM=./SHAPE/UCM/UCM.shp  
 field_list=./csvOutputList/nitratiToShape.csv  
 
-[aggregation]  
+>[aggregation]  
 aggregation_shape=./SHAPE/ZONE_QA/zone_QA.shp  
 shape_field=idQA  
 aggregation_list=./csvOutputList/deficitAggregation.csv  
