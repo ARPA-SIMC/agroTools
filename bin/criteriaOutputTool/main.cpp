@@ -3,7 +3,6 @@
 
 #include "commonConstants.h"
 #include "criteriaOutputProject.h"
-#include "utilities.h"
 #include <iostream>
 
 // uncomment to compute test
@@ -21,7 +20,7 @@ void usage()
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
-    std::cout << "CriteriaOutput V1.7.2" << std::endl;
+    std::cout << "CriteriaOutput V1.7.3" << std::endl;
     std::cout << "*** Shell command to manage the agro-hydrological output of CRITERIA1D-GEO" << std::endl;
 
     CriteriaOutputProject myProject;
