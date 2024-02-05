@@ -619,7 +619,6 @@ void fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int
         myMin = minValue;
         myMax = maxValue;
         iteration = 0;
-        time = 0;
         do {
 
             mySum1 = 0;
@@ -678,7 +677,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
     std::vector <float> hourlyT;
     float T;
     float minT, maxT;
-    bool dataPresent;
+    bool dataPresent, dataSunsetPresent;
     std::vector <float> ssData;
     float RH_SS;
     bool isSunRise, isSunset;
@@ -717,6 +716,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                 minT = NODATA;
                 maxT = NODATA;
                 dataPresent = false;
+                dataSunsetPresent = false;
                 hourlyT.clear();
 
                 while (! isSunRise)
@@ -749,6 +749,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                         {
                             ssData.push_back(T);
                             ssData.push_back(RH_SS);
+                            dataSunsetPresent = true;
                         }
                     }
 
@@ -770,7 +771,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                     if (h == hourSunRiseUtc && d == dateIndexSunRiseUtc)
                     {
                         isSunRise = true;
-                        if (dataPresent && minT < thresholdTmin && (maxT - minT >= thresholdTrange))
+                        if (dataPresent && dataSunsetPresent && minT < thresholdTmin && (maxT - minT >= thresholdTrange))
                         {
                             outData.push_back(hourlyT);
                             sunsetData.push_back(ssData);
