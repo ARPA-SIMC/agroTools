@@ -5,12 +5,11 @@
 
 // uncomment to execute test
 // #define TEST
-// #define TEST_CALIBRATE
 
 void usage()
 {
     std::cout << "frostForecast" << std::endl
-              << "Usage: frostForecast <project.ini> [date] [-calibrate]" << std::endl;
+              << "Usage: frostForecast <project.ini> [-calibrate] [-date]" << std::endl;
     std::cout << std::flush;
 }
 
@@ -35,10 +34,6 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGFILE;
         #endif
-
-        #ifdef TEST_CALIBRATE
-            calibrateModel = true;
-        #endif
     }
     else
     {
@@ -49,60 +44,68 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGFILE;
         }
-        runDateStr = argv[2];
 
-        if (argc == 3 && strcmp(argv[3], "-calibrate") == 0)
+        if (strcmp(argv[2], "-calibrate") == 0)
             calibrateModel = true;
-    }
-
-    // check date
-    QDate runDate = QDate::fromString(runDateStr, "yyyy-MM-dd");
-    if (! runDate.isValid())
-    {
-        frost.logger.writeError("Wrong date format. Requested format is: YYYY-MM-DD");
-        return ERROR_WRONGDATE;
+        else
+            runDateStr = argv[2];
     }
 
     frost.initialize();
     frost.setSettingsFileName(settingsFileName);
-    frost.setRunDate(runDate);
+
     frost.logger.writeInfo ("settingsFileName: " + settingsFileName);
 
     int result = frost.readSettings();
     if (result!=FROSTFORECAST_OK) return result;
 
-    /*
-    result = frost.downloadMeteoPointsData();
-    if (result!=FROSTFORECAST_OK)
-    {
-        return result;
-    }*/
-
     int i = 0;
-    bool calibrationOk = false;
 
+    bool calibrationOk = false;
     if (calibrateModel)
     {
+        QList<Crit3DMeteoPoint> pointList = frost.getMeteoPointsList();
+
         frost.initializeFrostParam();
 
-        for (int i=0; i < frost.getMeteoPointsList().size(); i++)
-            calibrationOk = (frost.calibrateModel(i) || calibrationOk);
+        for (int i=0; i < pointList.size(); i++)
+        {
+            if (frost.calibrateModel(i))
+            {
+                calibrationOk = true;
+                frost.logger.writeInfo ("calibration done for point: " + QString::fromStdString(pointList[i].id));
+            }
+        }
 
         if (calibrationOk) frost.saveParameters();
     }
-
-    result = frost.readParameters();
-    if (result != FROSTFORECAST_OK) return result;
-
-    QList<QString> idList = frost.getIdList();
-
-    for (i=0; i < idList.size(); i++)
+    else
     {
-        result = frost.getForecastData(i);
-        if (result == FROSTFORECAST_OK)
-            frost.createCsvFile(idList[i]);
-        else
-            return result;
+        // check date
+        QDate runDate = QDate::fromString(runDateStr, "yyyy-MM-dd");
+        if (! runDate.isValid())
+        {
+            frost.logger.writeError("Wrong date format. Requested format is: YYYY-MM-DD");
+            return ERROR_WRONGDATE;
+        }
+
+        frost.setRunDate(runDate);
+        result = frost.downloadMeteoPointsData();
+        if (result != FROSTFORECAST_OK) return result;
+
+        result = frost.readParameters();
+        if (result != FROSTFORECAST_OK) return result;
+
+        QList<QString> idList = frost.getIdList();
+
+        for (i=0; i < idList.size(); i++)
+        {
+            result = frost.getForecastData(i);
+            if (result == FROSTFORECAST_OK)
+                frost.createCsvFile(idList[i]);
+            else
+                return result;
+        }
     }
 
     return FROSTFORECAST_OK;

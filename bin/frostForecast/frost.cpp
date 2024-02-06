@@ -154,6 +154,9 @@ void Frost::saveParameters()
     projectSettings->setValue("SE_parTss", FloatVectorToStringList(SE_parTss));
     projectSettings->setValue("SE_parRHss", FloatVectorToStringList(SE_parRHss));
     projectSettings->endGroup();
+
+    projectSettings->sync();
+
 }
 
 int Frost::readSettings()
@@ -662,6 +665,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
 
     TObsDataH* hourlyData = point->getObsDataH();
 
+    const unsigned MIN_DATA = 5;
     Crit3DDate today;
     TsunPosition sunPosition;
     float temperature = 25;
@@ -786,7 +790,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
         }
     }
 
-    return (outData.size() > 0);
+    return (outData.size() > MIN_DATA);
 }
 
 bool Frost::calibrateModel(int idPos)
