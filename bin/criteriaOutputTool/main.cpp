@@ -2,16 +2,17 @@
 #include <QDir>
 
 #include "commonConstants.h"
+#include "utilities.h"
 #include "criteriaOutputProject.h"
 #include <iostream>
 
 // uncomment to compute test
-//#define TEST
+#define TEST
 
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
-              << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
+              << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|WEB|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
               << "Notes: computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
     std::cout << std::flush;
 }
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
 
             settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "CSV";
+            myProject.operation = "MAPS";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -126,6 +127,15 @@ int main(int argc, char *argv[])
             return ERROR_MISSING_GDAL;
         #endif
     }
+    else if (myProject.operation == "WEB")
+    {
+        #ifdef GDAL
+                myResult = myProject.createWebOutput();
+        #else
+                myProject.logger.writeError("WEB output is not available (need GDAL library).");
+                return ERROR_MISSING_GDAL;
+        #endif
+    }
     else
     {
         myProject.logger.writeError("Wrong parameter: " + myProject.operation);
@@ -140,6 +150,7 @@ int main(int argc, char *argv[])
     else
     {
         myProject.logger.writeError(myProject.projectError);
+        myProject.logger.writeInfo("END");
     }
 
     return myResult;
