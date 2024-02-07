@@ -89,14 +89,14 @@ int main(int argc, char *argv[])
             return ERROR_WRONGDATE;
         }
 
-        frost.setRunDate(runDate);
-        result = frost.downloadMeteoPointsData();
-        if (result != FROSTFORECAST_OK) return result;
-
         result = frost.readParameters();
         if (result != FROSTFORECAST_OK) return result;
 
         QList<QString> idList = frost.getIdList();
+        frost.setRunDate(runDate);
+
+        result = frost.downloadMeteoPointsData();
+        if (result != FROSTFORECAST_OK) return result;
 
         for (i=0; i < idList.size(); i++)
         {
