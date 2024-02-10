@@ -12,7 +12,7 @@
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
-              << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|WEB|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
+              << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
               << "Notes: computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
     std::cout << std::flush;
 }
@@ -21,7 +21,7 @@ void usage()
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
-    std::cout << "CriteriaOutput V1.7.3" << std::endl;
+    std::cout << "CriteriaOutput V1.7.4" << std::endl;
     std::cout << "*** Shell command to manage the agro-hydrological output of CRITERIA1D-GEO" << std::endl;
 
     CriteriaOutputProject myProject;
@@ -125,15 +125,6 @@ int main(int argc, char *argv[])
         #else
             myProject.logger.writeError("MAPS are not available (need GDAL library).");
             return ERROR_MISSING_GDAL;
-        #endif
-    }
-    else if (myProject.operation == "WEB")
-    {
-        #ifdef GDAL
-                myResult = myProject.createWebOutput();
-        #else
-                myProject.logger.writeError("WEB output is not available (need GDAL library).");
-                return ERROR_MISSING_GDAL;
         #endif
     }
     else
