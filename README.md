@@ -14,28 +14,28 @@ ComputationDate must be in YYYY-MM-DD format, default date is today.
 
 >[software]  
 software="CriteriaOutput"
-
+>
 >[project]  
-name=DEFICIT MACRO AREE  
-db_units=./data/units.db  
-db_crop=./data/crop.db  
-db_data=./output/incolto.db  
-add_date_to_log=false  
-
+name=BOLLAGRO
+db_comp_units=../INCOLTO/data/comp_units_ER_incolto.db  
+db_crop=../INCOLTO/data/crop.db  
+db_data=../INCOLTO/output/incolto.db  
+db_data_climate=../INCOLTO/output/incolto_storico.db  
+add_date_to_log=false
+>
 >[csv]  
-variable_list=./csvOutputList/nitrati.csv  
-csv_output=./output/nitrati  
-add_date_to_filename = false 
-
->[shapefile]  
-UCM=./SHAPE/UCM/UCM.shp  
-field_list=./csvOutputList/nitratiToShape.csv  
-
->[aggregation]  
-aggregation_shape=./SHAPE/ZONE_QA/zone_QA.shp  
-shape_field=idQA  
-aggregation_list=./csvOutputList/deficitAggregation.csv  
-aggregation_cellsize=100  
-aggregation_threshold=0.5  
-aggregation_output=./nitrati/tabDeficit_macroAree.csv  
+variable_list=./csvOutputList/bollettino.csv  
+csv_output=./output/bollettino  
 add_date_to_filename = false  
+>
+>[shapefile]  
+UCM=./SHAPE/UCM_2021/ER_CompUnits_2021.shp  
+field_list=./csvOutputList/bollettinoToShape.csv  
+>
+>[maps]  
+map_list=./csvOutputList/bollettinoToMaps.csv  
+palette_path=./palette/  
+format = tif  
+projection=3857  
+cellsize = 200  
+png_copy = true  
