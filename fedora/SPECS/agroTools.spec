@@ -2,7 +2,7 @@
 %{!?srcarchivename: %global srcarchivename agroTools-%{version}}
 
 Name:           agroTools
-Version:        1.7.3
+Version:        1.7.4
 Release:        1%{?dist}
 Summary:        Agro tools
 
@@ -67,6 +67,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Mon Feb 12 2024 Fausto Tomei <ftomei@arpae.it> - 1.7.4-1
+- Release 1.7.4
+
 * Mon Feb 05 2024 Fausto Tomei <ftomei@arpae.it> - 1.7.3-1
 - Release 1.7.3
 
