@@ -544,7 +544,7 @@ int Frost::createCsvFile(QString id)
     if (!outputFile.open(QIODevice::ReadWrite | QIODevice::Truncate))
     {
         logger.writeError ("Open failure: " + outputCsvFileName);
-        return ERROR_CSVFILE;
+        return ERROR_OUTPUT;
     }
     else
     {
@@ -600,6 +600,104 @@ int Frost::createCsvFile(QString id)
     return FROSTFORECAST_OK;
 
 }
+
+int Frost::createPointsCsvFile(QList <QString> idActive)
+{
+    logger.writeInfo("Create point CSV");
+    // check output csv directory
+    if (! QDir(csvFilePath).exists())
+    {
+        QDir().mkdir(csvFilePath);
+    }
+
+    QString outputCsvFileName = csvFilePath + "/" + "stations.csv";
+    QFile outputFile(outputCsvFileName);
+
+    if (!outputFile.open(QIODevice::ReadWrite | QIODevice::Truncate))
+    {
+        logger.writeError ("Open failure: " + outputCsvFileName);
+        return ERROR_OUTPUT;
+    }
+    else
+    {
+        logger.writeInfo("Output file: " + outputCsvFileName);
+    }
+
+    QString header = "code,name,lat,lon,z";
+
+    QTextStream out(&outputFile);
+    out << header << "\n";
+
+    int pointPos;
+    for (const auto& id : idActive)
+    {
+        pointPos = 0;
+        for (; pointPos < meteoPointsList.size(); pointPos++)
+        {
+            if (meteoPointsList[pointPos].id == id.toStdString())
+            {
+                out << QString::fromStdString(meteoPointsList[pointPos].id) << ",";
+                out << QString::fromStdString(meteoPointsList[pointPos].name) << ",";
+                out << meteoPointsList[pointPos].latitude << ",";
+                out << meteoPointsList[pointPos].longitude << ",";
+                out << meteoPointsList[pointPos].point.z << "\n";
+
+                break;
+            }
+        }
+    }
+
+    outputFile.flush();
+    outputFile.close();
+
+    return FROSTFORECAST_OK;
+
+}
+
+int Frost::createPointsJsonFile(QList <QString> idActive)
+{
+    logger.writeInfo("Creating point json...");
+    // check output json directory
+    if (! QDir(csvFilePath).exists())
+    {
+        QDir().mkdir(csvFilePath);
+    }
+
+    std::vector <QString> fieldNames = {"code","name","lat","lon","z"};
+    std::vector <QString> datatype = {"string","string","float","float","float"};
+    std::vector <std::vector <QString>> values;
+    QString outputJson = csvFilePath + "/" + "stations.json";
+
+    int pointPos;
+    for (const auto& id : idActive)
+    {
+        pointPos = 0;
+        for (; pointPos < meteoPointsList.size(); pointPos++)
+        {
+            if (meteoPointsList[pointPos].id == id.toStdString())
+            {
+                std::vector <QString> myValues;
+
+                myValues.push_back(QString::fromStdString(meteoPointsList[pointPos].id));
+                myValues.push_back(QString::fromStdString(meteoPointsList[pointPos].name));
+                myValues.push_back(QString::number(meteoPointsList[pointPos].latitude));
+                myValues.push_back(QString::number(meteoPointsList[pointPos].longitude));
+                myValues.push_back(QString::number(meteoPointsList[pointPos].point.z));
+
+                values.push_back(myValues);
+
+                break;
+            }
+        }
+    }
+
+    if (writeJson("point", fieldNames, datatype, values, outputJson))
+        return FROSTFORECAST_OK;
+    else
+        return ERROR_OUTPUT;
+
+}
+
 
 QList<QString> Frost::getIdList() const
 {

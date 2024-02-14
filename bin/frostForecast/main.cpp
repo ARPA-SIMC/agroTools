@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         result = frost.downloadMeteoPointsData();
         if (result != FROSTFORECAST_OK) return result;
 
-        QStringList activePoints;
+        QList<QString> idListActive;
 
         for (i=0; i < idList.size(); i++)
         {
@@ -106,9 +106,12 @@ int main(int argc, char *argv[])
             if (result == FROSTFORECAST_OK)
             {
                 frost.createCsvFile(idList[i]);
-                activePoints.push_back(idList[i]);
+                idListActive.push_back(idList[i]);
             }
         }
+
+        result = frost.createPointsJsonFile(idListActive);
+        if (result != FROSTFORECAST_OK) return result;
     }
 
     return FROSTFORECAST_OK;

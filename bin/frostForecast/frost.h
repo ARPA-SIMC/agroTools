@@ -20,7 +20,7 @@
 #define ERROR_SUNSET -10
 #define ERROR_MISSINGDATA -11
 #define ERROR_MPDATANOTAVAILABLE -11
-#define ERROR_CSVFILE -13
+#define ERROR_OUTPUT -13
 
 class Frost
 {
@@ -40,6 +40,9 @@ public:
     float coeffReuter(float a0, float a1, float a2, float t, float RH);
     float t_Reuter(float d, float deltaTime, float tIni);
     int createCsvFile(QString id);
+    int createPointsCsvFile(QList <QString> idActive);
+    int createPointsJsonFile(QList <QString> idActive);
+
     QList<QString> getIdList() const;
 
     bool getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData);
