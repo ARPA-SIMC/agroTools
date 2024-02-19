@@ -30,6 +30,8 @@ void Frost::initialize()
     monthFin = 12;
     thresholdTmin = 0;
     thresholdTrange = 10;
+    historyDateEnd = QDate::currentDate().addDays(-1);
+    historyDateStart = historyDateStart.addDays(-365);
 }
 
 void Frost::initializeFrostParam()
@@ -280,6 +282,13 @@ int Frost::readSettings()
     monthFin = projectSettings->value("monthFin").toInt();
     thresholdTmin = projectSettings->value("thresholdTmin").toFloat();
     thresholdTrange = projectSettings->value("thresholdTrange").toFloat();
+
+    if (projectSettings->contains("history_date_start") && !projectSettings->value("history_date_start").toString().isEmpty())
+        historyDateStart = projectSettings->value("history_date_start").toDate();
+
+    if (projectSettings->contains("history_date_end") && !projectSettings->value("history_date_end").toString().isEmpty())
+        historyDateEnd = projectSettings->value("history_date_end").toDate();
+
     projectSettings->endGroup();
 
     return FROSTFORECAST_OK;
@@ -784,6 +793,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
     float RH_SS;
     bool isSunRise, isSunset;
 
+    //TODO use historyDateStart and historyDateEnd
     for (int i = 0; i < point->nrObsDataDaysH; i++)
     {
         today = hourlyData[i].date;

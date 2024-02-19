@@ -3,9 +3,9 @@
 
 #include <QString>
 #include "logger.h"
-#include "dbMeteoGrid.h"
+//#include "dbMeteoGrid.h"
 #include "dbMeteoPointsHandler.h"
-#include "meteo.h"
+#include "qdatetime.h"
 
 #define FROSTFORECAST_OK 0
 #define ERROR_MISSINGFILE -1
@@ -83,6 +83,8 @@ private:
     int monthFin;
     float thresholdTmin;
     float thresholdTrange;
+    QDate historyDateStart;
+    QDate historyDateEnd;
 
     QList<float> myForecast;
     QList<float> myForecastMin;
