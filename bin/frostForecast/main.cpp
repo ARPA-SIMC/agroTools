@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
     QString runDateStr;
     Frost frost;
     bool calibrateModel = false;
+    bool outofperiod = false;
 
     if (argc <= 2)
     {
@@ -47,6 +48,8 @@ int main(int argc, char *argv[])
 
         if (strcmp(argv[2], "-calibrate") == 0)
             calibrateModel = true;
+        else if(strcmp(argv[2], "-outofperiod") == 0)
+            outofperiod = true;
         else
             runDateStr = argv[2];
     }
@@ -78,6 +81,16 @@ int main(int argc, char *argv[])
         }
 
         if (calibrationOk) frost.saveParameters();
+    }
+    else if (outofperiod)
+    {
+        result = frost.readParameters();
+        if (result != FROSTFORECAST_OK) return result;
+
+        QList<QString> idList = frost.getIdList();
+
+        result = frost.createPointsJsonFile(idList);
+        if (result != FROSTFORECAST_OK) return result;
     }
     else
     {
