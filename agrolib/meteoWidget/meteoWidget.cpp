@@ -27,6 +27,7 @@
 #include "dialogRemoveStation.h"
 #include "dialogMeteoTable.h"
 #include "dialogChangeAxis.h"
+#include "dialogVariableToSum.h"
 #include "utilities.h"
 #include "commonConstants.h"
 #include "formInfo.h"
@@ -35,18 +36,18 @@
 #include <QDate>
 
 
-Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMeteoSettings* meteoSettings_)
+Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid_, QString projectPath, Crit3DMeteoSettings* meteoSettings_)
 {
     isInitialized = false;
     meteoSettings = meteoSettings_;
-    this->isGrid = isGrid;
-    this->isEnsemble = false;
-    this->nrMembers = NODATA;
+    isGrid = isGrid_;
+    isEnsemble = false;
+    nrMembers = NODATA;
     maxEnsembleBar = -1;
     maxEnsembleLine = NODATA;
     minEnsembleLine = -NODATA;
 
-    if (this->isGrid)
+    if (isGrid)
     {
         this->setWindowTitle("Grid");
     }
@@ -58,11 +59,13 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMet
     this->resize(1240, 700);
     this->setAttribute(Qt::WA_DeleteOnClose);
     currentFreq = noFrequency;
-    currentDate = QDate(1800,1,1);
-    firstDailyDate = currentDate;
-    firstHourlyDate = currentDate;
-    lastDailyDate = currentDate;
-    lastHourlyDate = currentDate;
+
+    QDate noDate = QDate(1800,1,1);
+    currentDate = noDate;
+    firstDailyDate = noDate;
+    firstHourlyDate = noDate;
+    lastDailyDate = noDate;
+    lastHourlyDate = noDate;
 
     isLine = false;
     isBar = false;
@@ -70,7 +73,7 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMet
     QVector<QBarSet*> vectorBarSet;
 
     QString csvPath, defaultPath, stylesPath;
-    if (!projectPath.isEmpty())
+    if (! projectPath.isEmpty())
     {
         defaultPath = projectPath + "SETTINGS/Crit3DPlotDefault.csv";
         stylesPath = projectPath + "SETTINGS/Crit3DPlotStyles.csv";
@@ -178,7 +181,7 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMet
     // check valid data
     int dailyVar = 0;
     int hourlyVar = 0;
-    for (int i = 0; i<currentVariables.size(); i++)
+    for (int i = 0; i < currentVariables.size(); i++)
     {
         if (currentVariables[i].contains("DAILY"))
         {
@@ -309,8 +312,6 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMet
     axisY = new QValueAxis();
     axisYdx = new QValueAxis();
 
-    QDate first(QDate::currentDate().year(), 1, 1);
-    QDate last(QDate::currentDate().year(), 12, 31);
     axisX->setTitleText("Date");
     axisXvirtual->setTitleText("Date");
     axisXvirtual->setGridLineVisible(false);
@@ -337,8 +338,10 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMet
     // menu
     QMenuBar* menuBar = new QMenuBar();
     QMenu *editMenu = new QMenu("Edit");
+    QMenu *viewMenu = new QMenu("View");
 
     menuBar->addMenu(editMenu);
+    menuBar->addMenu(viewMenu);
     mainLayout->setMenuBar(menuBar);
 
     QAction* changeLeftAxis = new QAction(tr("&Change axis left"), this);
@@ -351,6 +354,14 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMet
     editMenu->addAction(exportGraph);
     editMenu->addAction(removeStation);
 
+    QAction* infoPoint = new QAction(tr("&Info meteo point"), this);
+    QAction* dataAvailability = new QAction(tr("&Data availability"), this);
+    QAction* dataSum = new QAction(tr("&Sum"), this);
+
+    viewMenu->addAction(infoPoint);
+    viewMenu->addAction(dataAvailability);
+    viewMenu->addAction(dataSum);
+
     connect(addVarButton, &QPushButton::clicked, [=](){ showVar(); });
     connect(dailyButton, &QPushButton::clicked, [=](){ showDailyGraph(); });
     connect(hourlyButton, &QPushButton::clicked, [=](){ showHourlyGraph(); });
@@ -362,6 +373,9 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid, QString projectPath, Crit3DMet
     connect(changeRightAxis, &QAction::triggered, this, &Crit3DMeteoWidget::on_actionChangeRightAxis);
     connect(exportGraph, &QAction::triggered, this, &Crit3DMeteoWidget::on_actionExportGraph);
     connect(removeStation, &QAction::triggered, this, &Crit3DMeteoWidget::on_actionRemoveStation);
+    connect(infoPoint, &QAction::triggered, this, &Crit3DMeteoWidget::on_actionInfoPoint);
+    connect(dataAvailability, &QAction::triggered, this, &Crit3DMeteoWidget::on_actionDataAvailability);
+    connect(dataSum, &QAction::triggered, this, &Crit3DMeteoWidget::on_actionDataSum);
 
     plotLayout->addWidget(chartView);
     horizontalGroupBox->setLayout(buttonLayout);
@@ -396,11 +410,56 @@ void Crit3DMeteoWidget::setDateIntervalHourly(QDate firstDate, QDate lastDate)
 }
 
 
-void Crit3DMeteoWidget::draw(Crit3DMeteoPoint mp, bool isAppend)
+// search bigger data interval to show between meteoPoints
+void Crit3DMeteoWidget::updateTimeRange()
+{
+    for (int i = 0; i < meteoPoints.size(); i++)
+    {
+        QDate myDailyDateFirst;
+        myDailyDateFirst.setDate(meteoPoints[i].obsDataD[0].date.year,
+                                 meteoPoints[i].obsDataD[0].date.month,
+                                 meteoPoints[i].obsDataD[0].date.day);
+        QDate myDailyDateLast = myDailyDateFirst.addDays(meteoPoints[i].nrObsDataDaysD-1);
+
+        // updates daily range
+        if (myDailyDateFirst.isValid() &&
+            (! firstDailyDate.isValid() || firstDailyDate.year() == 1800 || myDailyDateFirst < firstDailyDate))
+        {
+            firstDailyDate = myDailyDateFirst;
+        }
+        if (myDailyDateLast.isValid() &&
+            (! lastDailyDate.isValid() || lastDailyDate.year() == 1800 || myDailyDateLast > lastDailyDate))
+        {
+            lastDailyDate = myDailyDateLast;
+        }
+
+        QDate myHourlyDateFirst;
+        myHourlyDateFirst.setDate(meteoPoints[i].getMeteoPointHourlyValuesDate(0).year,
+                                  meteoPoints[i].getMeteoPointHourlyValuesDate(0).month,
+                                  meteoPoints[i].getMeteoPointHourlyValuesDate(0).day);
+        QDate myHourlyDateLast = myHourlyDateFirst.addDays(meteoPoints[i].nrObsDataDaysH-1);
+
+        // updates hourly range
+        if (myHourlyDateFirst.isValid() &&
+            (! firstHourlyDate.isValid() || firstHourlyDate.year() == 1800 || myHourlyDateFirst < firstHourlyDate))
+        {
+            firstHourlyDate = myHourlyDateFirst;
+        }
+        if (myHourlyDateLast.isValid() &&
+            (! lastHourlyDate.isValid() || lastHourlyDate.year() == 1800 || myHourlyDateLast > lastHourlyDate))
+        {
+            lastHourlyDate = myHourlyDateLast;
+        }
+    }
+}
+
+
+void Crit3DMeteoWidget::drawMeteoPoint(Crit3DMeteoPoint mp, bool isAppend)
 {
     if (! isInitialized) return;
 
     meteoPoints.append(mp);
+    updateTimeRange();
 
     if (! isAppend)
     {
@@ -408,43 +467,17 @@ void Crit3DMeteoWidget::draw(Crit3DMeteoPoint mp, bool isAppend)
         firstDate->blockSignals(true);
         lastDate->blockSignals(true);
 
-        QDate myDailyDateFirst;
-        QDate myDailyDateLast;
-        QDate myHourlyDateFirst;
-        QDate myHourlyDateLast;
-        // search bigger data interval to show between meteoPoints
-        for (int i = 0; i < meteoPoints.size(); i++)
-        {
-            myDailyDateFirst.setDate(meteoPoints[i].obsDataD[0].date.year, meteoPoints[i].obsDataD[0].date.month, meteoPoints[i].obsDataD[0].date.day);
-            myDailyDateLast = myDailyDateFirst.addDays(meteoPoints[i].nrObsDataDaysD-1);
-            if (myDailyDateFirst.isValid() && myDailyDateFirst < firstDailyDate)
-            {
-                firstDailyDate = myDailyDateFirst;
-            }
-            if (myDailyDateLast.isValid() && myDailyDateLast > lastDailyDate)
-            {
-                lastDailyDate = myDailyDateLast;
-            }
-            myHourlyDateFirst.setDate(meteoPoints[i].getMeteoPointHourlyValuesDate(0).year, meteoPoints[i].getMeteoPointHourlyValuesDate(0).month,
-                                      meteoPoints[i].getMeteoPointHourlyValuesDate(0).day);
-            myHourlyDateLast = myHourlyDateFirst.addDays(meteoPoints[i].nrObsDataDaysH-1);
-            if (myHourlyDateFirst.isValid() && myHourlyDateFirst < firstHourlyDate)
-            {
-                firstHourlyDate = myHourlyDateFirst;
-            }
-            if (myHourlyDateLast.isValid() && myHourlyDateLast > lastHourlyDate)
-            {
-                lastHourlyDate = myHourlyDateLast;
-            }
-        }
-
         lastDate->setDate(currentDate);
 
         // draw period (31 days for daily, 3 days for hourly)
         if (currentFreq == daily)
+        {
             firstDate->setDate(currentDate.addDays(-30));
+        }
         else if (currentFreq == hourly)
+        {
             firstDate->setDate(currentDate.addDays(-2));
+        }
 
         firstDate->blockSignals(false);
         lastDate->blockSignals(false);
@@ -457,6 +490,36 @@ void Crit3DMeteoWidget::draw(Crit3DMeteoPoint mp, bool isAppend)
 void Crit3DMeteoWidget::addMeteoPointsEnsemble(Crit3DMeteoPoint mp)
 {
     meteoPointsEnsemble.append(mp);
+}
+
+
+QString getFormattedLabel(QString pointName, QString varName)
+{
+    QString label;
+
+    QList<QString> words = pointName.split(' ');
+
+    if (words.size() == 1)
+    {
+        int size = std::min(int(words[0].size()), 12);
+        pointName = words[0].left(size);
+    }
+    else
+    {
+        int last = words.size() - 1;
+        int size1 = std::min(int(words[0].size()), 7);
+        int size2 = std::min(int(words[last].size()), 12-size1);
+        pointName = words[0].left(size1) + '_' + words[last].left(size2);
+    }
+
+    if (varName.contains("DAILY_"))
+    {
+        varName = varName.remove("DAILY_");
+    }
+
+    label = pointName + '_' + varName;
+
+    return label;
 }
 
 
@@ -511,6 +574,7 @@ void Crit3DMeteoWidget::drawEnsemble()
     show();
 }
 
+
 void Crit3DMeteoWidget::resetValues()
 {
     int nMeteoPoints = meteoPoints.size();
@@ -531,7 +595,7 @@ void Crit3DMeteoWidget::resetValues()
         }
         lineSeries.clear();
     }
-    if (!barSeries.isEmpty())
+    if (! barSeries.isEmpty())
     {
         for (int mp = 0; mp < barSeries.size(); mp++)
         {
@@ -552,23 +616,16 @@ void Crit3DMeteoWidget::resetValues()
     {
         QVector<QLineSeries*> vectorLine;
         // add lineSeries elements for each mp, clone lineSeries[0]
-        for (int mp=0; mp<nMeteoPoints;mp++)
+        for (int mp = 0; mp < nMeteoPoints; mp++)
         {
+            QString pointName = QString::fromStdString(meteoPoints[mp].name);
             vectorLine.clear();
-            for (int i = 0; i<nameLines.size(); i++)
+
+            for (int i = 0; i < nameLines.size(); i++)
             {
                 QLineSeries* line = new QLineSeries();
-                QString pointName = QString::fromStdString(meteoPoints[mp].name);
-                QList<QString> elementsName = pointName.split(' ');
-                if (elementsName.size() == 1)
-                {
-                    pointName = elementsName[0].left(10);
-                }
-                else
-                {
-                    pointName = elementsName[0].left(5) + elementsName[elementsName.size()-1].left(5);
-                }
-                line->setName(QString::fromStdString(meteoPoints[mp].id)+"_"+pointName+"_"+nameLines[i]);
+                line->setName(getFormattedLabel(pointName, nameLines[i]));
+
                 //QColor lineColor = colorLine[i];
                 QColor lineColor = colorLines[i];
                 if (nMeteoPoints == 1)
@@ -589,28 +646,21 @@ void Crit3DMeteoWidget::resetValues()
         }
     }
 
+    // possono essere veri entrambi
     if (isBar)
     {
         QVector<QBarSet*> vectorBarSet;
-        QString name;
         // add vectorBarSet elements for each mp
-        for (int mp=0; mp<nMeteoPoints;mp++)
+        for (int mp = 0; mp < nMeteoPoints; mp++)
         {
+            QString pointName = QString::fromStdString(meteoPoints[mp].name);
             vectorBarSet.clear();
+
             for (int i = 0; i < nameBar.size(); i++)
             {
-                QString pointName = QString::fromStdString(meteoPoints[mp].name);
-                QList<QString> elementsName = pointName.split(' ');
-                if (elementsName.size() == 1)
-                {
-                    pointName = elementsName[0].left(10);
-                }
-                else
-                {
-                    pointName = elementsName[0].left(5) + elementsName[elementsName.size()-1].left(5);
-                }
-                name = QString::fromStdString(meteoPoints[mp].id)+"_"+pointName+"_"+nameBar[i];
-                QBarSet* set = new QBarSet(name);
+                QBarSet* bar = new QBarSet(getFormattedLabel(pointName, nameBar[i]));
+                bar->setLabel(getFormattedLabel(pointName, nameBar[i]));
+
                 QColor barColor = colorBar[i];
                 if (meteoPointsEnsemble.size() == 0)
                 {
@@ -622,14 +672,14 @@ void Crit3DMeteoWidget::resetValues()
                     {
                         barColor.setAlpha( 255-(mp*(150/(nMeteoPoints-1))) );
                     }
-                    set->setColor(barColor);
+                    bar->setColor(barColor);
                 }
                 else
                 {
-                    set->setColor(Qt::transparent);
+                    bar->setColor(Qt::transparent);
                 }
-                set->setBorderColor(barColor);
-                vectorBarSet.append(set);
+                bar->setBorderColor(barColor);
+                vectorBarSet.append(bar);
             }
             if (vectorBarSet.size() != 0)
             {
@@ -728,7 +778,11 @@ void Crit3DMeteoWidget::drawEnsembleDailyVar()
             {
                 sortedList.clear();
                 myDate = firstCrit3DDate.addDays(day);
-                meteoVariable meteoVar = MapDailyMeteoVar.at(nameLines[i].toStdString());
+                meteoVariable meteoVar = getMeteoVar(nameLines[i].toStdString());
+                if (meteoVar == noMeteoVar)
+                {
+                    continue;
+                }
 
                 for (int mp=0; mp<nrMembers;mp++)
                 {
@@ -791,7 +845,11 @@ void Crit3DMeteoWidget::drawEnsembleDailyVar()
             for (int day = 0; day < nDays; day++)
             {
                 myDate = firstCrit3DDate.addDays(day);
-                meteoVariable meteoVar = MapDailyMeteoVar.at(nameBar[i].toStdString());
+                meteoVariable meteoVar = getMeteoVar(nameBar[i].toStdString());
+                if (meteoVar == noMeteoVar)
+                {
+                    continue;
+                }
                 sortedList.clear();
                 for (int mp=0; mp<nrMembers;mp++)
                 {
@@ -895,6 +953,7 @@ void Crit3DMeteoWidget::drawEnsembleDailyVar()
     formInfo.close();
 }
 
+
 void Crit3DMeteoWidget::drawDailyVar()
 {
     if (! isInitialized) return;
@@ -958,7 +1017,11 @@ void Crit3DMeteoWidget::drawDailyVar()
             {
                 for (int i = 0; i < nameLines.size(); i++)
                 {
-                    meteoVariable meteoVar = MapDailyMeteoVar.at(nameLines[i].toStdString());
+                    meteoVariable meteoVar = getMeteoVar(nameLines[i].toStdString());
+                    if (meteoVar == noMeteoVar)
+                    {
+                        continue;
+                    }
                     double value = meteoPoints[mp].getMeteoPointValueD(myDate, meteoVar, meteoSettings);
                     if (value != NODATA)
                     {
@@ -985,7 +1048,11 @@ void Crit3DMeteoWidget::drawDailyVar()
             {
                 for (int j = 0; j < nameBar.size(); j++)
                 {
-                    meteoVariable meteoVar = MapDailyMeteoVar.at(nameBar[j].toStdString());
+                    meteoVariable meteoVar = getMeteoVar(nameBar[j].toStdString());
+                    if (meteoVar == noMeteoVar)
+                    {
+                        continue;
+                    }
                     double value = meteoPoints[mp].getMeteoPointValueD(myDate, meteoVar, meteoSettings);
                     if (value != NODATA)
                     {
@@ -1006,7 +1073,7 @@ void Crit3DMeteoWidget::drawDailyVar()
 
     if (isBar)
     {
-        for (int mp=0; mp<nMeteoPoints;mp++)
+        for (int mp = 0; mp < nMeteoPoints; mp++)
         {
             QBarSeries* barMpSeries = new QBarSeries();
             for (int i = 0; i < nameBar.size(); i++)
@@ -1016,7 +1083,7 @@ void Crit3DMeteoWidget::drawDailyVar()
             barSeries.append(barMpSeries);
         }
 
-        for (int mp=0; mp<nMeteoPoints;mp++)
+        for (int mp = 0; mp < nMeteoPoints; mp++)
         {
             connect(barSeries[mp], &QBarSeries::hovered, this, &Crit3DMeteoWidget::tooltipBar);
             if (nameBar.size() != 0)
@@ -1514,7 +1581,7 @@ void Crit3DMeteoWidget::showHourlyGraph()
         auto searchDaily = MapDailyMeteoVar.find(name.toStdString());
         if (searchDaily != MapDailyMeteoVar.end())
         {
-            meteoVariable dailyVar = MapDailyMeteoVar.at(name.toStdString());
+            meteoVariable dailyVar = getMeteoVar(name.toStdString());
             meteoVariable hourlyVar= updateMeteoVariable(dailyVar, hourly);
             if (hourlyVar != noMeteoVar)
             {
@@ -1584,7 +1651,7 @@ void Crit3DMeteoWidget::redraw()
     {
         resetEnsembleValues();
     }
-    if(!isEnsemble)
+    if(! isEnsemble)
     {
         resetValues();
     }
@@ -1595,7 +1662,7 @@ void Crit3DMeteoWidget::redraw()
         {
             drawEnsembleDailyVar();
         }
-        if(!isEnsemble)
+        if(! isEnsemble)
         {
             drawDailyVar();
         }
@@ -1618,13 +1685,30 @@ void Crit3DMeteoWidget::redraw()
 void Crit3DMeteoWidget::shiftPrevious()
 {
     int nDays = firstDate->date().daysTo(lastDate->date());
-    if (firstDailyDate < firstDate->date().addDays(-nDays-1))
+
+    QDate firstValidDate;
+    if (currentFreq == daily)
+    {
+        if (! firstDailyDate.isValid() || firstDailyDate.year() == 1800)
+            return;
+
+        firstValidDate = firstDailyDate;
+    }
+    else
+    {
+        if (! firstHourlyDate.isValid() || firstHourlyDate.year() == 1800)
+            return;
+
+        firstValidDate = firstHourlyDate;
+    }
+
+    if (firstValidDate < firstDate->date().addDays(-nDays-1))
     {
         firstDate->setDate(firstDate->date().addDays(-nDays-1));
     }
     else
     {
-        firstDate->setDate(firstDailyDate);
+        firstDate->setDate(firstValidDate);
     }
 
     lastDate->setDate(firstDate->date().addDays(nDays));
@@ -1636,13 +1720,30 @@ void Crit3DMeteoWidget::shiftPrevious()
 void Crit3DMeteoWidget::shiftFollowing()
 {
     int nDays = firstDate->date().daysTo(lastDate->date());
-    if (lastDate->date().addDays(nDays+1) < lastDailyDate)
+
+    QDate lastValidDate;
+    if (currentFreq == daily)
+    {
+        if (! lastDailyDate.isValid() || lastDailyDate.year() == 1800)
+            return;
+
+        lastValidDate = lastDailyDate;
+    }
+    else
+    {
+        if (! lastHourlyDate.isValid() || lastHourlyDate.year() == 1800)
+            return;
+
+        lastValidDate = lastHourlyDate;
+    }
+
+    if (lastDate->date().addDays(nDays+1) < lastValidDate)
     {
         lastDate->setDate(lastDate->date().addDays(nDays+1));
     }
     else
     {
-        lastDate->setDate(lastDailyDate);
+        lastDate->setDate(lastValidDate);
     }
 
     firstDate->setDate(lastDate->date().addDays(-nDays));
@@ -2033,9 +2134,11 @@ void Crit3DMeteoWidget::on_actionExportGraph()
 
     if (fileName != "")
     {
-        const auto dpr = chartView->devicePixelRatioF();
+        /*const auto dpr = chartView->devicePixelRatioF();
         QPixmap buffer(chartView->width() * dpr, chartView->height() * dpr);
-        buffer.setDevicePixelRatio(dpr);
+        buffer.setDevicePixelRatio(dpr);*/
+
+        QPixmap buffer(chartView->width() * 2, chartView->height() * 2);
         buffer.fill(Qt::transparent);
 
         QPainter *paint = new QPainter(&buffer);
@@ -2047,6 +2150,7 @@ void Crit3DMeteoWidget::on_actionExportGraph()
         buffer.save(&file, "PNG");
     }
 }
+
 
 void Crit3DMeteoWidget::on_actionRemoveStation()
 {
@@ -2077,6 +2181,147 @@ void Crit3DMeteoWidget::on_actionRemoveStation()
         updateSeries();
         redraw();
     }
+}
+
+void Crit3DMeteoWidget::on_actionInfoPoint()
+{
+    QDialog infoWindow;
+    infoWindow.setWindowTitle("Info meteo points");
+    QVBoxLayout* layout = new QVBoxLayout();
+    for (int mp=0; mp<meteoPoints.size();mp++)
+    {
+        QString stationId = QString::fromStdString(meteoPoints[mp].id);
+        QString stationsName = QString::fromStdString(meteoPoints[mp].name);
+        QString station = stationId+"_"+stationsName;
+        QString dataset = QString::fromStdString(meteoPoints[mp].dataset);
+        QString altitude = QString::number(meteoPoints[mp].point.z);
+        QString lapseRateName = QString::fromStdString(getLapseRateCodeName(meteoPoints[mp].lapseRateCode));
+        QLabel* label = new QLabel(station);
+        layout->addWidget(label);
+        QString infoStr;
+        if (isGrid)
+        {
+            infoStr = QString("Cell: <b> %1 </b> <br/> ID: %2 <br/> altitude: %3 m ")
+                          .arg(stationsName, stationId, altitude);
+        }
+        else
+        {
+            infoStr = QString("Point: <b> %1 </b> <br/> ID: %2 <br/> dataset: %3 <br/> altitude: %4 m <br/> lapse rate code: %5")
+                                  .arg(stationsName, stationId, dataset, altitude, lapseRateName);
+        }
+        QTextEdit* plainTextEdit = new QTextEdit(infoStr);
+        plainTextEdit->setReadOnly(true);
+        layout->addWidget(plainTextEdit);
+    }
+    infoWindow.setLayout(layout);
+    infoWindow.exec();
+}
+
+
+void Crit3DMeteoWidget::on_actionDataAvailability()
+{
+    QDialog infoWindow;
+    infoWindow.setWindowTitle("DataAvailability");
+    QVBoxLayout* layout = new QVBoxLayout();
+
+    if (isGrid)
+    {
+        QGroupBox *groupBox = new QGroupBox("MeteoGrid");
+        QVBoxLayout *vbox = new QVBoxLayout;
+
+        if (!firstDailyDate.isNull() && firstDailyDate.year() != 1800)
+        {
+            QLabel* labelDaily = new QLabel("Daily Data:");
+            vbox->addWidget(labelDaily);
+
+            QString dailyInfo = QString("%1 - %2").arg(firstDailyDate.toString("yyyy/MM/dd"), lastDailyDate.toString("yyyy/MM/dd"));
+            QTextEdit* dailyTextEdit = new QTextEdit(dailyInfo);
+
+            dailyTextEdit->setMaximumHeight(QFontMetrics(dailyTextEdit->font()).height() + 10);
+            dailyTextEdit->setReadOnly(true);
+
+            vbox->addWidget(dailyTextEdit);
+        }
+
+        if (!firstHourlyDate.isNull() && firstHourlyDate.year() != 1800)
+        {
+            QLabel* labelHourly = new QLabel("Hourly Data:");
+            vbox->addWidget(labelHourly);
+
+            QString hourlyInfo = QString("%1 - %2").arg(firstHourlyDate.toString("yyyy/MM/dd"), lastHourlyDate.toString("yyyy/MM/dd"));
+            QTextEdit* hourlyTextEdit = new QTextEdit(hourlyInfo);
+
+            hourlyTextEdit->setMaximumHeight(QFontMetrics(hourlyTextEdit->font()).height() + 10);
+            hourlyTextEdit->setReadOnly(true);
+
+            vbox->addWidget(hourlyTextEdit);
+        }
+
+        groupBox->setLayout(vbox);
+        layout->addWidget(groupBox);
+    }
+    else
+    {
+        QDate myFirstDailyDate, myLastDailyDate;
+        QDate myFirstHourlyDate, myLastHourlyDate;
+
+        for (int mp=0; mp<meteoPoints.size();mp++)
+        {
+            QString stationId = QString::fromStdString(meteoPoints[mp].id);
+            QString stationsName = QString::fromStdString(meteoPoints[mp].name);
+            QString stationString = stationId + "_" + stationsName;
+
+            QGroupBox *groupBox = new QGroupBox(stationString);
+            QVBoxLayout *vbox = new QVBoxLayout;
+
+            QString infoDaily = QString("Daily Data:");
+            QLabel* labelDaily = new QLabel(infoDaily);
+            vbox->addWidget(labelDaily);
+            myFirstDailyDate.setDate(meteoPoints[mp].obsDataD[0].date.year, meteoPoints[mp].obsDataD[0].date.month, meteoPoints[mp].obsDataD[0].date.day);
+            myLastDailyDate = myFirstDailyDate.addDays(meteoPoints[mp].nrObsDataDaysD-1);
+            QString dailyInfo = QString("%1 - %2")
+                                    .arg(myFirstDailyDate.toString("yyyy/MM/dd"), myLastDailyDate.toString("yyyy/MM/dd"));
+            QTextEdit* dailyTextEdit = new QTextEdit(dailyInfo);
+            QFont font = dailyTextEdit->font();
+            QFontMetrics fontMetrics = QFontMetrics(font);
+            dailyTextEdit->setMaximumHeight(fontMetrics.height()+10);
+            dailyTextEdit->setReadOnly(true);
+            vbox->addWidget(dailyTextEdit);
+
+            QString infoHourly = QString("Hourly Data:");
+            QLabel* labelHourly = new QLabel(infoHourly);
+            vbox->addWidget(labelHourly);
+            myFirstHourlyDate.setDate(meteoPoints[mp].getMeteoPointHourlyValuesDate(0).year, meteoPoints[mp].getMeteoPointHourlyValuesDate(0).month,
+                                      meteoPoints[mp].getMeteoPointHourlyValuesDate(0).day);
+            myLastHourlyDate = myFirstHourlyDate.addDays(meteoPoints[mp].nrObsDataDaysH-1);
+
+            QString hourlyInfo = QString("%1 - %2")
+                                     .arg(myFirstHourlyDate.toString("yyyy/MM/dd"), myLastHourlyDate.toString("yyyy/MM/dd"));
+            QTextEdit* hourlyTextEdit = new QTextEdit(hourlyInfo);
+            hourlyTextEdit->setMaximumHeight(fontMetrics.height()+10);
+            hourlyTextEdit->setReadOnly(true);
+            vbox->addWidget(hourlyTextEdit);
+            groupBox->setLayout(vbox);
+            layout->addWidget(groupBox);
+        }
+    }
+
+    infoWindow.setLayout(layout);
+    infoWindow.exec();
+}
+
+void Crit3DMeteoWidget::on_actionDataSum()
+{
+    // TO DO;
+    // Apre una finestra con l'elenco delle variabili attualmente visualizzate in modo che siano selezionabili quali vogliamo switchare sulla comulata
+    DialogVariableToSum varToSum(currentVariables);
+    QList<QString> varToSumList;
+    if (varToSum.result() == QDialog::Accepted)
+    {
+        varToSumList = varToSum.getSelectedVariable();
+    }
+    qDebug() << "varToSumList " << varToSumList.join(",");
+
 }
 
 

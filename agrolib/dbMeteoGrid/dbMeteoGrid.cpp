@@ -4,6 +4,7 @@
 #include "basicMath.h"
 #include "utilities.h"
 #include "meteoPoint.h"
+#include "meteo.h"
 #include "commonConstants.h"
 
 #include <iostream>
@@ -2233,6 +2234,7 @@ bool Crit3DMeteoGridDbHandler::loadGridMonthlyData(QString &myError, QString met
     return true;
 }
 
+
 bool Crit3DMeteoGridDbHandler::loadGridAllMonthlyData(QString &myError, QDate firstDate, QDate lastDate)
 {
     myError = "";
@@ -2248,14 +2250,25 @@ bool Crit3DMeteoGridDbHandler::loadGridAllMonthlyData(QString &myError, QDate fi
         return false;
     }
 
+    // init all monthly data
+    for (int row = 0; row < gridStructure().header().nrRows; row++)
+    {
+        for (int col = 0; col < gridStructure().header().nrCols; col++)
+        {
+            _meteoGrid->meteoPointPointer(row,col)->initializeObsDataM(numberOfMonths, firstDate.month(), firstDate.year());
+        }
+    }
+
     QSqlQuery qry(_db);
-    QDate date;
+    QDate monthDate;
     unsigned row, col;
     int year, month, varCode;
+    int lastVarCode = NODATA;
+    meteoVariable variable = noMeteoVar;
+    QString pointCode, lastPointCode;
     float value;
-    QString pointCode;
-    QString prevCode = "NODATA";
-    QString statement = QString("SELECT * FROM `%1` WHERE `PragaYear` BETWEEN %2 AND %3 ORDER BY `PragaYear`").arg(table).arg(firstDate.year()).arg(lastDate.year());
+
+    QString statement = QString("SELECT * FROM `%1` WHERE `PragaYear` BETWEEN %2 AND %3 ORDER BY `PointCode`").arg(table).arg(firstDate.year()).arg(lastDate.year());
     if( !qry.exec(statement) )
     {
         myError = qry.lastError().text();
@@ -2265,58 +2278,59 @@ bool Crit3DMeteoGridDbHandler::loadGridAllMonthlyData(QString &myError, QDate fi
     {
         while (qry.next())
         {
-            if (!getValue(qry.value("PragaYear"), &year))
+            if (! getValue(qry.value("PragaYear"), &year))
             {
                 myError = "Missing PragaYear";
                 return false;
             }
 
-            if (!getValue(qry.value("PragaMonth"), &month))
+            if (! getValue(qry.value("PragaMonth"), &month))
             {
                 myError = "Missing PragaMonth";
                 return false;
             }
 
-            date.setDate(year,month, 1);
-            if (date < firstDate || date > lastDate)
+            monthDate.setDate(year, month, 1);
+            if (monthDate < firstDate || monthDate > lastDate)
             {
                 continue;
             }
 
-            if (!getValue(qry.value("PointCode"), &pointCode))
+            if (! getValue(qry.value("PointCode"), &pointCode))
             {
                 myError = "Missing PointCode";
                 return false;
             }
 
-            if (!getValue(qry.value("VariableCode"), &varCode))
+            if (pointCode != lastPointCode)     // new point
+            {
+                if (! _meteoGrid->findMeteoPointFromId(&row, &col, pointCode.toStdString()) )
+                {
+                    myError = "Missing MeteoPoint id";
+                    return false;
+                }
+                lastPointCode = pointCode;
+            }
+
+            if (! getValue(qry.value("VariableCode"), &varCode))
             {
                 myError = "Missing VariableCode";
                 return false;
             }
 
-            if (!getValue(qry.value("Value"), &value))
+            if (varCode != lastVarCode)     // new var
+            {
+                variable = getMonthlyVarEnum(varCode);
+                lastVarCode = varCode;
+            }
+
+            if (! getValue(qry.value("Value"), &value))
             {
                 myError = "Missing Value";
             }
 
-            meteoVariable variable = getMonthlyVarEnum(varCode);
-            if (prevCode != pointCode) // new point
-            {
-                if (!_meteoGrid->findMeteoPointFromId(&row, &col, pointCode.toStdString()) )
-                {
-                    myError = "Missing MeteoPoint id";
-                    return false;
-                }
-
-                if (_meteoGrid->meteoPointPointer(row,col)->nrObsDataDaysM == 0)
-                {
-                    _meteoGrid->meteoPointPointer(row,col)->initializeObsDataM(numberOfMonths, firstDate.month(), firstDate.year());
-                }
-            }
-            if (! _meteoGrid->meteoPointPointer(row,col)->setMeteoPointValueM(getCrit3DDate(date), variable, value))
+            if (! _meteoGrid->meteoPointPointer(row, col)->setMeteoPointValueM(getCrit3DDate(monthDate), variable, value))
                 return false;
-            prevCode = pointCode;
         }
     }
 
@@ -2422,6 +2436,84 @@ std::vector<float> Crit3DMeteoGridDbHandler::loadGridDailyVar(QString *myError, 
     } while (qry.next());
 
     return dailyVarList;
+}
+
+std::vector<float> Crit3DMeteoGridDbHandler::exportAllDataVar(QString *myError, frequencyType freq, meteoVariable variable, QString id, std::vector<QString> &dateStr)
+{
+    QString myDateStr;
+    float value;
+    std::vector<float> allDataVarList;
+
+    QSqlQuery myQuery(_db);
+    QString tableName;
+    int idVar;
+
+    if (freq == daily)
+    {
+        idVar = getDailyVarCode(variable);
+        if (idVar == NODATA)
+        {
+            *myError = "Variable not existing";
+            return allDataVarList;
+        }
+        tableName = _tableDaily.prefix + id + _tableDaily.postFix;
+    }
+    else if (freq == hourly)
+    {
+        idVar = getHourlyVarCode(variable);
+        if (idVar == NODATA)
+        {
+            *myError = "Variable not existing";
+            return allDataVarList;
+        }
+        tableName = _tableHourly.prefix + id + _tableHourly.postFix;
+    }
+    else
+    {
+        *myError = "Frequency should be daily or hourly";
+        return allDataVarList;
+    }
+
+    QString statement = QString( "SELECT * FROM `%1` WHERE VariableCode = '%2'")
+                            .arg(tableName).arg(idVar);
+    QDateTime dateTime;
+    QDate date;
+    if( !myQuery.exec(statement) )
+    {
+        *myError = myQuery.lastError().text();
+        return allDataVarList;
+    }
+    else
+    {
+        while (myQuery.next())
+        {
+            if (freq == daily)
+            {
+                if (! getValue(myQuery.value(_tableDaily.fieldTime), &date))
+                {
+                    *myError = "Missing fieldTime";
+                    return allDataVarList;
+                }
+                myDateStr = date.toString("yyyy-MM-dd");
+            }
+            else if (freq == hourly)
+            {
+                if (! getValue(myQuery.value(_tableHourly.fieldTime), &dateTime))
+                {
+                    *myError = "Missing fieldTime";
+                    return allDataVarList;
+                }
+                // LC dateTime.toString direttamente ritorna una stringa vuota nelle ore di passaggio all'ora legale
+                myDateStr = dateTime.date().toString("yyyy-MM-dd") + " " + dateTime.time().toString("hh:mm");
+            }
+
+            dateStr.push_back(myDateStr);
+            value = myQuery.value(2).toFloat();
+            allDataVarList.push_back(value);
+        }
+    }
+
+    return allDataVarList;
 }
 
 

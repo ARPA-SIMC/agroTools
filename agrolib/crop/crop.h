@@ -91,13 +91,13 @@
         void updateRootDepth(double currentDD, double waterTableDepth);
         double computeRootLength(double currentDD, double waterTableDepth);
 
-        void updateRootDepth3D(double currentDD, double waterTableDepth, double previousRootDepth, double totalSoilDepth);
+        void computeRootLength3D(double currentDD, double totalSoilDepth);
 
         double computeSimpleLAI(double myDegreeDays, double latitude, int currentDoy);
 
-        bool dailyUpdate(const Crit3DDate &myDate, double latitude, const std::vector<soil::Crit3DLayer> &soilLayers,
+        bool dailyUpdate(const Crit3DDate &myDate, double latitude, const std::vector<soil::Crit1DLayer> &soilLayers,
                          double tmin, double tmax, double waterTableDepth, std::string &myError);
-        bool restore(const Crit3DDate &myDate, double latitude, const std::vector<soil::Crit3DLayer> &soilLayers,
+        bool restore(const Crit3DDate &myDate, double latitude, const std::vector<soil::Crit1DLayer> &soilLayers,
                      double currentWaterTable, std::string &myError);
 
         double getCoveredSurfaceFraction();
@@ -105,9 +105,9 @@
         double getMaxTranspiration(double ET0);
         double getSurfaceWaterPonding() const;
 
-        double getCropWaterDeficit(const std::vector<soil::Crit3DLayer> & soilLayers);
+        double getCropWaterDeficit(const std::vector<soil::Crit1DLayer> & soilLayers);
 
-        double computeTranspiration(double maxTranspiration, const std::vector<soil::Crit3DLayer>& soilLayers, double& waterStress);
+        double computeTranspiration(double maxTranspiration, const std::vector<soil::Crit1DLayer>& soilLayers, double& waterStress);
     };
 
 
