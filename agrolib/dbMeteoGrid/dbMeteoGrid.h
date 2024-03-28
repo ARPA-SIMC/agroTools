@@ -126,7 +126,7 @@
         std::vector<float> loadGridDailyVarFixedFields(QString *myError, QString meteoPoint, meteoVariable variable, QDate first, QDate last, QDate* firstDateDB);
         std::vector<float> loadGridHourlyVar(QString *myError, QString meteoPoint, meteoVariable variable, QDateTime first, QDateTime last, QDateTime* firstDateDB);
         std::vector<float> loadGridHourlyVarFixedFields(QString *myError, QString meteoPoint, meteoVariable variable, QDateTime first, QDateTime last, QDateTime* firstDateDB);
-        std::vector<float> exportAllDataVar(QString *myError, frequencyType freq, meteoVariable variable, QString id, std::vector<QString> &dateStr);
+        std::vector<float> exportAllDataVar(QString *myError, frequencyType freq, meteoVariable variable, QString id, QDateTime myFirstTime, QDateTime myLastTime, std::vector<QString> &dateStr);
         bool getYearList(QString *myError, QString meteoPoint, QList<QString>* yearList);
         bool idDailyList(QString *myError, QList<QString>* idMeteoList);
 
@@ -168,11 +168,12 @@
         QDate getLastDailyDate() const;
         QDate getFirstHourlyDate() const;
         QDate getLastHourlyDate() const;
-        QDate getFirsMonthlytDate() const;
+        QDate getFirstMonthlytDate() const;
         QDate getLastMonthlyDate() const;
 
         bool isDaily();
         bool isHourly();
+        bool isMonthly();
 
         bool saveLogProcedures(QString *myError, QString nameProc, QDate date);
 

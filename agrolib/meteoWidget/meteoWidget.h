@@ -23,6 +23,7 @@
             void setCurrentDate(QDate myDate);
             void setDateIntervalDaily(QDate firstDate, QDate lastDate);
             void setDateIntervalHourly(QDate firstDate, QDate lastDate);
+            void setDateIntervalMonthly(QDate firstDate, QDate lastDate);
 
             void addMeteoPointsEnsemble(Crit3DMeteoPoint mp);
 
@@ -35,6 +36,8 @@
             void drawDailyVar();
             void drawEnsembleDailyVar();
             void drawHourlyVar();
+            void drawMonthlyVar();
+            void showMonthlyGraph();
             void showDailyGraph();
             void showHourlyGraph();
             void updateSeries();
@@ -58,6 +61,8 @@
             void on_actionInfoPoint();
             void on_actionDataAvailability();
             void on_actionDataSum();
+            void drawSum();
+            void checkExistingData();
 
     private:
             int meteoWidgetID;
@@ -75,11 +80,15 @@
             QDate lastDailyDate;
             QDate firstHourlyDate;
             QDate lastHourlyDate;
+            QDate firstMonthlyDate;
+            QDate lastMonthlyDate;
             QDate currentDate;
 
+            QAction* dataSum;
             QPushButton *addVarButton;
             QPushButton *dailyButton;
             QPushButton *hourlyButton;
+            QPushButton *monthlyButton;
             QPushButton *tableButton;
             QPushButton *redrawButton;
             QPushButton *shiftPreviousButton;
@@ -109,6 +118,7 @@
             QVector<QVector<QBarSet*>> setVector;
             QList<QString> categories;
             QList<QString> categoriesVirtual;
+            QList<QString> varToSumList;
 
             bool isLine;
             bool isBar;
