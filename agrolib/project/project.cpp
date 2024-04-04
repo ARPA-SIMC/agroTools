@@ -1121,9 +1121,11 @@ bool Project::loadMeteoPointsDB(QString fileName)
         logError("Error reading proxy values");
     }
 
-    //position with respect to DEM
+    // position with respect to DEM
     if (DEM.isLoaded)
+    {
         checkMeteoPointsDEM();
+    }
 
     meteoPointsLoaded = true;
     logInfo("Meteo points DB = " + dbName);
@@ -1220,7 +1222,9 @@ bool Project::loadAggregationDBAsMeteoPoints(QString fileName)
 
     //position with respect to DEM
     if (DEM.isLoaded)
+    {
         checkMeteoPointsDEM();
+    }
 
     meteoPointsLoaded = true;
     logInfo("Meteo points DB = " + dbName);
@@ -1762,11 +1766,14 @@ bool Project::readPointProxyValues(Crit3DMeteoPoint* myPoint, QSqlDatabase* myDb
             }
         }
 
-        if (int(myPoint->proxyValues[i]) == int(NODATA))
+        if (isEqual(myPoint->proxyValues[i], NODATA))
         {
             gis::Crit3DRasterGrid* proxyGrid = myProxy->getGrid();
             if (proxyGrid == nullptr || ! proxyGrid->isLoaded)
+            {
+                errorString = "Error in proxy grid: " + QString::fromStdString(myProxy->getGridName());
                 return false;
+            }
             else
             {
                 myValue = gis::getValueFromXY(*proxyGrid, myPoint->point.utm.x, myPoint->point.utm.y);
@@ -1864,7 +1871,8 @@ bool Project::readProxyValues()
 
     for (int i = 0; i < this->nrMeteoPoints; i++)
     {
-        if (! readPointProxyValues(&(this->meteoPoints[i]), &myDb)) return false;
+        if (! readPointProxyValues(&(this->meteoPoints[i]), &myDb))
+            return false;
     }
 
     return true;
@@ -1874,14 +1882,23 @@ bool Project::readProxyValues()
 bool Project::updateProxy()
 {
     if (DEM.isLoaded)
+    {
         if (! interpolationSettings.getProxyLoaded())
         {
-            if (loadProxyGrids()) interpolationSettings.setProxyLoaded(true);
-            else return false;
+            if (loadProxyGrids())
+            {
+                interpolationSettings.setProxyLoaded(true);
+            }
+            else
+                return false;
 
             if (meteoPointsDbHandler != nullptr)
-                if (! readProxyValues()) return false;
+            {
+                if (! readProxyValues())
+                    return false;
+            }
         }
+    }
 
     return true;
 }
@@ -2074,6 +2091,8 @@ void Project::passInterpolatedTemperatureToHumidityPoints(Crit3DTime myTime, Cri
 bool Project::interpolationOutputPoints(std::vector <Crit3DInterpolationDataPoint> &interpolationPoints,
                                         gis::Crit3DRasterGrid *outputGrid, meteoVariable myVar)
 {
+    // GA 2024-03-29 mi sembra che qua manchi il local detrending
+
     if (! getComputeOnlyPoints()) return false;
 
     if (outputPoints.empty())
@@ -2155,6 +2174,8 @@ bool Project::computeStatisticsCrossValidation(Crit3DTime myTime, meteoVariable 
 
 bool Project::interpolationCv(meteoVariable myVar, const Crit3DTime& myTime, crossValidationStatistics *myStats)
 {
+    // TODO local detrending
+
     if (! checkInterpolation(myVar)) return false;
 
     // check variables
@@ -2292,6 +2313,8 @@ bool Project::interpolationDemLocalDetrending(meteoVariable myVar, const Crit3DT
                 myRaster->getRowCol(x, y, row, col);
                 if (! myRaster->isOutOfGrid(row, col))
                 {
+                    getProxyValuesXY(x, y, &interpolationSettings, proxyValues);
+
                     std::vector <Crit3DInterpolationDataPoint> subsetInterpolationPoints;
                     localSelection(interpolationPoints, subsetInterpolationPoints, x, y, interpolationSettings);
                     if (! preInterpolation(subsetInterpolationPoints, &interpolationSettings, meteoSettings, &climateParameters,
@@ -2301,7 +2324,7 @@ bool Project::interpolationDemLocalDetrending(meteoVariable myVar, const Crit3DT
                         return false;
                     }
 
-                    getProxyValuesXY(x, y, &interpolationSettings, proxyValues);
+
                     outputPoints[i].currentValue = interpolate(subsetInterpolationPoints, &interpolationSettings, meteoSettings,
                                                                myVar, x, y, outputPoints[i].z, proxyValues, true);
 
@@ -2319,10 +2342,14 @@ bool Project::interpolationDemLocalDetrending(meteoVariable myVar, const Crit3DT
         {
             for (long col = 0; col < myHeader.nrCols; col++)
             {
+                interpolationSettings.setProxiesComplete(true);
+
                 float z = DEM.value[row][col];
                 if (! isEqual(z, myHeader.flag))
                 {
                     gis::getUtmXYFromRowCol(myHeader, row, col, &x, &y);
+
+                    if (! getProxyValuesXY(x, y, &interpolationSettings, proxyValues)) interpolationSettings.setProxiesComplete(false);
 
                     std::vector <Crit3DInterpolationDataPoint> subsetInterpolationPoints;
                     localSelection(interpolationPoints, subsetInterpolationPoints, x, y, interpolationSettings);
@@ -2333,9 +2360,11 @@ bool Project::interpolationDemLocalDetrending(meteoVariable myVar, const Crit3DT
                         return false;
                     }
 
-                    getProxyValuesXY(x, y, &interpolationSettings, proxyValues);
+
                     myRaster->value[row][col] = interpolate(subsetInterpolationPoints, &interpolationSettings, meteoSettings,
                                                             myVar, x, y, z, proxyValues, true);
+
+
                 }
             }
         }
@@ -2585,14 +2614,13 @@ bool Project::interpolationGrid(meteoVariable myVar, const Crit3DTime& myTime)
     {
         for (unsigned row = 0; row < unsigned(meteoGridDbHandler->meteoGrid()->gridStructure().header().nrRows); row++)
         {
-            if (meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->id == "002565")
-                int a = 0;
-
             if (meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->active)
             {
                 myX = meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->point.utm.x;
                 myY = meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->point.utm.y;
                 myZ = meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->point.z;
+
+                interpolationSettings.setProxiesComplete(true);
 
                 if (getUseDetrendingVar(myVar))
                 {
@@ -2609,6 +2637,8 @@ bool Project::interpolationGrid(meteoVariable myVar, const Crit3DTime& myTime)
                                 float proxyValue = gis::getValueFromXY(*meteoGridProxies[proxyIndex], myX, myY);
                                 if (proxyValue != meteoGridProxies[proxyIndex]->header->flag)
                                     proxyValues[i] = double(proxyValue);
+                                else
+                                    interpolationSettings.setProxiesComplete(false);
                             }
 
                             proxyIndex++;
@@ -3483,10 +3513,6 @@ void Project::showMeteoWidgetGrid(std::string idCell, bool isAppend)
                 {
                     meteoWidgetGrid->setDateIntervalHourly(firstDateTime.date(), lastDateTime.date());
                 }
-                if (meteoGridDbHandler->isMonthly())
-                {
-                    meteoWidgetGrid->setDateIntervalMonthly(firstMonthlyDate, lastMonthlyDate);
-                }
 
                 meteoWidgetGrid->drawMeteoPoint(meteoGridDbHandler->meteoGrid()->meteoPoint(row,col), isAppend);
             }
@@ -3558,6 +3584,12 @@ void Project::showProxyGraph()
         proxyWidget = new Crit3DProxyWidget(&interpolationSettings, meteoPointsSelected, nSelected, currentFrequency, currentDate, currentHour, quality, &qualityInterpolationSettings, meteoSettings, &climateParameters, checkSpatialQuality);
     }
     QObject::connect(proxyWidget, SIGNAL(closeProxyWidget()), this, SLOT(deleteProxyWidget()));
+    return;
+}
+
+void Project::showLocalProxyGraph(gis::Crit3DGisSettings gisSettings, double x, double y)
+{
+    localProxyWidget = new Crit3DLocalProxyWidget(x, y, gisSettings, &interpolationSettings, meteoPoints, nrMeteoPoints, currentFrequency, currentDate, currentHour, quality, &qualityInterpolationSettings, meteoSettings, &climateParameters, checkSpatialQuality);
     return;
 }
 

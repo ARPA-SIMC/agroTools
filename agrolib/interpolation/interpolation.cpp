@@ -1047,8 +1047,8 @@ void localSelection(vector <Crit3DInterpolationDataPoint> &inputPoints, vector <
     }
 
     for (i=0; i < selectedPoints.size(); i++)
-        selectedPoints[i].regressionWeight = (1 - selectedPoints[i].distance / r1);
-        //selectedPoints[i].regressionWeight = 1;
+        //selectedPoints[i].regressionWeight = (1 - selectedPoints[i].distance / r1);
+        selectedPoints[i].regressionWeight = 1;
 
     mySettings.setLocalRadius(r1);
 }
@@ -1092,7 +1092,7 @@ bool getUseDetrendingVar(meteoVariable myVar)
         myVar == dailyAirTemperatureMin ||
         myVar == elaboration )
 
-    return true;
+        return true;
     else
         return false;
 }
@@ -1108,7 +1108,7 @@ bool getUseTdVar(meteoVariable myVar)
         myVar == atmPressure ||
         myVar == dailyWaterTableDepth)
 
-    return false;
+        return false;
     else
         return true;
 }
@@ -1179,10 +1179,12 @@ float retrend(meteoVariable myVar, vector<double> myProxyValues, Crit3DInterpola
     {
         std::vector <double> activeProxyValues;
 
-        std::vector<std::function<double(double, std::vector<double>&)>> myFunc = mySettings->getFittingFunction();
-        std::vector <std::vector <double>> fittingParameters = mySettings->getFittingParameters();
         if (getActiveProxyValues(mySettings, myProxyValues, activeProxyValues))
+        {
+            std::vector<std::function<double(double, std::vector<double>&)>> myFunc = mySettings->getFittingFunction();
+            std::vector <std::vector <double>> fittingParameters = mySettings->getFittingParameters();
             retrendValue = float(functionSum(myFunc, activeProxyValues, fittingParameters));
+        }
     }
     else
     {
@@ -1532,8 +1534,8 @@ bool multipleDetrending(std::vector <Crit3DInterpolationDataPoint> &myPoints,
     }
 
     // multiple non linear fitting
-    interpolation::bestFittingMarquardt_nDimension(&functionSum, myFunc, 500, 3, parametersMin, parametersMax, parameters, parametersDelta,
-                                                   50, 0.005, 0.05, predictors, predictands, weights);
+    interpolation::bestFittingMarquardt_nDimension(&functionSum, myFunc, 1000, 5, parametersMin, parametersMax, parameters, parametersDelta,
+                                                   100, 0.005, 0.02, predictors, predictands, weights);
 
     mySettings->setFittingFunction(myFunc);
     mySettings->setFittingParameters(parameters);
@@ -1669,8 +1671,11 @@ bool preInterpolation(std::vector <Crit3DInterpolationDataPoint> &myPoints, Crit
     {
         if (mySettings->getUseMultipleDetrending())
         {
-            mySettings->setCurrentCombination(mySettings->getSelectedCombination());
-            if (! multipleDetrending(myPoints, mySettings, myVar, errorStr)) return false;
+            if (mySettings->getProxiesComplete())
+            {
+                mySettings->setCurrentCombination(mySettings->getSelectedCombination());
+                if (! multipleDetrending(myPoints, mySettings, myVar, errorStr)) return false;
+            }
         }
         else
         {
@@ -1765,10 +1770,11 @@ bool getActiveProxyValues(Crit3DInterpolationSettings *mySettings, const std::ve
 }
 
 
-void getProxyValuesXY(float x, float y, Crit3DInterpolationSettings* mySettings, std::vector<double> &myValues)
+bool getProxyValuesXY(float x, float y, Crit3DInterpolationSettings* mySettings, std::vector<double> &myValues)
 {
     float myValue;
     gis::Crit3DRasterGrid* proxyGrid;
+    bool proxyComplete = true;
 
     Crit3DProxyCombination myCombination = mySettings->getCurrentCombination();
 
@@ -1784,9 +1790,13 @@ void getProxyValuesXY(float x, float y, Crit3DInterpolationSettings* mySettings,
                 myValue = gis::getValueFromXY(*proxyGrid, x, y);
                 if (myValue != proxyGrid->header->flag)
                     myValues[i] = myValue;
+                else
+                    proxyComplete = false;
             }
         }
     }
+
+    return proxyComplete;
 }
 
 float getFirstIntervalHeightValue(std::vector <Crit3DInterpolationDataPoint> &myPoints, bool useLapseRateCode)
