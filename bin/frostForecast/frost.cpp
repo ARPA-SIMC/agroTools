@@ -339,7 +339,7 @@ int Frost::getForecastData(int paramPos)
     myForecastMax.clear();
     myForecastMin.clear();
     myObsData.clear();
-    myDate.clear();
+    myDateTime.clear();
 
     int meteoPointListpos = 0;
     bool found = false;
@@ -478,7 +478,8 @@ int Frost::getForecastData(int paramPos)
                 {
                     QDate dateTmp = firstDate.addDays(myDateTmpIndex);
                     dateTimeTmp = QDateTime(dateTmp,QTime(myTmpHour,0,0));
-                    myDate.append(QDateTime(runDate.addDays(i),QTime(j,0,0)));
+                    myDateTime.append(QDateTime(runDate.addDays(i),QTime(j,0,0),Qt::UTC));
+
                     float myT = point->getMeteoPointValueH(getCrit3DDate(dateTmp), myTmpHour, 0, airTemperature);
                     if (myT != NODATA)
                     {
@@ -567,7 +568,7 @@ int Frost::createCsvFile(QString id)
     {
         if (i>12 && i<38) // csv file from h.12 to h.12 day after
         {
-            out << myDate[i].toString("yyyy-MM-dd hh:mm");
+            out << myDateTime[i].toString("yyyy-MM-dd hh:mm");
             if (myObsData[i] !=NODATA)
             {
                 out << "," << myObsData[i];
