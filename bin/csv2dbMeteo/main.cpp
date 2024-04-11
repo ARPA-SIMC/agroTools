@@ -97,6 +97,8 @@ int main(int argc, char *argv[])
         qDebug() << "File format: Date, Tmin, Tmax, Prec";
     }
 
+    qDebug() << "Save to DB...";
+
     for (int i=0; i<fileList.count(); i++)
     {
         fn = fileList[i];
@@ -115,6 +117,8 @@ int main(int argc, char *argv[])
             insertData(fileName, tableName, myDB);
         }
     }
+
+    qDebug() << "END.";
 
     myDB.close();
 }
