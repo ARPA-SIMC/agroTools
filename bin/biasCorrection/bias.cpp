@@ -785,7 +785,7 @@ int Bias::getDistributionParam(QString idCell, QString variable, std::vector<dou
         while (qry.next())
         {
             getValue(qry.value("month"), &month);
-            if (month < 1 || month > 12)
+            if ((month < 1) || (month > 12))
             {
                 logger.writeError ("Invalid month: " + QString::number(month) + " idCell: " +"\n");
                 return ERROR_GETTINGPARAM;
