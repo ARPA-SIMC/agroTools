@@ -142,6 +142,9 @@ Crit3DMeteoWidget::Crit3DMeteoWidget(bool isGrid_, QString projectPath, Crit3DMe
             currentFreq = hourly;
         }
         MapCSVDefault.insert(key,items);
+        zeroLine = new QLineSeries();
+        zeroLine->setColor(Qt::gray);
+        zeroLine->setName("zero");
         if (items[0] == "line")
         {
             auto search = MapDailyMeteoVar.find(key.toStdString());
@@ -656,6 +659,10 @@ void Crit3DMeteoWidget::drawEnsemble()
 
 void Crit3DMeteoWidget::resetValues()
 {
+    if (chart->series().contains(zeroLine))
+    {
+        chart->removeSeries(zeroLine);
+    }
     int nMeteoPoints = meteoPoints.size();
     // clear prev series values
     if (!lineSeries.isEmpty())
@@ -664,7 +671,6 @@ void Crit3DMeteoWidget::resetValues()
         {
             for (int i = 0; i < lineSeries[mp].size(); i++)
             {
-                lineSeries[mp][i]->clear();
                 if (chart->series().contains(lineSeries[mp][i]))
                 {
                     chart->removeSeries(lineSeries[mp][i]);
@@ -679,7 +685,6 @@ void Crit3DMeteoWidget::resetValues()
         for (int mp = 0; mp < barSeries.size(); mp++)
         {
             setVector[mp].clear();
-            barSeries[mp]->clear();
             if (chart->series().contains(barSeries[mp]))
             {
                 chart->removeSeries(barSeries[mp]);
@@ -712,8 +717,45 @@ void Crit3DMeteoWidget::resetValues()
                 else
                 {
                     QColor newColor = lineColor.toHsl();
-                    newColor.setHsl(newColor.hslHue()+(mp*15), newColor.hslSaturation(), newColor.lightness());
-                    line->setColor(newColor);
+                    int h = newColor.hslHue();
+                    if (h >= 180)
+                    {
+                        newColor.setHsl(h-(mp*27), newColor.hslSaturation(), newColor.lightness());
+                    }
+                    else
+                    {
+                        newColor.setHsl(h+(mp*27), newColor.hslSaturation(), newColor.lightness());
+                    }
+                    if (colorLinesMpAppended.isEmpty() || !colorLinesMpAppended.contains(lineColor.name()))
+                    {
+                        line->setColor(newColor);
+                        QList<QColor> myList;
+                        myList.append(newColor);
+                        colorLinesMpAppended.insert(lineColor.name(), myList);
+                    }
+                    else
+                    {
+                        QMapIterator<QString, QList<QColor>> iterator(colorLinesMpAppended);
+                        while (iterator.hasNext())
+                        {
+                            iterator.next();
+                            if (iterator.key() == lineColor.name())
+                            {
+                                QList<QColor> myList = colorLinesMpAppended[lineColor.name()];
+                                if (myList.size()>=mp)
+                                {
+                                    line->setColor(myList[mp-1]);
+                                }
+                                else
+                                {
+                                    myList.append(newColor);
+                                    colorLinesMpAppended[lineColor.name()] = myList;
+                                    line->setColor(newColor);
+                                }
+                                break;
+                            }
+                        }
+                    }
                 }
                 vectorLine.append(line);
             }
@@ -750,9 +792,49 @@ void Crit3DMeteoWidget::resetValues()
                     else
                     {
                         QColor newColor = barColor.toHsl();
-                        newColor.setHsl(newColor.hslHue()+(mp*15), newColor.hslSaturation(), newColor.lightness());
-                        bar->setColor(newColor);
-                        bar->setBorderColor(newColor);
+                        int h = newColor.hslHue();
+                        if (h >= 180)
+                        {
+                            newColor.setHsl(h-(mp*27), newColor.hslSaturation(), newColor.lightness());
+                        }
+                        else
+                        {
+                            newColor.setHsl(h+(mp*27), newColor.hslSaturation(), newColor.lightness());
+                        }
+                        if (colorBarMpAppended.isEmpty() || !colorBarMpAppended.contains(barColor.name()))
+                        {
+                            bar->setColor(newColor);
+                            bar->setBorderColor(newColor);
+                            QList<QColor> myList;
+                            myList.append(newColor);
+                            colorBarMpAppended.insert(barColor.name(), myList);
+                        }
+                        else
+                        {
+                            QMapIterator<QString, QList<QColor>> iterator(colorBarMpAppended);
+                            while (iterator.hasNext())
+                            {
+                                iterator.next();
+
+                                if (iterator.key() == barColor.name())
+                                {
+                                    QList<QColor> myList = colorBarMpAppended[barColor.name()];
+                                    if (myList.size() >= mp)
+                                    {
+                                        bar->setColor(myList[mp-1]);
+                                        bar->setBorderColor(myList[mp-1]);
+                                    }
+                                    else
+                                    {
+                                        myList.append(newColor);
+                                        colorBarMpAppended[barColor.name()] = myList;
+                                        bar->setColor(newColor);
+                                        bar->setBorderColor(newColor);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
                 else
@@ -1252,6 +1334,19 @@ void Crit3DMeteoWidget::drawDailyVar()
         axisY->setVisible(false);
     }
 
+    // add zeroLine
+    if (axisY->min() <= 0 && axisY->max() >= 0)
+    {
+        zeroLine->clear();
+        for (int day = 0; day < nDays; day++)
+        {
+            zeroLine->append(day, 0);
+        }
+        chart->addSeries(zeroLine);
+        zeroLine->attachAxis(axisX);
+        zeroLine->attachAxis(axisY);
+    }
+
     // add minimimum values required
     if (nDays==1)
     {
@@ -1281,36 +1376,9 @@ void Crit3DMeteoWidget::drawDailyVar()
     {
         for (int j = 0; j < nameBar.size(); j++)
         {
-            if (nDays < 5)
+            if (nDays < 5 || meteoPointsEnsemble.size() != 0)
             {
                 setVector[mp][j]->setColor(QColor("transparent"));
-            }
-            else
-            {
-                QColor barColor = colorBar[j];
-                if (meteoPointsEnsemble.size() == 0)
-                {
-                    if (mp == 0)
-                    {
-                        setVector[mp][j]->setColor(barColor);
-                        setVector[mp][j]->setBorderColor(barColor);
-                    }
-                    else
-                    {
-                        QColor newColor;
-                        newColor.setRed(barColor.red() + (255-barColor.red()) * mp/nMeteoPoints);
-                        newColor.setGreen(barColor.green() + (255-barColor.green()) * mp/nMeteoPoints);
-                        newColor.setBlue(barColor.blue() + (255-barColor.blue()) * mp/nMeteoPoints);
-                        setVector[mp][j]->setColor(newColor);
-                        setVector[mp][j]->setBorderColor(newColor);
-                    }
-                }
-                else
-                {
-                    setVector[mp][j]->setColor(Qt::transparent);
-                    setVector[mp][j]->setBorderColor(barColor);
-                }
-
             }
         }
     }
@@ -1324,10 +1392,19 @@ void Crit3DMeteoWidget::drawDailyVar()
 
     foreach(QLegendMarker* marker, chart->legend()->markers())
     {
-        marker->setVisible(true);
-        marker->series()->setVisible(true);
-        QObject::connect(marker, &QLegendMarker::clicked, this, &Crit3DMeteoWidget::handleMarkerClicked);
+        if (marker->series()->name() != "zero")
+        {
+            marker->setVisible(true);
+            marker->series()->setVisible(true);
+            QObject::connect(marker, &QLegendMarker::clicked, this, &Crit3DMeteoWidget::handleMarkerClicked);
+        }
+        else
+        {
+            marker->setVisible(false);
+            marker->series()->setVisible(true);
+        }
     }
+
 
     formInfo.close();
 }
@@ -1359,8 +1436,8 @@ void Crit3DMeteoWidget::drawHourlyVar()
     double maxLine = NODATA;
     double minLine = -NODATA;
 
-    int nrDays = firstDate->date().daysTo(lastDate->date())+1;
-    int nrValues = nrDays*24;
+    int nDays = firstDate->date().daysTo(lastDate->date())+1;
+    int nrValues = nDays*24;
 
     // virtual x axis
     int nrIntervals;
@@ -1381,7 +1458,7 @@ void Crit3DMeteoWidget::drawHourlyVar()
     Crit3DDate myCrit3DDate;
     QDateTime myDateTime;
 
-    for (int d = 0; d < nrDays; d++)
+    for (int d = 0; d < nDays; d++)
     {
         myCrit3DDate = getCrit3DDate(myDate);
 
@@ -1457,35 +1534,16 @@ void Crit3DMeteoWidget::drawHourlyVar()
 
     if (isBar)
     {
-        for (int mp=0; mp < nMeteoPoints; mp++)
+        for (int mp = 0; mp < nMeteoPoints; mp++)
         {
             QBarSeries* barMpSeries = new QBarSeries();
             for (int i = 0; i < nameBar.size(); i++)
             {
-                QColor barColor = colorBar[i];
-                if (meteoPointsEnsemble.size() == 0)
-                {
-                    if (mp == 0)
-                    {
-                        setVector[mp][i]->setColor(barColor);
-                        setVector[mp][i]->setBorderColor(barColor);
-                    }
-                    else
-                    {
-                        QColor newColor;
-                        newColor.setRed(barColor.red() + (255-barColor.red()) * mp/nMeteoPoints);
-                        newColor.setGreen(barColor.green() + (255-barColor.green()) * mp/nMeteoPoints);
-                        newColor.setBlue(barColor.blue() + (255-barColor.blue()) * mp/nMeteoPoints);
-                        setVector[mp][i]->setColor(newColor);
-                        setVector[mp][i]->setBorderColor(newColor);
-                    }
-                }
-                else
+                barMpSeries->append(setVector[mp][i]);
+                if (meteoPointsEnsemble.size() != 0)
                 {
                     setVector[mp][i]->setColor(Qt::transparent);
-                    setVector[mp][i]->setBorderColor(barColor);
                 }
-                barMpSeries->append(setVector[mp][i]);
             }
             barSeries.append(barMpSeries);
         }
@@ -1557,6 +1615,23 @@ void Crit3DMeteoWidget::drawHourlyVar()
         axisY->setVisible(false);
     }
 
+    // add zeroLine
+    if (axisY->min() <= 0 && axisY->max() >= 0)
+    {
+        zeroLine->clear();
+        for (int d = 0; d < nDays; d++)
+        {
+            for (int h = 0; h < 24; h++)
+            {
+                int index = d*24+h;
+                zeroLine->append(index, 0);
+            }
+        }
+        chart->addSeries(zeroLine);
+        zeroLine->attachAxis(axisX);
+        zeroLine->attachAxis(axisY);
+    }
+
     axisX->setCategories(categories);
     axisXvirtual->setCategories(categoriesVirtual);
     axisX->setGridLineVisible(false);
@@ -1566,13 +1641,20 @@ void Crit3DMeteoWidget::drawHourlyVar()
 
     foreach(QLegendMarker* marker, chart->legend()->markers())
     {
-        marker->setVisible(true);
-        marker->series()->setVisible(true);
-        QObject::connect(marker, &QLegendMarker::clicked, this, &Crit3DMeteoWidget::handleMarkerClicked);
+        if (marker->series()->name() != "zero")
+        {
+            marker->setVisible(true);
+            marker->series()->setVisible(true);
+            QObject::connect(marker, &QLegendMarker::clicked, this, &Crit3DMeteoWidget::handleMarkerClicked);
+        }
+        else
+        {
+            marker->setVisible(false);
+            marker->series()->setVisible(true);
+        }
     }
 
     formInfo.close();
-
 }
 
 void Crit3DMeteoWidget::drawMonthlyVar()
@@ -1789,6 +1871,19 @@ void Crit3DMeteoWidget::drawMonthlyVar()
         axisY->setVisible(false);
     }
 
+    // add zeroLine
+    if (axisY->min() <= 0 && axisY->max() >= 0)
+    {
+        zeroLine->clear();
+        for (int month = 0; month < numberOfMonths; month++)
+        {
+            zeroLine->append(month, 0);
+        }
+        chart->addSeries(zeroLine);
+        zeroLine->attachAxis(axisX);
+        zeroLine->attachAxis(axisY);
+    }
+
     // add minimimum values required
     if (numberOfMonths==1)
     {
@@ -1822,32 +1917,6 @@ void Crit3DMeteoWidget::drawMonthlyVar()
             {
                 setVector[mp][j]->setColor(QColor("transparent"));
             }
-            else
-            {
-                QColor barColor = colorBar[j];
-                if (meteoPointsEnsemble.size() == 0)
-                {
-                    if (mp == 0)
-                    {
-                        setVector[mp][j]->setColor(barColor);
-                        setVector[mp][j]->setBorderColor(barColor);
-                    }
-                    else
-                    {
-                        QColor newColor;
-                        newColor.setRed(barColor.red() + (255-barColor.red()) * mp/nMeteoPoints);
-                        newColor.setGreen(barColor.green() + (255-barColor.green()) * mp/nMeteoPoints);
-                        newColor.setBlue(barColor.blue() + (255-barColor.blue()) * mp/nMeteoPoints);
-                        setVector[mp][j]->setColor(newColor);
-                        setVector[mp][j]->setBorderColor(newColor);
-                    }
-                }
-                else
-                {
-                    setVector[mp][j]->setColor(Qt::transparent);
-                    setVector[mp][j]->setBorderColor(barColor);
-                }
-            }
         }
     }
 
@@ -1860,9 +1929,17 @@ void Crit3DMeteoWidget::drawMonthlyVar()
 
     foreach(QLegendMarker* marker, chart->legend()->markers())
     {
-        marker->setVisible(true);
-        marker->series()->setVisible(true);
-        QObject::connect(marker, &QLegendMarker::clicked, this, &Crit3DMeteoWidget::handleMarkerClicked);
+        if (marker->series()->name() != "zero")
+        {
+            marker->setVisible(true);
+            marker->series()->setVisible(true);
+            QObject::connect(marker, &QLegendMarker::clicked, this, &Crit3DMeteoWidget::handleMarkerClicked);
+        }
+        else
+        {
+            marker->setVisible(false);
+            marker->series()->setVisible(true);
+        }
     }
 
     formInfo.close();
@@ -2130,7 +2207,9 @@ void Crit3DMeteoWidget::updateSeries()
 
     nameLines.clear();
     colorLines.clear();
+    colorLinesMpAppended.clear();
     nameBar.clear();
+    colorBarMpAppended.clear();
     colorBar.clear();
     isLine = false;
     isBar = false;
@@ -2148,13 +2227,33 @@ void Crit3DMeteoWidget::updateSeries()
                 {
                     isLine = true;
                     nameLines.append(i.key());
-                    colorLines.append(QColor(items[1]));
+                    QColor myColor = QColor(items[1]);
+                    colorLines.append(myColor);
+                    QList<QColor> appendedList;
+                    for (int colorAppended = 2; colorAppended < items.size(); colorAppended++)
+                    {
+                        appendedList.append(QColor(items[colorAppended]));
+                    }
+                    if (!appendedList.isEmpty())
+                    {
+                        colorLinesMpAppended.insert(myColor.name(), appendedList);
+                    }
                 }
                 if (items[0] == "bar")
                 {
                     isBar = true;
                     nameBar.append(i.key());
-                    colorBar.append(QColor(items[1]));
+                    QColor myColor = QColor(items[1]);
+                    colorBar.append(myColor);
+                    QList<QColor> appendedList;
+                    for (int colorAppended = 2; colorAppended < items.size(); colorAppended++)
+                    {
+                        appendedList.append(QColor(items[colorAppended]));
+                    }
+                    if (!appendedList.isEmpty())
+                    {
+                        colorBarMpAppended.insert(myColor.name(), appendedList);
+                    }
                 }
             }
         }
@@ -2354,7 +2453,23 @@ void Crit3DMeteoWidget::editLineSeries()
                             if (iterator.key() == nameLines[i])
                             {
                                 QList<QString> newItems = iterator.value();
-                                newItems[1] = newColor.name();
+                                // check which mp is
+                                for (int mp = 0; mp < meteoPoints.size(); mp++)
+                                {
+                                    QString pointName = QString::fromStdString(meteoPoints[mp].name);
+                                    QString label = getFormattedLabel(pointName, nameLines[i]);
+                                    if (series->name() == label)
+                                    {
+                                        if (newItems.size() > mp+1)
+                                        {
+                                            newItems[mp+1] = newColor.name();
+                                        }
+                                        else
+                                        {
+                                            newItems.append(newColor.name());
+                                        }
+                                    }
+                                }
                                 MapCSVStyles[nameLines[i]] = newItems;
                                 break;
                             }
@@ -2683,7 +2798,24 @@ void Crit3DMeteoWidget::editBar()
                             if (iterator.key() == nameBar[i])
                             {
                                 QList<QString> newItems = iterator.value();
-                                newItems[1] = newColor.name();
+                                // check which mp is
+                                for (int mp = 0; mp < meteoPoints.size(); mp++)
+                                {
+                                    QString pointName = QString::fromStdString(meteoPoints[mp].name);
+                                    QString label = getFormattedLabel(pointName, nameBar[i]);
+                                    if (barset->label() == label)
+                                    {
+                                        if (newItems.size() > mp+1)
+                                        {
+                                            newItems[mp+1] = newColor.name();
+                                        }
+                                        else
+                                        {
+                                            newItems.append(newColor.name());
+                                        }
+                                        break;
+                                    }
+                                }
                                 MapCSVStyles[nameBar[i]] = newItems;
                                 break;
                             }

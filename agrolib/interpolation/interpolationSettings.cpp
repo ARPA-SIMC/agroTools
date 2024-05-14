@@ -296,6 +296,22 @@ void Crit3DInterpolationSettings::setFittingFunction(const std::vector<std::func
     fittingFunction = newFittingFunction;
 }
 
+TFittingFunction Crit3DInterpolationSettings::getChosenElevationFunction()
+{
+    return chosenElevationFunction;
+}
+
+void Crit3DInterpolationSettings::setChosenElevationFunction(TFittingFunction chosenFunction)
+{
+    chosenElevationFunction = chosenFunction;
+}
+
+void Crit3DInterpolationSettings::clearFitting()
+{
+    fittingFunction.clear();
+    fittingParameters.clear();
+}
+
 bool Crit3DInterpolationSettings::getProxiesComplete() const
 {
     return proxiesComplete;
@@ -339,6 +355,7 @@ void Crit3DInterpolationSettings::initialize()
     meteoGridAggrMethod = aggrAverage;
     meteoGridUpscaleFromDem = true;
     indexHeight = unsigned(NODATA);
+    chosenElevationFunction = frei;
 
     isKrigingReady = false;
     precipitationAllZero = false;
@@ -359,6 +376,22 @@ std::string getKeyStringInterpolationMethod(TInterpolationMethod value)
     std::string key = "";
 
     for (it = interpolationMethodNames.begin(); it != interpolationMethodNames.end(); ++it)
+    {
+        if (it->second == value)
+        {
+            key = it->first;
+            break;
+        }
+    }
+    return key;
+}
+
+std::string getKeyStringElevationFunction(TFittingFunction value)
+{
+    std::map<std::string, TFittingFunction>::const_iterator it;
+    std::string key = "";
+
+    for (it = fittingFunctionNames.begin(); it != fittingFunctionNames.end(); ++it)
     {
         if (it->second == value)
         {
@@ -567,7 +600,34 @@ std::vector<double> Crit3DProxy::getFittingParametersRange() const
 
 void Crit3DProxy::setFittingParametersRange(const std::vector<double> &newFittingParametersRange)
 {
+    fittingParametersRange.clear();
     fittingParametersRange = newFittingParametersRange;
+}
+
+void Crit3DProxy::setFittingFunctionName(TFittingFunction functionName)
+{
+    fittingFunctionName = functionName;
+    return;
+}
+
+TFittingFunction Crit3DProxy::getFittingFunctionName()
+{
+    return fittingFunctionName;
+}
+
+void Crit3DProxy::setMinMaxTemperature(double min, double max)
+{
+    tempMinMax.clear();
+    tempMinMax.push_back(min);
+    tempMinMax.push_back(max);
+}
+
+double Crit3DProxy::getMinMaxTemperature(int i)
+{
+    if (tempMinMax.empty())
+        return NODATA;
+
+    return tempMinMax[i];
 }
 
 Crit3DProxy::Crit3DProxy()
@@ -586,6 +646,7 @@ Crit3DProxy::Crit3DProxy()
     lapseRateT1 = NODATA;
     inversionLapseRate = NODATA;
     inversionIsSignificative = false;
+    tempMinMax;
 
     avg = NODATA;
     stdDev = NODATA;

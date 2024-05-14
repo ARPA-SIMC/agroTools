@@ -6,6 +6,42 @@
     #include <QStringList>
     #include <QDomElement>
 
+    struct TXMLScenarioPoint
+    {
+        QString name;
+        QString code;
+        float latitude;
+        float longitude;
+        float height;
+    };
+    struct TXMLScenarioModels
+    {
+        QString type;
+        QStringList value;
+    };
+    struct TXMLScenarioClimateField
+    {
+        int yearFrom;
+        int yearTo;
+    };
+    struct TXMLScenarioType
+    {
+        QString type;
+        int yearFrom;
+        int yearTo;
+    };
+    struct TXMLScenarioValuesList
+    {
+        QString type;
+        QString attribute;
+        QStringList value;
+    };
+    struct TXMLScenarioPeriod
+    {
+        QString type;
+        TXMLScenarioValuesList seasonalScenarios[4];
+    };
+
     struct TXMLPoint
     {
         QString name;
@@ -48,9 +84,28 @@
         QString anomalySeason;
     };
 
+    class XMLScenarioAnomaly
+    {
+    public:
+        XMLScenarioAnomaly();
+
+        void initialize();
+        void printInfo();
+
+        TXMLScenarioPoint point;
+        TXMLScenarioModels models;
+        TXMLScenarioClimateField climatePeriod;
+        TXMLScenarioType scenario;
+        TXMLScenarioPeriod period[4]; // four season
+        int repetitions;
+        int anomalyYear;
+    };
+
     bool parseXMLFile(const QString &xmlFileName, QDomDocument &xmlDoc);
 
     bool parseXMLSeasonal(const QString &xmlFileName, XMLSeasonalAnomaly &XMLAnomaly);
+
+    bool parseXMLScenario(const QString &xmlFileName, XMLScenarioAnomaly &XMLAnomaly);
 
 
 #endif // PARSERXML_H

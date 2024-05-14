@@ -87,23 +87,28 @@ Crit3DProxyWidget::Crit3DProxyWidget(Crit3DInterpolationSettings* interpolationS
         climatologicalLR.setVisible(true);
     }
 
-    std::map<meteoVariable, std::string>::const_iterator it;
+    std::map<meteoVariable, std::string>::const_iterator iterator;
     if (currentFrequency == daily)
     {
-        for(it = MapDailyMeteoVarToString.begin(); it != MapDailyMeteoVarToString.end(); ++it)
+        for(iterator = MapDailyMeteoVarToString.begin(); iterator != MapDailyMeteoVarToString.end(); ++iterator)
         {
-            comboVariable.addItem(QString::fromStdString(it->second));
+            comboVariable.addItem(QString::fromStdString(iterator->second));
         }
         myVar = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, comboVariable.currentText().toStdString());
     }
     else if (currentFrequency == hourly)
     {
-        for(it = MapHourlyMeteoVarToString.begin(); it != MapHourlyMeteoVarToString.end(); ++it)
+        for(iterator = MapHourlyMeteoVarToString.begin(); iterator != MapHourlyMeteoVarToString.end(); ++iterator)
         {
-            comboVariable.addItem(QString::fromStdString(it->second));
+            comboVariable.addItem(QString::fromStdString(iterator->second));
         }
         myVar = getKeyMeteoVarMeteoMap(MapHourlyMeteoVarToString, comboVariable.currentText().toStdString());
     }
+    else
+    {
+        QMessageBox::information(nullptr, "Warning!", "Select data frequency (daily or hourly) before.");
+    }
+
     //comboVariable.setSizeAdjustPolicy(QComboBox::AdjustToContents);
     comboVariable.setMinimumWidth(100);
     
@@ -436,51 +441,61 @@ void Crit3DProxyWidget::modelLRClicked(int toggled)
             xMin = getZmin(outInterpolationPoints);
             xMax = getZmax(outInterpolationPoints);
 
-            if (!regressionOrography(outInterpolationPoints,interpolationSettings->getSelectedCombination(), interpolationSettings, climateParam,
-                                                               getCurrentTime(), myVar, proxyPos))
-            {
-                return;
-            }
+            float regressionSlope;
 
-            float lapseRateH0 = interpolationSettings->getProxy(proxyPos)->getLapseRateH0();
-            float lapseRateH1 = interpolationSettings->getProxy(proxyPos)->getLapseRateH1();
-            float lapseRateT0 = interpolationSettings->getProxy(proxyPos)->getLapseRateT0();
-            float lapseRateT1 = interpolationSettings->getProxy(proxyPos)->getLapseRateT1();
-            float regressionSlope = interpolationSettings->getProxy(proxyPos)->getRegressionSlope();
-
-            if (interpolationSettings->getProxy(proxyPos)->getInversionIsSignificative())
+            if (! interpolationSettings->getUseMultipleDetrending())
             {
-                if (xMin < interpolationSettings->getProxy(proxyPos)->getLapseRateH0())
+                if (!regressionOrography(outInterpolationPoints,interpolationSettings->getSelectedCombination(), interpolationSettings, climateParam,
+                                                                   getCurrentTime(), myVar, proxyPos))
                 {
-                    point.setX(xMin);
+                    return;
+                }
+
+                float lapseRateH0 = interpolationSettings->getProxy(proxyPos)->getLapseRateH0();
+                float lapseRateH1 = interpolationSettings->getProxy(proxyPos)->getLapseRateH1();
+                float lapseRateT0 = interpolationSettings->getProxy(proxyPos)->getLapseRateT0();
+                float lapseRateT1 = interpolationSettings->getProxy(proxyPos)->getLapseRateT1();
+                regressionSlope = interpolationSettings->getProxy(proxyPos)->getRegressionSlope();
+
+                if (interpolationSettings->getProxy(proxyPos)->getInversionIsSignificative())
+                {
+                    if (xMin < interpolationSettings->getProxy(proxyPos)->getLapseRateH0())
+                    {
+                        point.setX(xMin);
+                        point.setY(lapseRateT0);
+                        point_vector.append(point);
+                    }
+                    point.setX(lapseRateH0);
                     point.setY(lapseRateT0);
                     point_vector.append(point);
+
+                    point.setX(lapseRateH1);
+                    point.setY(lapseRateT1);
+                    point_vector.append(point);
+
+                    float myY = lapseRateT1 + regressionSlope * (xMax - lapseRateH1);
+                    point.setX(xMax);
+                    point.setY(myY);
+                    point_vector.append(point);
                 }
-                point.setX(lapseRateH0);
-                point.setY(lapseRateT0);
-                point_vector.append(point);
+                else
+                {
+                    float myY = lapseRateT0 + regressionSlope * xMin;
+                    point.setX(xMin);
+                    point.setY(myY);
+                    point_vector.append(point);
 
-                point.setX(lapseRateH1);
-                point.setY(lapseRateT1);
-                point_vector.append(point);
-
-                float myY = lapseRateT1 + regressionSlope * (xMax - lapseRateH1);
-                point.setX(xMax);
-                point.setY(myY);
-                point_vector.append(point);
+                    myY = lapseRateT0 + regressionSlope * xMax;
+                    point.setX(xMax);
+                    point.setY(myY);
+                    point_vector.append(point);
+                }
             }
-            else
+            /*else
             {
-                float myY = lapseRateT0 + regressionSlope * xMin;
-                point.setX(xMin);
-                point.setY(myY);
-                point_vector.append(point);
+                multipleDetrending()
+            }*/
 
-                myY = lapseRateT0 + regressionSlope * xMax;
-                point.setX(xMax);
-                point.setY(myY);
-                point_vector.append(point);
-            }
             if (interpolationSettings->getProxy(proxyPos)->getRegressionR2() != NODATA)
             {
                 r2.setText(QString("%1").arg(interpolationSettings->getProxy(proxyPos)->getRegressionR2(), 0, 'f', 2));
