@@ -24,6 +24,7 @@
 // #define TEST
 
 
+void cleanAllDataTable(QSqlDatabase &myDB);
 bool cleanTable(QString tableName, QSqlDatabase& myDB);
 bool insertData(QString fileName, QString tableName, QSqlDatabase& myDB);
 bool cleanTableTPrec(QString tableName, QSqlDatabase &myDB);
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
     // open and check DB
     QSqlDatabase myDB = QSqlDatabase::addDatabase("QSQLITE");
     myDB.setDatabaseName (dataBaseName);
-    if(!myDB.open())
+    if(! myDB.open())
     {
         qDebug() << "\n-----ERROR-----\n" << myDB.lastError().text() << myDB.databaseName();
         exit(-1);
@@ -97,9 +98,11 @@ int main(int argc, char *argv[])
         qDebug() << "File format: Date, Tmin, Tmax, Prec";
     }
 
-    qDebug() << "Save to DB...";
+    qDebug() << "Clean previous data on DB...";
+    cleanAllDataTable(myDB);
 
-    for (int i=0; i<fileList.count(); i++)
+    qDebug() << "Save to DB...";
+    for (int i = 0; i < fileList.count(); i++)
     {
         fn = fileList[i];
 
@@ -123,6 +126,20 @@ int main(int argc, char *argv[])
     myDB.close();
 }
 
+
+void cleanAllDataTable(QSqlDatabase &myDB)
+{
+    QList<QString> tablesList = myDB.tables();
+    int indexLastTable = tablesList.size() -1;
+    for (int i = indexLastTable; i >= 0; i--)
+    {
+        if (tablesList[i].toUpper() != "POINT_PROPERTIES" && tablesList[i].toUpper() != "METEO_LOCATIONS")
+        {
+            QString query = "DROP TABLE '" + tablesList[i] + "'";
+            myDB.exec(query);
+        }
+    }
+}
 
 
 bool cleanTable(QString tableName, QSqlDatabase &myDB)
