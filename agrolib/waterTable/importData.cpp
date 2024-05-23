@@ -2,6 +2,7 @@
 #include "commonConstants.h"
 #include <QFile>
 #include <QTextStream>
+#include <QRegularExpression>
 
 
 bool loadCsvRegistry(QString csvRegistry, std::vector<Well> &wellList, QString &errorStr, int &wrongLines)
@@ -31,7 +32,7 @@ bool loadCsvRegistry(QString csvRegistry, std::vector<Well> &wellList, QString &
         while (!in.atEnd())
         {
             line = in.readLine();
-            QStringList items = line.split(",");
+            QList<QString> items = line.split(",");
             items.removeAll({});
             if (items.size()<nFields)
             {
@@ -39,7 +40,8 @@ bool loadCsvRegistry(QString csvRegistry, std::vector<Well> &wellList, QString &
                 wrongLines++;
                 continue;
             }
-            QString id = items[posId];
+            items[posId] = items[posId].simplified();
+            QString id = items[posId].remove(QChar('"'));
             if (idList.contains(id))
             {
                 // id already saved
@@ -48,14 +50,16 @@ bool loadCsvRegistry(QString csvRegistry, std::vector<Well> &wellList, QString &
                 continue;
             }
             idList.append(id);
-            double utmX = items[posUtmx].toDouble(&ok);
+            items[posUtmx] = items[posUtmx].simplified();
+            double utmX = items[posUtmx].remove(QChar('"')).toDouble(&ok);
             if (!ok)
             {
                 errorList.append(id);
                 wrongLines++;
                 continue;
             }
-            double utmY = items[posUtmy].toDouble(&ok);
+            items[posUtmy] = items[posUtmy].simplified();
+            double utmY = items[posUtmy].remove(QChar('"')).toDouble(&ok);
             if (!ok)
             {
                 errorList.append(id);
@@ -84,6 +88,7 @@ bool loadCsvDepths(QString csvDepths, std::vector<Well> &wellList, int waterTabl
 {
     QFile myFile(csvDepths);
     QList<QString> errorList;
+
     int posId = 0;
     int posDate = 1;
     int posDepth = 2;
@@ -105,7 +110,7 @@ bool loadCsvDepths(QString csvDepths, std::vector<Well> &wellList, int waterTabl
         while (!in.atEnd())
         {
             line = in.readLine();
-            QStringList items = line.split(",");
+            QList<QString> items = line.split(",");
             items.removeAll({});
             if (items.size() < nFields)
             {
@@ -113,7 +118,8 @@ bool loadCsvDepths(QString csvDepths, std::vector<Well> &wellList, int waterTabl
                 wrongLines++;
                 continue;
             }
-            QString id = items[posId];
+            items[posId] = items[posId].simplified();
+            QString id = items[posId].remove(QChar('"'));
             bool found = false;
             int index = NODATA;
             for (int i = 0; i < wellList.size(); i++)
@@ -121,7 +127,7 @@ bool loadCsvDepths(QString csvDepths, std::vector<Well> &wellList, int waterTabl
                 if (wellList[i].getId() == id)
                 {
                     found = true;
-                    index = 1;
+                    index = i;
                     break;
                 }
             }
@@ -132,16 +138,16 @@ bool loadCsvDepths(QString csvDepths, std::vector<Well> &wellList, int waterTabl
                 wrongLines++;
                 continue;
             }
-
-            QDate date = QDate::fromString(items[posDate],"yyyy-MM-dd");
+            items[posDate] = items[posDate].simplified();
+            QDate date = QDate::fromString(items[posDate].remove(QChar('"')),"yyyy-MM-dd");
             if (! date.isValid())
             {
                 errorList.append(line);
                 wrongLines++;
                 continue;
             }
-
-            int value = items[posDepth].toInt(&ok);
+            items[posDepth] = items[posDepth].simplified();
+            int value = items[posDepth].remove(QChar('"')).toInt(&ok);
             if (!ok || value == NODATA || value < 0 || value > waterTableMaximumDepth)
             {
                 errorList.append(line);
