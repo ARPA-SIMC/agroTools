@@ -7,7 +7,7 @@
 #include <iostream>
 
 // uncomment to compute test
-//#define TEST
+#define TEST
 
 void usage()
 {
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     CriteriaOutputProject myProject;
 
     QString appPath = myApp.applicationDirPath() + "/";
-    QString settingsFileName, dateComputationStr;
+    QString settingsFileName, dateComputationStr, operationStr;
 
     if (argc <= 2)
     {
@@ -36,9 +36,9 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
+            settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_C2.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "MAPS";
+            operationStr = "SHAPE";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
     }
     else
     {
-        myProject.operation = argv[1];
-        myProject.operation = myProject.operation.toUpper();
+        operationStr = argv[1];
+        operationStr = operationStr.toUpper();
 
         settingsFileName = argv[2];
         if (settingsFileName.right(3) != "ini")
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     }
 
     // initialize
-    int myResult = myProject.initializeProject(settingsFileName, myProject.operation, dateComputation, true);
+    int myResult = myProject.initializeProject(settingsFileName, operationStr, dateComputation, true);
     if (myResult != CRIT1D_OK)
     {
         myProject.logger.writeError(myProject.projectError);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        myProject.logger.writeError("Wrong parameter: " + myProject.operation);
+        myProject.logger.writeError("Wrong operation: " + myProject.operation);
         usage();
         return ERROR_WRONGPARAMETER;
     }
