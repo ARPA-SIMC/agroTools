@@ -21,7 +21,7 @@ void usage()
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
-    std::cout << "CriteriaOutput V1.8.3" << std::endl;
+    std::cout << "CriteriaOutput V1.8.4" << std::endl;
     std::cout << "*** Shell command to manage the agro-hydrological output of CRITERIA1D-GEO" << std::endl;
 
     CriteriaOutputProject myProject;
@@ -36,9 +36,10 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_AL.ini";
+            //settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_AL.ini";
+            settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollAgro.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operationStr = "SHAPE";
+            operationStr = "MAPS";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
