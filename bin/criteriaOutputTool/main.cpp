@@ -7,7 +7,7 @@
 #include <iostream>
 
 // uncomment to compute test
-#define TEST
+//#define TEST
 
 void usage()
 {
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_C2.ini";
+            settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_AL.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
             operationStr = "SHAPE";
         #else
