@@ -2,7 +2,7 @@
 %{!?srcarchivename: %global srcarchivename agroTools-%{version}}
 
 Name:           agroTools
-Version:        1.8.3
+Version:        1.8.4
 Release:        1%{?dist}
 Summary:        Agro tools
 
@@ -67,6 +67,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Mon May 27 2024 Laura Costantini <laura.costantini0@gmail.com> - 1.8.4-1
+- Release 1.8.4
+
 * Thu Apr 4 2024 Laura Costantini <laura.costantini0@gmail.com> - 1.8.3-1
 - Release 1.8.3
 
