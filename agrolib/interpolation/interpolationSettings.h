@@ -107,6 +107,7 @@
     {
     private:
         std::vector<bool> _isActiveList;
+        std::vector<bool> _isSignificantList;
         bool _useThermalInversion;
 
     public:
@@ -116,7 +117,17 @@
         void addProxyActive(bool value) { _isActiveList.push_back(value); }
         void setProxyActive(unsigned index, bool value) { _isActiveList[index] = value; }
         bool isProxyActive(unsigned index) { return _isActiveList[index]; }
+        std::vector<bool> getActiveList() { return _isActiveList; }
 
+        void addProxySignificant(bool value) { _isSignificantList.push_back(value); }
+        void setProxySignificant(unsigned index, bool value) { _isSignificantList[index] = value; }
+        bool isProxySignificant(unsigned index) { return _isSignificantList[index]; }
+
+        void resetCombination(unsigned int size);
+        void setAllActiveToFalse();
+        void setAllSignificantToFalse();
+
+        unsigned int getActiveProxySize();
         unsigned int getProxySize() const { return unsigned(_isActiveList.size()); }
 
         bool getUseThermalInversion() const { return _useThermalInversion; }
@@ -130,7 +141,6 @@
         gis::Crit3DRasterGrid* currentDEM; //for TD
 
         TInterpolationMethod interpolationMethod;
-        TFittingFunction chosenElevationFunction;
 
         float minRegressionR2;
         bool useThermalInversion;
@@ -224,7 +234,7 @@
         void setOptimalCombination(const Crit3DProxyCombination &value);
         Crit3DProxyCombination getSelectedCombination() const;
         void setSelectedCombination(const Crit3DProxyCombination &value);
-        void setValueSelectedCombination(unsigned int index, bool isActive);
+        void setActiveSelectedCombination(unsigned int index, bool isActive);
         unsigned getIndexHeight() const;
         void setIndexHeight(unsigned value);
         Crit3DProxyCombination getCurrentCombination() const;
@@ -253,9 +263,13 @@
         void setMinPointsLocalDetrending(int newMinPointsLocalDetrending);
 
         std::vector<std::vector <double>> getFittingParameters() const;
+        std::vector<double> getProxyFittingParameters(int tempIndex);
         void setFittingParameters(const std::vector<std::vector <double>> &newFittingParameters);
+        void setSingleFittingParameters(std::vector<double> &newFittingParameters, int paramIndex);
+        void addFittingParameters(const std::vector<std::vector<double> > &newFittingParameters);
         std::vector<std::function<double (double, std::vector<double> &)> > getFittingFunction() const;
         void setFittingFunction(const std::vector<std::function<double (double, std::vector<double> &)> > &newFittingFunction);
+        void setSingleFittingFunction(const std::function<double (double, std::vector<double> &)> &newFittingFunction, unsigned int index);
         bool getProxiesComplete() const;
         void setProxiesComplete(bool newProxiesComplete);
         void clearFitting();

@@ -1,23 +1,28 @@
 #ifndef WATERTABLEWIDGET_H
 #define WATERTABLEWIDGET_H
 
-#include <QtWidgets>
-#include <QtCharts>
+    #include <QtWidgets>
+    #include <QtCharts>
 
-#include "waterTableChartView.h"
+    #include "waterTableChartView.h"
 
-class WaterTableWidget : public QWidget
-{
-    Q_OBJECT
-public:
-    WaterTableWidget(QString id, std::vector<QDate> myDates, std::vector<float> myHindcastSeries, std::vector<float> myInterpolateSeries, QMap<QDate, int> obsDepths);
-    ~WaterTableWidget();
-    void closeEvent(QCloseEvent *event);
-    void on_actionExportInterpolationData();
+    class WaterTableWidget : public QWidget
+    {
+        Q_OBJECT
+    public:
+        WaterTableWidget(const QString &id, WaterTable &waterTable, float maxObservedDepth);
 
-private:
-    WaterTableChartView *waterTableChartView;
+        ~WaterTableWidget() { ; }
 
-};
+        void closeEvent(QCloseEvent *event)
+        { event->accept(); }
+
+    private:
+        WaterTableChartView *waterTableChartView;
+
+        void on_actionExportInterpolationData();
+        void on_actionChangeXAxis();
+
+    };
 
 #endif // WATERTABLEWIDGET_H

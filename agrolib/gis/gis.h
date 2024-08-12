@@ -139,7 +139,7 @@
             Crit3DRasterCell();
         };
 
-        struct RasterGridParameters {
+        struct RasterGridCell {
         public:
             int row;
             int col;
@@ -155,7 +155,7 @@
             float minimum, maximum;
             bool isLoaded;
             Crit3DTime mapTime;
-            std::vector<RasterGridParameters> parametersCell;
+            std::vector<RasterGridCell> singleCell;
 
             Crit3DUtmPoint* utmPoint(int myRow, int myCol);
             void getXY(int myRow, int myCol, double &x, double &y) const;
@@ -191,7 +191,7 @@
             float getValueFromXY(double x, double y) const;
             std::vector<std::vector<double>> getParametersFromRowCol(int row, int col);
             bool setParametersForRowCol(int row, int col, std::vector<std::vector<double>> parameters);
-            std::vector<std::vector<double>> prepareParameters(int row, int col);
+            std::vector<std::vector<double>> prepareParameters(int row, int col, std::vector<bool> activeList);
 
             Crit3DTime getMapTime() const;
             void setMapTime(const Crit3DTime &value);
@@ -216,7 +216,7 @@
         void getRowColFromXY(const Crit3DRasterHeader& myHeader, double myX, double myY, int *row, int *col);
         void getRowColFromXY(const Crit3DRasterHeader& myHeader, const Crit3DUtmPoint& p, int *row, int *col);
         void getRowColFromXY(const Crit3DRasterHeader& myHeader, const Crit3DUtmPoint& p, Crit3DRasterCell* v);
-        void getGridRowColFromXY(const Crit3DLatLonHeader& myHeader, double myX, double myY, int *row, int *col);
+        void getGridRowColFromLonLat(const Crit3DLatLonHeader& myHeader, double myX, double myY, int *row, int *col);
 
         void getRowColFromLatLon(const Crit3DLatLonHeader &latLonHeader, const Crit3DGeoPoint& p, int *myRow, int *myCol);
         bool isOutOfGridRowCol(int myRow, int myCol, const Crit3DRasterGrid &rasterGrid);
@@ -224,6 +224,7 @@
         void getUtmXYFromRowColSinglePrecision(const Crit3DRasterGrid& rasterGrid, int myRow, int myCol,float* myX,float* myY);
         void getUtmXYFromRowColSinglePrecision(const Crit3DRasterHeader& myHeader, int myRow, int myCol,float* myX,float* myY);
         void getUtmXYFromRowCol(const Crit3DRasterHeader& myHeader,int myRow, int myCol, double* myX, double* myY);
+        void getUtmXYFromRowCol(Crit3DRasterHeader *myHeader, int row, int col, double* myX, double* myY);
 
         void getLatLonFromRowCol(const Crit3DLatLonHeader &latLonHeader, int myRow, int myCol, double* lat, double* lon);
         void getLatLonFromRowCol(const Crit3DLatLonHeader &latLonHeader, const Crit3DRasterCell& v, Crit3DGeoPoint* p);
@@ -242,7 +243,9 @@
         bool getNorthernEmisphere();
         void getLatLonFromUtm(const Crit3DGisSettings& gisSettings, double utmX,double utmY, double *myLat, double *myLon);
         void getLatLonFromUtm(const Crit3DGisSettings& gisSettings, const Crit3DUtmPoint& utmPoint, Crit3DGeoPoint& geoPoint);
+
         void getUtmFromLatLon(int zoneNumber, const Crit3DGeoPoint& geoPoint, Crit3DUtmPoint* utmPoint);
+        void getUtmFromLatLon(const Crit3DGisSettings& gisSettings, double latitude, double longitude, double *utmX, double *utmY);
 
         void latLonToUtm(double lat, double lon,double *utmEasting,double *utmNorthing,int *zoneNumber);
         void latLonToUtmForceZone(int zoneNumber, double lat, double lon, double *utmEasting, double *utmNorthing);
@@ -251,16 +254,20 @@
 
         bool openRaster(std::string fileName, Crit3DRasterGrid *rasterGrid, int currentUtmZone, std::string &errorStr);
 
-        bool readEsriGrid(std::string fileName, Crit3DRasterGrid* rasterGrid, std::string &errorStr);
-        bool writeEsriGrid(std::string fileName, Crit3DRasterGrid *rasterGrid, std::string &errorStr);
+        bool readEsriGrid(const std::string &fileName, Crit3DRasterGrid* rasterGrid, std::string &errorStr);
+        bool writeEsriGrid(const std::string &fileName, Crit3DRasterGrid *rasterGrid, std::string &errorStr);
 
         bool readEnviGrid(std::string fileName, Crit3DRasterGrid* rasterGrid, int currentUtmZone, std::string &errorStr);
         bool writeEnviGrid(std::string fileName, int utmZone, Crit3DRasterGrid *rasterGrid, std::string &errorStr);
 
         bool mapAlgebra(Crit3DRasterGrid* myMap1, Crit3DRasterGrid* myMap2, Crit3DRasterGrid *outputMap, operationType myOperation);
         bool mapAlgebra(Crit3DRasterGrid* myMap1, float myValue, Crit3DRasterGrid *outputMap, operationType myOperation);
+
         bool prevailingMap(const Crit3DRasterGrid& inputMap,  Crit3DRasterGrid *outputMap);
         float prevailingValue(const std::vector<float> &valueList);
+
+        bool clipRasterWithRaster(gis::Crit3DRasterGrid* refRaster, gis::Crit3DRasterGrid* maskRaster,
+                                  gis::Crit3DRasterGrid* outputRaster);
 
         bool computeLatLonMaps(const gis::Crit3DRasterGrid& rasterGrid,
                                gis::Crit3DRasterGrid* latMap, gis::Crit3DRasterGrid* lonMap,
@@ -280,7 +287,7 @@
         float closestDistanceFromGrid(Crit3DPoint myPoint, const gis::Crit3DRasterGrid& dem);
         bool compareGrids(const gis::Crit3DRasterGrid& first, const gis::Crit3DRasterGrid& second);
         void resampleGrid(const gis::Crit3DRasterGrid& oldGrid, gis::Crit3DRasterGrid* newGrid,
-                          Crit3DRasterHeader* header, aggregationMethod elab, float nodataThreshold);
+                          Crit3DRasterHeader* newHeader, aggregationMethod elab, float nodataRatioThreshold);
         bool temporalYearlyInterpolation(const gis::Crit3DRasterGrid& firstGrid, const gis::Crit3DRasterGrid& secondGrid,
                                          int myYear, float minValue, float maxValue, gis::Crit3DRasterGrid* outGrid);
     }

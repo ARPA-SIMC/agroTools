@@ -31,21 +31,19 @@
       { "orography", proxyHeight },
       { "orogIndex", proxyOrogIndex },
       { "urbanFraction", proxyUrbanFraction },
+      { "urban", proxyUrbanFraction},
       { "seaDistance", proxySeaDistance },
       { "aspect", proxyAspect },
       { "slope", proxySlope },
       { "water_index", proxyWaterIndex}
     };
 
-    enum TFittingFunction { piecewiseTwo, piecewiseThree, piecewiseThreeFree, piecewiseThreeSlope, frei, freiFree, linear, noFunction };
+    enum TFittingFunction { piecewiseTwo, piecewiseThreeFree, piecewiseThree, linear, noFunction };
 
     const std::map<std::string, TFittingFunction> fittingFunctionNames = {
-        { "Double piecewise", piecewiseTwo },
-        { "Triple piecewise", piecewiseThree },
-        { "Triple piecewise (6 parameters)", piecewiseThreeFree},
-        { "Triple piecewise (5 parameters)", piecewiseThreeSlope},
-        { "Nonlinear Frei function (5 parameters)", frei },
-        { "Nonlinear Frei function (6 parameters)", freiFree},
+        { "piecewise_two", piecewiseTwo },
+        { "free_triple_piecewise", piecewiseThreeFree},
+        { "triple_piecewise", piecewiseThree},
         { "linear", linear }
     };
 

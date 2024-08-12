@@ -5,35 +5,43 @@
 #include <QList>
 #include <QDate>
 #include <QMap>
-#include "meteoPoint.h"
 
 class Well
 {
 public:
+    QMap<QDate, float> depths;
+
     Well();
-    QString getId() const;
-    void setId(const QString &newId);
 
-    double getUtmX() const;
-    void setUtmX(double newUtmX);
+    QString getId() const { return id; }
+    void setId(const QString &newId) { id = newId; }
 
-    double getUtmY() const;
-    void setUtmY(double newUtmY);
+    double getUtmX() const { return utmX; }
+    void setUtmX(double newUtmX) { utmX = newUtmX; }
 
-    void insertData(QDate myDate, int myValue);
+    double getUtmY() const { return utmY; }
+    void setUtmY(double newUtmY) { utmY = newUtmY; }
+
+    double getLatitude() const { return lat; }
+    void setLatitude(double newLat) { lat = newLat; }
+
+    double getLongitude() const { return lon; }
+    void setLongitude(double newLon) { lon = newLon; }
+
+    void insertData(QDate myDate, float myValue);
 
     QDate getFirstDate();
     QDate getLastDate();
 
     int getObsDepthNr();
-
-    QMap<QDate, int> getObsDepths() const;
+    int minValuesPerMonth();
 
 private:
     QString id;
-    double utmX;
-    double utmY;
-    QMap<QDate, int> depths;
+
+    double utmX, utmY;
+    double lat, lon;
+
     QDate firstDate;
     QDate lastDate;
 };

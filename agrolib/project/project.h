@@ -59,7 +59,7 @@
     #define ERROR_STR_MISSING_DEM "Load a Digital Elevation Model (DEM) before."
     #define ERROR_STR_MISSING_PROJECT "Open a project before."
     #define ERROR_STR_MISSING_GRID "Load a meteo grid DB before."
-    #define ERROR_STR_MISSING_POINT_GRID "Load meteo Points or grid."
+    #define ERROR_STR_MISSING_POINT_GRID "Load meteo points or meteo grid before."
 
     class Crit3DMeteoWidget;
     class FormInfo;
@@ -181,7 +181,7 @@
 
         void setProxyDEM();
         void clearProxyDEM();
-        bool checkProxy(const Crit3DProxy &myProxy, QString *error);
+        bool checkProxy(Crit3DProxy &myProxy, QString *error);
         bool addProxyToProject(std::vector <Crit3DProxy> proxyList, std::deque <bool> proxyActive, std::vector <int> proxyOrder);
         void addProxyGridSeries(QString name_, std::vector <QString> gridNames, std::vector <unsigned> gridYears);
         void setCurrentDate(QDate myDate);
@@ -203,11 +203,16 @@
         QString getCompleteFileName(QString fileName, QString secondaryPath);
 
         bool setLogFile(QString myFileName);
-        void logError(QString myStr);
+
         void logInfo(QString myStr);
         void logInfoGUI(QString myStr);
         void closeLogInfo();
+
+        void logError(QString myStr);
         void logError();
+
+        void logWarning(QString myStr);
+        void logWarning();
 
         int setProgressBar(QString myStr, int nrValues);
         void updateProgressBar(int value);
@@ -236,6 +241,7 @@
         bool loadMeteoGridHourlyData(QDateTime firstDate, QDateTime lastDate, bool showInfo);
         bool loadMeteoGridMonthlyData(QDate firstDate, QDate lastDate, bool showInfo);
         void loadMeteoGridData(QDate firstDate, QDate lastDate, bool showInfo);
+
         QDateTime findDbPointLastTime();
         QDateTime findDbPointFirstTime();
 
@@ -262,7 +268,8 @@
         bool interpolationOutputPoints(std::vector <Crit3DInterpolationDataPoint> &interpolationPoints,
                                        gis::Crit3DRasterGrid *outputGrid, meteoVariable myVar);
         bool interpolationCv(meteoVariable myVar, const Crit3DTime& myTime, crossValidationStatistics* myStats);
-        bool computeStatisticsCrossValidation(Crit3DTime myTime, meteoVariable myVar, crossValidationStatistics *myStats);
+
+        bool computeStatisticsCrossValidation(crossValidationStatistics *myStats);
         bool meteoGridAggregateProxy(std::vector<gis::Crit3DRasterGrid *> &myGrids);
 
         frequencyType getCurrentFrequency() const;
@@ -277,7 +284,7 @@
         void showMeteoWidgetGrid(std::string idCell, bool isAppend);
         void showProxyGraph();
         void showLocalProxyGraph(gis::Crit3DGeoPoint myPoint, gis::Crit3DRasterGrid *myDataRaster);
-        bool findTempMinMax(meteoVariable myVar);
+        bool findTemperatureRange(meteoVariable myVar);
 
         void clearSelectedPoints();
         void clearSelectedOutputPoints();
@@ -300,12 +307,14 @@
         void setComputeOnlyPoints(bool value);
         bool getComputeOnlyPoints();
 
-        bool waterTableImportLocation(QString csvFileName);
-        bool waterTableImportDepths(QString csvDepths);
-        bool computeSingleWell(int indexWell);
-        void showSingleWell(WaterTable waterTable, QString idWell);
-        bool assignNearestMeteoPoint(bool isMeteoGridLoaded, double wellUtmX, double wellUtmY, QDate firstMeteoDate, Crit3DMeteoPoint* linkedMeteoPoint);
-        bool assignWTMeteoData(Crit3DMeteoPoint* linkedMeteoPoint, QDate firstMeteoDate);
+        bool waterTableImportLocation(const QString &csvFileName);
+        bool waterTableImportDepths(const QString &csvDepthsFileName);
+        bool waterTableComputeSingleWell(int indexWell);
+        void waterTableShowSingleWell(WaterTable &waterTable, const QString &idWell);
+        bool waterTableAssignNearestMeteoPoint(bool isMeteoGridLoaded, double wellUtmX, double wellUtmY, QDate firstMeteoDate, Crit3DMeteoPoint* linkedMeteoPoint);
+        bool waterTableAssignMeteoData(Crit3DMeteoPoint* linkedMeteoPoint, QDate firstMeteoDate);
+
+        bool assignAltitudeToAggregationPoints();
 
     private slots:
         void deleteMeteoWidgetPoint(int id);

@@ -69,33 +69,8 @@ double lapseRateFrei(double x, std::vector <double>& par)
     return y - 0.5*par[2]*(1 + cos(PI*(x-par[3])/(par[4])));
 }
 
-double lapseRateFreiFree(double x, std::vector <double>& par)
-{
-    /*
-    par[0] = T0;
-    par[1] = gamma1;
-    par[2] = a;
-    par[3] = h0;
-    par[4] = h1-h0;
-    par[5] = gamma2
-    */
 
-    if (par.size() < 6) return NODATA;
-
-    double h1 = par[3]+par[4];
-    if (x <= par[3])
-    {
-        return par[0] - par[1]*x - par[2];
-    }
-    else if (x >= (par[4]+par[3]))
-    {
-        return par[0] - par[5]*x;
-    }
-    return par[0] - ((par[5]*par[3]+par[1]*h1)/(par[3]+h1))*x - 0.5*par[2]*(1 + cos(PI*(x-par[3])/(par[4])));
-}
-
-
-double lapseRatePiecewise_three(double x, std::vector <double>& par)
+double lapseRatePiecewise_three_noSlope(double x, std::vector <double>& par)
 {
     // the piecewise line is parameterized as follows
     // the line passes through A(par[0];par[1])and B(par[0]+par[2];par[3]). par[4] is the slope of the 2 externals pieces
@@ -123,36 +98,8 @@ double lapseRatePiecewise_three(double x, std::vector <double>& par)
     }
 }
 
-double lapseRatePiecewiseForInterpolation(double x, std::vector <double>& par)
-{
-    // the piecewise line is parameterized as follows
-    // the line passes through A(par[0];par[1])and B(par[0]+par[2];par[1]+par[3]). par[4] is the slope of the 2 externals pieces
-    // "y = mx + q" piecewise function;
-    double xb;
-    par[2] = MAXVALUE(10, par[2]);
-    // par[2] means the delta between the two quotes. It must be positive.
-    xb = par[0]+par[2];
-    if (x < par[0])
-    {
-        //m = par[4];;
-        //q = par[1]-m*par[0];
-        return par[4]*x + par[1]-par[4]*par[0];
-    }
-    else if (x>xb)
-    {
-        //m = par[4];
-        //q = (par[1]+par[3])-m*xb;
-        return par[4]*x + (par[1]+par[3])-par[4]*xb;
-    }
-    else
-    {
-        //m = ((par[1]+par[3])-par[1])/par[2];
-        //q = par[1]-m*par[0];
-        return (par[3]/par[2])*x + par[1]-(par[3])/par[2]*par[0];
-    }
-}
 
-double lapseRatePiecewiseThree_withSlope(double x, std::vector <double>& par)
+double lapseRatePiecewise_three(double x, std::vector <double>& par)
 {
     //xa (par[0],par[1]), xb-xa = par[2], par[3] is the slope of the middle piece,
     //par[4] the slope of the first and last piece
@@ -167,7 +114,22 @@ double lapseRatePiecewiseThree_withSlope(double x, std::vector <double>& par)
         return par[3]*x - par[3]*par[0]+par[1];
 }
 
-double lapseRatePiecewiseFree(double x, std::vector <double>& par)
+double detrendingLapseRatePiecewise_three(double x, std::vector <double>& par)
+{
+    //xa (par[0],par[1]), xb-xa = par[2], par[3] is the slope of the middle piece,
+    //par[4] the slope of the first and last piece
+    par[2] = MAXVALUE(10, par[2]);
+    double xb = par[2]+par[0];
+
+    if (x < par[0])
+        return par[4]*x;
+    else if (x > xb)
+        return par[4]*x;
+    else
+        return par[3]*x;
+}
+
+double lapseRatePiecewise_three_free(double x, std::vector <double>& par)
 {
     // the piecewise line is parameterized as follows
     // the line passes through A(par[0];par[1])and B(par[0]+par[2];...)
@@ -199,6 +161,38 @@ double lapseRatePiecewiseFree(double x, std::vector <double>& par)
     }
 }
 
+double detrendingLapseRatePiecewise_three_free(double x, std::vector <double>& par)
+{
+    // the piecewise line is parameterized as follows
+    // the line passes through A(par[0];par[1])and B(par[0]+par[2];...)
+    //par [3] is the slope of the middle piece
+    //par[4] is the first slope. par[5] is the third slope
+
+    // "y = mx + q" piecewise function;
+    double xb;
+    par[2] = MAXVALUE(10, par[2]);
+    // par[2] means the delta between the two quotes. It must be positive.
+    xb = par[0]+par[2];
+    if (x < par[0])
+    {
+        //m = par[4];;
+        //q = par[1]-m*par[0];
+        return par[4]*x;
+    }
+    else if (x>xb)
+    {
+        //m = par[5];
+        //q = m(-par[0]-par[2])+par[3]*par[2]+par[1];
+        return (par[4]*par[0]) + (par[3]*par[2]) + par[5]*(x-xb);
+    }
+    else
+    {
+        //m = par[3];
+        //q = m*(-par[0]) + par[1];
+        return (par[4]*par[0]) + par[3]*(x-par[0]);
+    }
+}
+
 double lapseRatePiecewise_two(double x, std::vector <double>& par)
 {
     // the piecewise line is parameterized as follows
@@ -215,6 +209,25 @@ double lapseRatePiecewise_two(double x, std::vector <double>& par)
         //m = par[3]:
         //q = -par[3]*par[0]+par[1];
         return par[3]*(x-par[0])+par[1];
+    }
+}
+
+double detrendingLapseRatePiecewise_two(double x, std::vector <double>& par)
+{
+    // the piecewise line is parameterized as follows
+    // the line passes through A(par[0];par[1]). par[2] is the slope of the first line, par[3] the slope of the second
+    // "y = mx + q" piecewise function;
+    if (x < par[0])
+    {
+        //m = par[2];
+        //q = -par[2]*par[0]+par[1];
+        return par[2]*x;
+    }
+    else
+    {
+        //m = par[3]:
+        //q = -par[3]*par[0]+par[1];
+        return (par[2]*par[0]) + par[3]*(x-par[0]);
     }
 }
 
@@ -235,13 +248,18 @@ double functionLinear(double x, std::vector <double>& par)
     return par[0] * x;
 }
 
+double functionLinear_intercept(double x, std::vector <double>& par)
+{
+    return par[0] * x + par[1];
+}
+
 double multilinear(std::vector<double> &x, std::vector<double> &par)
 {
     if (par.size() != (x.size()+1))
         return NODATA;
 
     double y = 0;
-    for (int i=0; i < x.size(); i++)
+    for (int i=0; i < int(x.size()); i++)
         y += par[i] * x[i];
 
     y += par[x.size()];
@@ -724,7 +742,7 @@ namespace interpolation
                       double* parametersDelta, double* parametersChange)
     {
         int i, j, k;
-        double pivot, mult, top;
+        double mult, top;
         if (nrParameters <= 0)
             return;
 
@@ -754,7 +772,7 @@ namespace interpolation
             for (j = 0; j < nrData; j++)
             {
                 double newEst = estimateFunction(idFunction, parameters, nrParameters, x[j]);
-                P[i][j] = (newEst - firstEst[j]) / MAXVALUE(parametersDelta[i], EPSILON) ;
+                P[i][j] = (newEst - firstEst[j]) / std::max(parametersDelta[i], EPSILON);
             }
             parameters[i] -= parametersDelta[i];
         }
@@ -769,7 +787,7 @@ namespace interpolation
                     a[i][j] += P[i][k] * P[j][k];
                 }
             }
-            z[i] = sqrt(a[i][i]) + EPSILON; //?
+            z[i] = sqrt(a[i][i]) + EPSILON;
         }
 
         for (i = 0; i < nrParameters; i++)
@@ -797,7 +815,7 @@ namespace interpolation
 
         for (j = 0; j < (nrParameters - 1); j++)
         {
-            pivot = a[j][j];
+            double pivot = std::max(a[j][j], EPSILON);
             for (i = j + 1 ; i < nrParameters; i++)
             {
                 mult = a[i][j] / pivot;
@@ -818,7 +836,8 @@ namespace interpolation
             {
                 top -= a[i][k] * parametersChange[k];
             }
-            parametersChange[i] = top / a[i][i];
+            double pivot = std::max(a[i][i], EPSILON);
+            parametersChange[i] = top / pivot;
         }
 
         for (i = 0; i < nrParameters; i++)
@@ -947,6 +966,112 @@ namespace interpolation
     }
 
 
+    /*!
+    * \brief Computes daily values starting from monthly averages using cubic spline
+    * \param monthlyAvg: vector of monthly averages (12 values)
+    * outputDailyValues: vector of interpolated daily values (366 values)
+    */
+    void cubicSplineYearInterpolate(float *monthlyAvg, float *outputDailyValues)
+    {
+        double monthMid [16] = {-61, - 31, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365, 396};
+
+        for (int iMonth=0; iMonth<16; iMonth++)
+        {
+            monthMid[iMonth] += 15;
+        }
+
+        double* avgMonthlyAmountLarger = new double[16];
+        for (int iMonth = 0; iMonth < 12; iMonth++)
+        {
+            avgMonthlyAmountLarger[iMonth+2] = double(monthlyAvg[iMonth]);
+        }
+
+        avgMonthlyAmountLarger[0] = double(monthlyAvg[10]);
+        avgMonthlyAmountLarger[1] = double(monthlyAvg[11]);
+        avgMonthlyAmountLarger[14] = double(monthlyAvg[0]);
+        avgMonthlyAmountLarger[15] = double(monthlyAvg[1]);
+
+        for (int iDay=0; iDay<365; iDay++)
+        {
+            outputDailyValues[iDay] = float(interpolation::cubicSpline(iDay, monthMid, avgMonthlyAmountLarger, 16));
+        }
+        // leap years
+        outputDailyValues[365] = outputDailyValues[0];
+
+        delete [] avgMonthlyAmountLarger;
+    }
+
+
+    /*!
+    * \brief Computes daily values starting from monthly mean
+    * using quadratic spline
+    * original Campbell function
+    * it has a discontinuity between end and start of the year
+    */
+    void quadrSplineYearInterpolate(float *meanY, float *dayVal)
+    {
+        float a[13] = {0};
+        float b[14] = {0};
+        float c[13] = {0};
+        float aa[13] = {0};
+        float bb[13] = {0};
+        float cc[13] = {0};
+        float d[14] = {0};
+        float h[13] = {0};
+
+        int i,j;
+
+        int monthLastDoy [13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
+
+        d[1] = meanY[0] - meanY[11];
+        h[0] = 30;
+
+        for (i = 1; i<=12; i++)
+        {
+            if (i == 12)
+                d[i + 1] = meanY[0] - meanY[i-1];
+            else
+                d[i + 1] = meanY[i] - meanY[i-1];
+
+            h[i] = float(monthLastDoy[i] - monthLastDoy[i - 1] - 1);
+            aa[i] = h[i - 1] / 6;
+            bb[i] = (h[i - 1] + h[i]) / 3;
+            cc[i] = h[i] / 6;
+        }
+
+        for (i = 1; i<= 11; i++)
+        {
+            cc[i] = cc[i] / bb[i];
+            d[i] = d[i] / bb[i];
+            bb[i + 1] = bb[i + 1] - aa[i + 1] * cc[i];
+            d[i + 1] = d[i + 1] - aa[i + 1] * d[i];
+        }
+
+        b[12] = d[12] / bb[12];
+        for (i = 11; i>=1; i--)
+            b[i] = d[i] - cc[i] * b[i + 1];
+
+        for (i = 1; i<=12; i++)
+        {
+            a[i] = (b[i + 1] - b[i]) / (2 * h[i]);
+            c[i] = meanY[i-1] - (b[i + 1] + 2 * b[i]) * h[i] / 6;
+        }
+
+        j = 0;
+        for (i = 1; i<=365; i++)
+        {
+            if (monthLastDoy[j] < i)
+                j = j + 1;
+            int t = i - monthLastDoy[j - 1] - 1;
+
+            dayVal[i-1] = c[j] + b[j] * t + a[j] * t * t;
+
+        }
+
+        dayVal[365] = dayVal[0];
+    }
+
+
     double cubicSpline(double x, double *firstColumn, double *secondColumn, int dim)
     {
         double a,b,c,d,y;
@@ -1052,13 +1177,13 @@ namespace interpolation
         double meanObs=0;
         double RSS=0;
         double TSS=0;
-        for (int i=0;i<obs.size();i++)
+        for (int i=0;i<int(obs.size());i++)
         {
             meanObs += obs[i];
         }
         meanObs /= obs.size();
         //compute RSS and TSS
-        for (int i=0;i<obs.size();i++)
+        for (int i=0;i<int(obs.size());i++)
         {
             RSS += (obs[i]-sim[i])*(obs[i]-sim[i]);
             TSS += (obs[i]-meanObs)*(obs[i]-meanObs);
@@ -1080,7 +1205,7 @@ namespace interpolation
         double sum_squared_weighted_data = 0.0;
 
         // Calculate the necessary sums for weighted variance calculation
-        for (int i = 0; i < data.size(); i++)
+        for (int i = 0; i < int(data.size()); i++)
         {
             sum_weights += weights[i];
             sum_weighted_data += data[i] * weights[i];
@@ -1104,7 +1229,7 @@ namespace interpolation
 
         // Calculate the weighted mean of the observed values
         double sum_weights = 0.0;
-        for (int i = 0; i < observed.size(); i++)
+        for (int i = 0; i < int(observed.size()); i++)
         {
             weighted_mean_observed += observed[i] * weights[i];
             sum_weights += weights[i];
@@ -1112,7 +1237,7 @@ namespace interpolation
         weighted_mean_observed /= sum_weights;
 
         // Calculate the sums needed for weighted R-squared calculation
-        for (int i = 0; i < observed.size(); i++)
+        for (int i = 0; i < int(observed.size()); i++)
         {
             double weighted_residual = weights[i] * (observed[i] - predicted[i]);
             sum_weighted_squared_residuals += weighted_residual * weighted_residual;
@@ -1135,13 +1260,13 @@ namespace interpolation
         //double weighted_mean_observed = 0.0;
 
 
-        for (int i = 0; i < observed.size(); i++)
+        for (int i = 0; i < int(observed.size()); i++)
         {
             double weighted_residual = weights[i] * (observed[i] - predicted[i]);
             sum_weighted_squared_residuals += weighted_residual * weighted_residual;
         }
         double standardError;
-        if (observed.size() > (nrPredictors+1))
+        if (int(observed.size()) > (nrPredictors+1))
             standardError = sqrt(sum_weighted_squared_residuals/(observed.size()-nrPredictors-1));
         else
             standardError = sqrt(sum_weighted_squared_residuals/(observed.size()-1));
@@ -1157,22 +1282,25 @@ namespace interpolation
                                         std::vector <std::vector <double>>& parameters, std::vector <std::vector <double>>& parametersDelta,
                                         int maxIterationsNr, double myEpsilon, double deltaR2,
                                         std::vector <std::vector <double>>& x ,std::vector<double>& y,
-                                        std::vector<double>& weights)
+                                        std::vector<double>& weights, unsigned int elevationPos)
     {
         int i,j;
-        int nrPredictors = parameters.size();
-        int nrData = y.size();
-        std::vector <int> nrParameters(nrPredictors);
+        int nrPredictors = 0;
+        for (int k = 0; k < parameters.size(); k++)
+            if (parameters[k].size() == 2) nrPredictors++;
+        if (elevationPos != NODATA) nrPredictors++;
+        int nrData = int(y.size());
+        std::vector <int> nrParameters(parameters.size());
         int nrParametersTotal = 0;
-        for (i=0; i<nrPredictors;i++)
+        for (i=0; i<parameters.size();i++)
         {
             nrParameters[i]= int(parameters[i].size());
             nrParametersTotal += nrParameters[i];
         }
-        std::vector <std::vector <double>> bestParameters(nrPredictors);
+        std::vector <std::vector <double>> bestParameters(parameters.size());
         std::vector <std::vector <int>> correspondenceTag(2,std::vector<int>(nrParametersTotal));
         int counterTag = 0;
-        for (i=0; i<nrPredictors;i++)
+        for (i=0; i<parameters.size();i++)
         {
             for (j=0; j<nrParameters[i];j++)
             {
@@ -1190,72 +1318,97 @@ namespace interpolation
         std::vector<double> ySim(nrData);
 
         int counter = 0;
-        //srand (unsigned(time(nullptr)));
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::normal_distribution<double> normal_dis(0.5, 0.5);
-        double truncNormal;
+        //grigliato
 
-        do
+        const int numSteps = 20;
+        std::vector<double> stepSize = {2*(parametersMax[0][0]-parametersMin[0][0])/numSteps, 2*(parametersMax[0][1]-parametersMin[0][1])/numSteps};
+
+        int directions[] = {1, -1};
+        std::vector<std::vector<double>> firstGuessParam = parameters;
+        bool exitFlag = 0;
+
+        for (int step = 1; step <= numSteps; ++step)
         {
-            fittingMarquardt_nDimension_noSquares(func,myFunc,parametersMin, parametersMax,
-                                        parameters, parametersDelta,correspondenceTag, maxIterationsNr,
-                                        myEpsilon, x, y, weights);
-
-            for (i=0;i<nrData;i++)
+            for (int dir = 0; dir < 2; ++dir)
             {
-                ySim[i]= func(myFunc,x[i], parameters);
-            }
-            R2 = computeWeighted_R2(y,ySim,weights);
-
-            if (R2 > (bestR2-deltaR2))
-            {
-                for (j=0;j<nrMinima-1;j++)
+                for (int proxyIndex = 0; proxyIndex < nrPredictors; ++proxyIndex)
                 {
-                    R2Previous[j] = R2Previous[j+1];
-                }
-                if (R2 > (bestR2))
-                {
-                    for (i=0;i<nrPredictors;i++)
+                    if (proxyIndex != elevationPos)
                     {
-                        for (j=0; j<nrParameters[i]; j++)
+                        for (int paramIndex = 0; paramIndex < parameters.size(); ++paramIndex)
                         {
-                            bestParameters[i][j] = parameters[i][j];
+
+                            fittingMarquardt_nDimension_noSquares(func,myFunc,parametersMin, parametersMax,
+                                                                  parameters, parametersDelta,correspondenceTag, maxIterationsNr,
+                                                                  myEpsilon, x, y, weights);
+
+                            for (i=0;i<nrData;i++)
+                            {
+                                ySim[i]= func(myFunc,x[i], parameters);
+                            }
+                            R2 = computeWeighted_R2(y,ySim,weights);
+
+                            if (R2 > (bestR2-deltaR2))
+                            {
+                                for (j=0;j<nrMinima-1;j++)
+                                {
+                                    R2Previous[j] = R2Previous[j+1];
+                                }
+                                if (R2 > (bestR2))
+                                {
+                                    for (i=0;i<parameters.size();i++)
+                                    {
+                                        for (j=0; j<nrParameters[i]; j++)
+                                        {
+                                            bestParameters[i][j] = parameters[i][j];
+                                        }
+                                    }
+                                    bestR2 = R2;
+                                }
+                                R2Previous[nrMinima-1] = R2;
+
+                                for (i=0;i<parameters.size();i++)
+                                {
+                                    for (j=0; j<nrParameters[i]; j++)
+                                    {
+                                        bestParameters[i][j] = parameters[i][j];
+                                    }
+                                }
+                            }
+                            counter++;
+
+                            if (parameters.size() > proxyIndex && !parameters[proxyIndex].empty())
+                            {
+                                if (dir == 0)
+                                    parameters[proxyIndex][paramIndex] = MINVALUE(firstGuessParam[proxyIndex][paramIndex] + directions[dir] * step * stepSize[paramIndex], parametersMax[proxyIndex][paramIndex]);
+                                else
+                                    parameters[proxyIndex][paramIndex] = MAXVALUE(firstGuessParam[proxyIndex][paramIndex] + directions[dir] * step * stepSize[paramIndex], parametersMin[proxyIndex][paramIndex]);
+                            }
+
+                            if ((counter > nrTrials) || ((R2Previous[0] != NODATA) && fabs(R2Previous[0]-R2Previous[nrMinima-1]) < deltaR2 ))
+                            {
+                                for (i=0;i<parameters.size();i++)
+                                {
+                                    for (j=0; j<nrParameters[i]; j++)
+                                    {
+                                        parameters[i][j] = bestParameters[i][j];
+                                    }
+                                }
+                                exitFlag = 1;
+                                break;
+                            }
                         }
                     }
-                    bestR2 = R2;
+                    if (exitFlag)
+                        break;
                 }
-                R2Previous[nrMinima-1] = R2;
-
-                for (i=0;i<nrPredictors;i++)
-                {
-                    for (j=0; j<nrParameters[i]; j++)
-                    {
-                        bestParameters[i][j] = parameters[i][j];
-                    }
-                }
+                if (exitFlag)
+                    break;
             }
-            counter++;
-
-            for (i=0; i<nrPredictors; i++)
-            {
-                for (j=0; j<nrParameters[i]; j++)
-                {
-                    do {
-                        truncNormal = normal_dis(gen);
-                    } while(truncNormal <= 0.0 || truncNormal >= 1.0);
-                    parameters[i][j] = parametersMin[i][j] + (truncNormal)*(parametersMax[i][j]-parametersMin[i][j]);
-                }
-            }
-        } while( (counter < nrTrials) && !(R2Previous[0] > 0.8 && R2Previous[nrMinima-1] > 0.8) && (fabs(R2Previous[0]-R2Previous[nrMinima-1]) > deltaR2) );
-
-        for (i=0;i<nrPredictors;i++)
-        {
-            for (j=0; j<nrParameters[i]; j++)
-            {
-                parameters[i][j] = bestParameters[i][j];
-            }
+            if (exitFlag)
+                break;
         }
+
 
         return counter;
 
@@ -1365,8 +1518,10 @@ namespace interpolation
                                      std::vector<double>& weights)
     {
         int i;
-        int nrPredictors = parameters.size();
-        int nrData = y.size();
+        int nrPredictors = 0;
+        for (int k = 0; k < parameters.size(); k++)
+            if (parameters[k].size() == 2) nrPredictors++;
+        int nrData = int(y.size());
         double mySSE, diffSSE, newSSE;
         static double VFACTOR = 10;
         std::vector <int> nrParameters(nrPredictors);
@@ -1859,7 +2014,7 @@ namespace interpolation
         double error;
         double norm = 0;
 
-        for (int i = 0; i < y.size(); i++)
+        for (int i = 0; i < int(y.size()); i++)
         {
             error = y[i] - func(myFunc,x[i], parameters);
             norm += error * error * weights[i] * weights[i];
@@ -1885,61 +2040,73 @@ namespace interpolation
         double R2;
         std::vector <double> R2Previous(nrMinima,NODATA);
         std::vector<double> ySim(nrData);
-
         int counter = 0;
-        //srand (unsigned(time(nullptr)));
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::normal_distribution<double> normal_dis(0.5, 0.5);
-        double truncNormal;
 
-        do
+        //grigliato
+        std::vector<double> stepSize;
+        const int numSteps = 30;
+        if (parameters.size() == 4)
+            stepSize = {2*(parametersMax[0]-parametersMin[0])/numSteps, 2*(parametersMax[1]-parametersMin[1])/numSteps, 20*(parametersMax[2]-parametersMin[2])/numSteps, 20*(parametersMax[3]-parametersMin[3])/numSteps};
+        else if (parameters.size() == 6)
+            stepSize = {2*(parametersMax[0]-parametersMin[0])/numSteps, 2*(parametersMax[1]-parametersMin[1])/numSteps, 4*(parametersMax[2]-parametersMin[2])/numSteps, 20*(parametersMax[3]-parametersMin[3])/numSteps,20*(parametersMax[3]-parametersMin[3])/numSteps,20*(parametersMax[3]-parametersMin[3])/numSteps };
+        else return false;
+
+        int directions[] = {1, -1};
+        size_t numParamsToVary = parameters.size();
+        std::vector<double> firstGuessParam = parameters;
+
+        for (int step = 1; step <= numSteps; ++step)
         {
-            fittingMarquardt_nDimension_noSquares_singleFunction(func,parametersMin,
-                                                                 parametersMax,parameters,
-                                                                 parametersDelta,maxIterationsNr,
-                                                                 myEpsilon,x,y,weights);
-
-            for (i=0;i<nrData;i++)
+            for (int dir = 0; dir < 2; ++dir)
             {
-                ySim[i]= func(x[i], parameters);
-            }
-            R2 = computeWeighted_R2(y,ySim,weights);
+                for (int paramIndex = 0; paramIndex < int(numParamsToVary); ++paramIndex)
+                {
 
-            if (R2 > (bestR2-deltaR2))
-            {
-                for (j=0;j<nrMinima-1;j++)
-                {
-                    R2Previous[j] = R2Previous[j+1];
-                }
-                if (R2 > (bestR2))
-                {
-                    for (j=0; j<nrParameters; j++)
+                    fittingMarquardt_nDimension_noSquares_singleFunction(func,parametersMin,
+                                                                         parametersMax,parameters,
+                                                                         parametersDelta,maxIterationsNr,
+                                                                         myEpsilon,x,y,weights);
+
+                    for (i=0;i<nrData;i++)
                     {
-                        bestParameters[j] = parameters[j];
+                        ySim[i]= func(x[i], parameters);
                     }
-                    bestR2 = R2;
-                }
-                R2Previous[nrMinima-1] = R2;
+                    R2 = computeWeighted_R2(y,ySim,weights);
 
-                //for (i=0;i<nrPredictors;i++)
-                //{
-                for (j=0; j<nrParameters; j++)
-                {
-                    bestParameters[j] = parameters[j];
-                }
-                //}
-            }
-            counter++;
+                    if (R2 > (bestR2-deltaR2))
+                    {
+                        for (j=0;j<nrMinima-1;j++)
+                        {
+                            R2Previous[j] = R2Previous[j+1];
+                        }
+                        if (R2 > (bestR2))
+                        {
+                            for (j=0; j<nrParameters; j++)
+                            {
+                                bestParameters[j] = parameters[j];
+                            }
+                            bestR2 = R2;
+                        }
+                        R2Previous[nrMinima-1] = R2;
 
-            for (j=0; j<nrParameters; j++)
-            {
-                do {
-                    truncNormal = normal_dis(gen);
-                } while(truncNormal <= 0.0 || truncNormal >= 1.0);
-                parameters[j] = parametersMin[j] + (truncNormal)*(parametersMax[j]-parametersMin[j]);
+                        for (j=0; j<nrParameters; j++)
+                        {
+                            bestParameters[j] = parameters[j];
+                        }
+                    }
+                    counter++;
+
+                    if (dir == 0)
+                        parameters[paramIndex] = MINVALUE(firstGuessParam[paramIndex] + directions[dir] * step * stepSize[paramIndex], parametersMax[paramIndex]);
+                    else
+                        parameters[paramIndex] = MAXVALUE(firstGuessParam[paramIndex] + directions[dir] * step * stepSize[paramIndex], parametersMin[paramIndex]);
+
+                }
             }
-        } while( (counter < nrTrials) && (R2 < 0.8) && (fabs(R2Previous[0]-R2Previous[nrMinima-1]) > deltaR2) );
+
+            if ((counter > nrTrials) || ((R2Previous[0] != NODATA) && fabs(R2Previous[0]-R2Previous[nrMinima-1]) < deltaR2 ))
+                break;
+        }
 
         for (j=0; j<nrParameters; j++)
         {
@@ -2039,7 +2206,7 @@ namespace interpolation
 
             for (j = 0; j < (nrParameters - 1); j++)
             {
-                pivot = a[j][j];
+                pivot = std::max(a[j][j],EPSILON);
                 for (i = j + 1 ; i < nrParameters; i++)
                 {
                     mult = a[i][j] / pivot;
@@ -2051,8 +2218,7 @@ namespace interpolation
                 }
             }
 
-
-            paramChange[nrParameters -1] = g[nrParameters - 1] / a[nrParameters - 1][nrParameters - 1];
+            paramChange[nrParameters -1] = g[nrParameters - 1] / std::max(a[nrParameters - 1][nrParameters - 1], EPSILON);
 
             for (i = nrParameters - 2; i >= 0; i--)
             {
@@ -2061,7 +2227,7 @@ namespace interpolation
                 {
                     top -= a[i][k] * paramChange[k];
                 }
-                paramChange[i] = top / a[i][i];
+                paramChange[i] = top / std::max(a[i][i], EPSILON);
             }
 
             // change parameters

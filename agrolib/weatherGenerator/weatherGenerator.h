@@ -9,6 +9,10 @@
         #include "parserXML.h"
     #endif
 
+    #ifndef WATERTABLE_H
+        #include "waterTable.h"
+    #endif
+
     struct TinputObsData
     {
         Crit3DDate inputFirstDate;
@@ -72,9 +76,10 @@
     struct ToutputDailyMeteo
     {
         Crit3DDate date;
-        float minTemp;
-        float maxTemp;
-        float prec;
+        float minTemp;              // [C]
+        float maxTemp;              // [C]
+        float prec;                 // [mm]
+        float waterTableDepth;      // [m]
     };
 
     void initializeDailyDataBasic(ToutputDailyMeteo* dailyData, Crit3DDate myDate);
@@ -92,8 +97,6 @@
 
     bool markov(float pwd, float pww, bool isWetPreviousDay);
     float weibull (float mean, float precThreshold);
-    void cubicSplineYearInterpolate(float *monthlyAvg, float *outputDailyValues);
-    void quadrSplineYearInterpolate(float *meanY, float *dayVal);
 
     void genTemps(float *tMax, float *tMin, float meanTMax, float meanTMin, float stdMax,
                   float stdMin, float *resTMaxPrev, float *resTMinPrev);
@@ -108,25 +111,29 @@
 
     bool assignAnomalyPrec(float myAnomaly, int anomalyMonth1, int anomalyMonth2,
                            float* myWGMonthlyVarNoAnomaly, float* myWGMonthlyVar);
+    bool assignXMLAnomalyScenario(XMLScenarioAnomaly* XMLAnomaly, int modelIndex, int *anomalyMonth1, int *anomalyMonth2,
+                                  TweatherGenClimate& wGenNoAnomaly, TweatherGenClimate &wGen);
 
     bool makeSeasonalForecast(QString outputFileName, char separator, XMLSeasonalAnomaly* XMLAnomaly,
-                            TweatherGenClimate& wGenClimate, TinputObsData* lastYearDailyObsData,
+                            TweatherGenClimate& wGenClimate, TinputObsData* dailyObsData,
                             int numRepetitions, int myPredictionYear, int wgDoy1, int wgDoy2, float rainfallThreshold);
 
-    bool computeSeasonalPredictions(TinputObsData *lastYearDailyObsData, TweatherGenClimate& wgClimate,
+    bool initializeWaterTableData(TinputObsData* dailyObsData, WaterTable *waterTable,
+                                  int predictionYear, int wgDoy1, int nrDaysBeforeWgDoy1, int daysWg);
+
+    bool makeSeasonalForecastWaterTable(QString outputFileName, char separator, XMLSeasonalAnomaly* XMLAnomaly,
+                                        TweatherGenClimate& wGenClimate, TinputObsData* dailyObsData, WaterTable *waterTable,
+                                        int nrRepetitions, int myPredictionYear, int wgDoy1, int wgDoy2, float rainfallThreshold);
+
+    bool computeSeasonalPredictions(TinputObsData *dailyObsData, TweatherGenClimate& wgClimate,
                                     int predictionYear, int firstYear, int nrRepetitions,
                                     int wgDoy1, int wgDoy2, float minPrec, bool isLastMember,
-                                    std::vector<ToutputDailyMeteo> &outputDailyData, int *outputDataLength);
+                                    std::vector<ToutputDailyMeteo> &outputDailyData, int *outputDataLength, std::vector<int> &indexWg);
 
     bool computeClimate(TweatherGenClimate &wgClimate, int firstYear, int nrRepetitions,
                         float rainfallThreshold, std::vector<ToutputDailyMeteo> &outputDailyData);
 
     void clearInputData(TinputObsData &myData);
-
-    bool makeScenario(QString outputFileName, char separator, XMLSeasonalAnomaly* XMLAnomaly,
-                      TweatherGenClimate& wGenClimate,
-                      int nrRepetitions, int myPredictionYear, int wgDoy1, int wgDoy2,
-                      float rainfallThreshold);
 
 
 #endif // WEATHERGENERATOR_H

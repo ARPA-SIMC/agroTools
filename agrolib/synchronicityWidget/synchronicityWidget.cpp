@@ -191,7 +191,7 @@ void Crit3DSynchronicityWidget::addStationGraph()
 
             if ((float)myX.size() / days * 100.0 > minPerc)
             {
-                statistics::linearRegression(myX, myY, myX.size(), false, &y_intercept, &trend, &r2);
+                statistics::linearRegression(myX, myY, int(myX.size()), false, &y_intercept, &trend, &r2);
             }
             else
             {
@@ -398,7 +398,7 @@ void Crit3DSynchronicityWidget::changeInterpolationDate()
 
 void Crit3DSynchronicityWidget::on_actionChangeLeftSynchAxis()
 {
-    DialogChangeAxis changeAxisDialog(true);
+    DialogChangeAxis changeAxisDialog(1, false);
     if (changeAxisDialog.result() == QDialog::Accepted)
     {
         synchronicityChartView->setYmax(changeAxisDialog.getMaxVal());
@@ -408,7 +408,7 @@ void Crit3DSynchronicityWidget::on_actionChangeLeftSynchAxis()
 
 void Crit3DSynchronicityWidget::on_actionChangeLeftInterpolationAxis()
 {
-    DialogChangeAxis changeAxisDialog(true);
+    DialogChangeAxis changeAxisDialog(1, false);
     if (changeAxisDialog.result() == QDialog::Accepted)
     {
         interpolationChartView->setYmax(changeAxisDialog.getMaxVal());

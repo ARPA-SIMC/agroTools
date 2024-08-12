@@ -23,10 +23,10 @@ public:
     void plot();
     void climatologicalLRClicked(int toggled);
     void modelLRClicked(int toggled);
-
 private:
     double x;
     double y;
+    double z;
     std::vector<std::vector<double>> parameters;
     gis::Crit3DGisSettings gisSettings;
     Crit3DInterpolationSettings* interpolationSettings;
@@ -48,11 +48,13 @@ private:
     QCheckBox detrended;
     QCheckBox climatologicalLR;
     QCheckBox modelLR;
+    QCheckBox stationWeights;
     QTextEdit r2;
     QTextEdit lapseRate;
     ChartView *chartView;
     meteoVariable myVar;
     int proxyPos;
+    std::vector <QGraphicsTextItem*> weightLabels;
 
     Crit3DTime getCurrentTime();
 

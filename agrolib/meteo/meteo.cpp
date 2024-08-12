@@ -786,6 +786,12 @@ bool setColorScale(meteoVariable variable, Crit3DColorScale *colorScale)
         case snowFall: case snowWaterEquivalent: case snowLiquidWaterContent: case snowMelt:
         case dailyWaterTableDepth:
             setPrecipitationScale(colorScale);
+            if (variable == snowFall || variable == snowWaterEquivalent
+                || variable == snowLiquidWaterContent || variable == snowMelt)
+            {
+                colorScale->setHideOutliers(true);
+                colorScale->setTransparent(true);
+            }
             break;  
         case snowAge:
             setGrayScale(colorScale);
@@ -921,6 +927,10 @@ std::string getVariableString(meteoVariable myVar)
     else if (myVar == leafAreaIndex)
             return "Leaf area index (m2 m-2)";
 
+    else if (myVar == elaboration)
+        return "Elaboration";
+    else if (myVar == anomaly)
+        return "Anomaly";
     else if (myVar == noMeteoTerrain)
         return "Elevation (m)";
     else
@@ -944,9 +954,9 @@ std::string getKeyStringMeteoMap(std::map<std::string, meteoVariable> map, meteo
     return key;
 }
 
+
 std::string getUnitFromVariable(meteoVariable var)
 {
-
     std::string unit = "";
     std::map<std::vector<meteoVariable>, std::string>::const_iterator it;
     std::vector<meteoVariable> key;
@@ -961,8 +971,10 @@ std::string getUnitFromVariable(meteoVariable var)
         }
         key.clear();
     }
+
     return unit;
 }
+
 
 meteoVariable getKeyMeteoVarMeteoMap(std::map<meteoVariable,std::string> map, const std::string& value)
 {

@@ -52,54 +52,44 @@ void XMLSeasonalAnomaly::printInfo()
    qDebug() << "";
 }
 
+
 XMLScenarioAnomaly::XMLScenarioAnomaly()
 {
-    this->initialize(); // chiedere a Fausto perché non fare initialize direttamente qui
+    this->initialize();
 }
 
 
 void XMLScenarioAnomaly::initialize()
 {
-    /*
     point.name = "";
     point.code = "";
     point.latitude = NODATA;
     point.longitude = NODATA;
-    point.info = "";
-
-    forecast.clear();
 
     climatePeriod.yearFrom = NODATA;
     climatePeriod.yearTo = NODATA;
 
-    modelNumber = NODATA;
-
-    modelName.clear();
-    modelMember.clear();
+    models.type.clear();
+    models.value.clear();
+    models.number = 0;
 
     repetitions = NODATA;
     anomalyYear = NODATA;
-    anomalySeason = "";
-    */
 }
 
 
 void XMLScenarioAnomaly::printInfo()
 {
-    /*
     qDebug() << "point.name = " << point.name;
-    qDebug() << "point.longitude = " << point.longitude;
-    qDebug() << "point.latitude = " << point.latitude;
+    //qDebug() << "point.longitude = " << point.longitude;
+    //qDebug() << "point.latitude = " << point.latitude;
     qDebug() << "climate first year = " << climatePeriod.yearFrom;
     qDebug() << "climate last year = " << climatePeriod.yearTo;
-    qDebug() << "number of models = " << modelNumber;
-    qDebug() << "models = " << modelName;
-    qDebug() << "number of members = " << modelMember;
-    qDebug() << "number of repetitions = " << repetitions;
+    qDebug() << "models = " << models.type;
+    qDebug() << "number of models = " << models.number;
     qDebug() << "anomaly year = " << anomalyYear;
-    qDebug() << "anomaly season = " << anomalySeason;
+    qDebug() << "number of repetitions = " << repetitions;
     qDebug() << "";
-    */
 }
 
 
@@ -186,12 +176,22 @@ bool parseXMLSeasonal(const QString &xmlFileName, XMLSeasonalAnomaly &XMLAnomaly
                 }
                 else if ((myTag == "LAT") || (myTag == "LATITUDE"))
                 {
-                    XMLAnomaly.point.latitude = child.toElement().text().toFloat();
+                    bool ok;
+                    XMLAnomaly.point.latitude = child.toElement().text().toFloat(&ok);
+                    if (ok == false)
+                    {
+                        XMLAnomaly.point.latitude = NODATA;
+                    }
                     nrTokens++;
                 }
                 else if ((myTag == "LON") || (myTag == "LONGITUDE"))
                 {
-                    XMLAnomaly.point.longitude = child.toElement().text().toFloat();
+                    bool ok;
+                    XMLAnomaly.point.longitude = child.toElement().text().toFloat(&ok);
+                    if (ok == false)
+                    {
+                        XMLAnomaly.point.longitude = NODATA;
+                    }
                     nrTokens++;
                 }
                 else if (myTag == "INFO")
@@ -320,7 +320,7 @@ bool parseXMLScenario(const QString &xmlFileName, XMLScenarioAnomaly &XMLAnomaly
 
     QDomNode child;
     QDomNode secondChild;
-    TXMLValuesList valuelist;
+    TXMLScenarioValuesList valuelist;
 
     QDomNode ancestor = xmlDoc.documentElement().firstChild();
     QString myTag;
@@ -389,6 +389,7 @@ bool parseXMLScenario(const QString &xmlFileName, XMLScenarioAnomaly &XMLAnomaly
                 {
                     models = child.toElement().text();
                     XMLAnomaly.models.value = models.split(",");
+                    XMLAnomaly.models.number = XMLAnomaly.models.value.size();
                     nrTokens++;
                 }
                 child = child.nextSibling();
@@ -437,6 +438,7 @@ bool parseXMLScenario(const QString &xmlFileName, XMLScenarioAnomaly &XMLAnomaly
         else if (ancestor.toElement().tagName().toUpper() == "PERIOD")
         {
             child = ancestor.firstChild();
+            counterVar = 0;
             while(! child.isNull())
             {
                 myTag = child.toElement().tagName().toUpper();
@@ -452,7 +454,7 @@ bool parseXMLScenario(const QString &xmlFileName, XMLScenarioAnomaly &XMLAnomaly
                 if (myTag == "VAR")
                 {
                     secondChild = child.firstChild();
-                    counterVar = 0;
+                    XMLAnomaly.period[counterTime].seasonalScenarios.push_back(valuelist);
                     while(! secondChild.isNull())
                     {
                         mySecondTag = secondChild.toElement().tagName().toUpper();
@@ -478,8 +480,9 @@ bool parseXMLScenario(const QString &xmlFileName, XMLScenarioAnomaly &XMLAnomaly
                         }
 
                         secondChild = secondChild.nextSibling();
-                        counterVar++;
+
                     }
+                    counterVar++;
                 }
                 child = child.nextSibling();
             }

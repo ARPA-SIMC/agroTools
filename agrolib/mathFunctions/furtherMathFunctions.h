@@ -48,14 +48,21 @@ enum estimatedFunction {FUNCTION_CODE_SPHERICAL, FUNCTION_CODE_LINEAR, FUNCTION_
     double functionSum(std::vector<std::function<double (double, std::vector<double> &)> > &functions, std::vector<double>& x, std::vector <std::vector <double>>& par);
     double functionSum_detrending(std::vector<std::function<double(double, std::vector<double>&)>>& functions, std::vector<double> x, std::vector <std::vector <double>>& par);
     double functionLinear(double x, std::vector <double>& par);
-    double lapseRatePiecewise_three(double x, std::vector <double>& par);
-    double lapseRatePiecewiseForInterpolation(double x, std::vector <double>& par);
-    double lapseRatePiecewiseFree(double x, std::vector <double>& par);
-    double lapseRatePiecewiseThree_withSlope(double x, std::vector <double>& par);
-    double lapseRatePiecewise_two(double x, std::vector <double>& par);
+    double functionLinear_intercept(double x, std::vector <double>& par);
+    double multilinear(std::vector<double> &x, std::vector<double> &par);
     double lapseRateFrei(double x, std::vector <double>& par);
     double lapseRateFreiFree(double x, std::vector <double>& par);
     double lapseRateRotatedSigmoid(double x, std::vector <double> par);
+
+    double lapseRatePiecewise_two(double x, std::vector <double>& par);
+    double lapseRatePiecewise_three_noSlope(double x, std::vector <double>& par);
+    double lapseRatePiecewise_three(double x, std::vector <double>& par);
+    double lapseRatePiecewise_three_free(double x, std::vector <double>& par);
+
+    double detrendingLapseRatePiecewise_two(double x, std::vector <double>& par);
+    double detrendingLapseRatePiecewise_three(double x, std::vector <double>& par);
+    double detrendingLapseRatePiecewise_three_free(double x, std::vector <double>& par);
+
 
     namespace integration
     {
@@ -91,7 +98,10 @@ enum estimatedFunction {FUNCTION_CODE_SPHERICAL, FUNCTION_CODE_LINEAR, FUNCTION_
         double normGeneric(int idFunction, double *parameters, int nrParameters, double *x, double *y,  int nrData);
 
         double modifiedVanGenuchten(double psi, double *parameters, bool isRestricted);
-        double cubicSpline(double x , double *firstColumn , double *secondColumn, int dim); // not working to be checked
+        double cubicSpline(double x , double *firstColumn , double *secondColumn, int dim);
+        void cubicSplineYearInterpolate(float *monthlyAvg, float *outputDailyValues);
+        void quadrSplineYearInterpolate(float *meanY, float *dayVal);
+
         bool punctualSecondDerivative(int dim, double *firstColumn , double *secondColumn, double* secondDerivative); // not working to be checked
         void tridiagonalThomasAlgorithm (int n, double *subDiagonal, double *mainDiagonal, double *superDiagonal, double *constantTerm, double* output); // not working to be checked
 
@@ -105,7 +115,7 @@ enum estimatedFunction {FUNCTION_CODE_SPHERICAL, FUNCTION_CODE_LINEAR, FUNCTION_
                                         std::vector<std::vector<double> > &parametersMin, std::vector<std::vector<double> > &parametersMax,
                                         std::vector<std::vector<double> > &parameters, std::vector<std::vector<double> > &parametersDelta,
                                         int maxIterationsNr, double myEpsilon, double deltaR2,
-                                        std::vector <std::vector <double>>& x , std::vector<double>& y, std::vector<double>& weights);
+                                        std::vector <std::vector <double>>& x , std::vector<double>& y, std::vector<double>& weights, unsigned int elevationPos);
 
         bool fittingMarquardt_nDimension(double (*func)(std::vector<std::function<double (double, std::vector<double> &)> > &, std::vector<double> &, std::vector <std::vector <double>>&),
                                          std::vector<std::function<double (double, std::vector<double> &)> > &myFunc,

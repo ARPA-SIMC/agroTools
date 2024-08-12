@@ -1,83 +1,102 @@
 #ifndef WATERTABLE_H
 #define WATERTABLE_H
 
-#include "well.h"
-#include "meteoPoint.h"
-#include "meteoGrid.h"
+#ifndef WELL_H
+    #include "well.h"
+#endif
+#ifndef METEO_H
+    #include "meteo.h"
+#endif
+#ifndef GIS_H
+    #include "gis.h"
+#endif
 #include <QDate>
 
-#define MAXWELLDISTANCE 5000                           // distanza max: 10 km
+#define MAXWELLDISTANCE 5000                           // distanza max: 5 km
 #define WATERTABLE_MAXDELTADAYS 90
 
 class WaterTable
 {
     public:
-        WaterTable(Crit3DMeteoPoint* linkedMeteoPoint, Crit3DMeteoSettings meteoSettings, gis::Crit3DGisSettings gisSettings);
-        QString getIdWell() const;
-        QDate getFirstDateWell();
-        QDate getLastDateWell();
+        float WTClimateMonthly[12];
+        float WTClimateDaily[366];
+
+        QDate firstDate;
+        std::vector<float> hindcastSeries;
+        std::vector<float> interpolationSeries;
+
+        WaterTable(std::vector<float> &inputTMin, std::vector<float> &inputTMax, std::vector<float> &inputPrec,
+                   QDate firstMeteoDate, QDate lastMeteoDate, Crit3DMeteoSettings meteoSettings);
+
         void initializeWaterTable(Well myWell);
-        bool computeWaterTable(Well myWell, int maxNrDays);
+        bool computeWaterTableParameters(Well myWell, int stepDays);
         bool computeWTClimate();
-        bool computeETP_allSeries();
-        bool computeCWBCorrelation(int maxNrDays);
-        float computeCWB(QDate myDate, int nrDays);
+        bool computeETP_allSeries(bool isUpdateAvgCWB);
+        bool computeCWBCorrelation(int stepDays);
+        double computeCWB(QDate myDate, int nrDays);
         bool computeWaterTableIndices();
         float getWaterTableDaily(QDate myDate);
         float getWaterTableClimate(QDate myDate);
         bool computeWaterTableClimate(QDate currentDate, int yearFrom, int yearTo, float* myValue);
-        bool getWaterTableHindcast(QDate myDate, float* myValue, float* myDelta, int* myDeltaDays);
-        void viewWaterTableSeries();
-        QString getError() const;
+        bool getWaterTableInterpolation(QDate myDate, float* myValue, float* myDelta, int* myDeltaDays);
+        void computeWaterTableSeries();
 
-        float getAlpha() const;
-        float getH0() const;
-        int getNrDaysPeriod() const;
-        float getR2() const;
-        float getRMSE() const;
-        float getNASH() const;
-        float getEF() const;
-        int getNrObsData() const;
+        bool setMeteoData(QDate myDate, float tmin, float tmax, float prec);
 
-        std::vector<QDate> getMyDates() const;
-        std::vector<float> getMyHindcastSeries() const;
-        std::vector<float> getMyInterpolateSeries() const;
-        QMap<QDate, int> getObsDepths();
+        void setInputTMin(const std::vector<float> &newInputTMin);
+        void setInputTMax(const std::vector<float> &newInputTMax);
+        void setInputPrec(const std::vector<float> &newInputPrec);
+
+        void setFirstMeteoDate(QDate myDate) { firstMeteoDate = myDate; }
+        void setLastMeteoDate(QDate myDate) { lastMeteoDate = myDate; }
+
+        QString getError() const { return errorStr; }
+
+        double getAlpha() const { return alpha; }
+        double getH0() const { return h0; }
+
+        float getR2() const { return R2; }
+        float getRMSE() const { return RMSE; }
+        float getEF() const { return EF; }
+
+        int getNrDaysPeriod() const { return nrDaysPeriod; }
+        int getNrObsData() const { return nrObsData; }
+
+        QString getIdWell() const { return well.getId(); }
+        QDate getFirstDateWell() { return well.getFirstDate(); }
+        QDate getLastDateWell() { return well.getLastDate(); }
+
+        Well* getWell() { return &well; }
+
+        void cleanAllMeteoVector();
 
     private:
-        Crit3DMeteoPoint* linkedMeteoPoint;
         Crit3DMeteoSettings meteoSettings;
-        gis::Crit3DGisSettings gisSettings;
-        QDate firstDateWell;
-        QDate lastDateWell;
+
         QDate firstMeteoDate;
         QDate lastMeteoDate;
         Well well;
-        QString error;
+        QString errorStr;
 
+        std::vector<float> inputTMin;
+        std::vector<float> inputTMax;
+        std::vector<float> inputPrec;
         std::vector<float> etpValues;
         std::vector<float> precValues;
 
         int nrDaysPeriod;
-        float alpha;
-        float h0;
+        double alpha;
+        double h0;
+
         float R2;
         float RMSE;
-        float NASH;
         float EF;
 
         bool isClimateReady;
-        float WTClimateMonthly[12];
-        float WTClimateDaily[366];
         int nrObsData;
 
         bool isCWBEquationReady;
-        float avgDailyCWB; //[mm]
-
-        // graph
-        std::vector<QDate> myDates;
-        std::vector<float> myHindcastSeries;
-        std::vector<float> myInterpolateSeries;
+        double avgDailyCWB; //[mm]
 };
 
 #endif // WATERTABLE_H

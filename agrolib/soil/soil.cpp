@@ -1,5 +1,5 @@
 /*!
-    CRITERIA3D
+    soil.cpp
 
     \copyright 2016 Fausto Tomei, Gabriele Antolini,
     Alberto Pistocchi, Marco Bittelli, Antonio Volta, Laura Costantini
@@ -353,7 +353,14 @@ namespace soil
         else
         {
             // FINE grained soils
-            if (horizon.texture.classNameUSDA == "loam" || horizon.texture.classNameUSDA == "clayloam" || horizon.texture.classNameUSDA == "silty clayloam")
+            if (horizon.texture.classNameUSDA == "loam")
+            {
+                if (horizon.organicMatter > 0.2)
+                    return 16; // OL
+                else
+                    return 12; // SC-CL
+            }
+            if (horizon.texture.classNameUSDA == "clayloam" || horizon.texture.classNameUSDA == "silty clayloam")
             {
                 if (horizon.organicMatter > 0.2)
                    return 16; // OL
@@ -365,7 +372,12 @@ namespace soil
                 if (horizon.organicMatter > 0.2)
                    return 16; // OL
                 else
-                   return 13; // ML
+                {
+                    if(horizon.texture.clay >= 20)
+                        return 12; // SC-CL
+                    else
+                        return 13; // ML
+                }
             }
             if (horizon.texture.classNameUSDA == "clay" || horizon.texture.classNameUSDA == "silty clay")
             {
@@ -379,10 +391,9 @@ namespace soil
             if (horizon.organicMatter > 0.2)
                 return 16; // OL
             else
-                return 14; // CL
+                return 13; // ML
         }
     }
-
 
     double estimateSpecificDensity(double organicMatter)
     {
@@ -752,8 +763,8 @@ namespace soil
     {
         double suctionStress = -waterPotential * getDegreeOfSaturation();    // [kPa]
 
-        double slopeAngle = asin(slope);
-        double frictionAngle = horizonPtr->frictionAngle * DEG_TO_RAD;
+        double slopeAngle = std::max(asin(slope), EPSILON);                  // [rad]
+        double frictionAngle = horizonPtr->frictionAngle * DEG_TO_RAD;       // [rad]
 
         double tanAngle = tan(slopeAngle);
         double tanFrictionAngle = tan(frictionAngle);
@@ -780,8 +791,8 @@ namespace soil
         // surface 2%
         if (upperDepth == 0.0) return 0.02;
         // first layer 1%
-        if (upperDepth > 0 && upperDepth < 0.5) return 0.01;
-        // sub-surface 0.5%
+        if (upperDepth > 0 && upperDepth < 0.4) return 0.01;
+        // sub-surface
         return MINIMUM_ORGANIC_MATTER;
     }
 
@@ -814,7 +825,7 @@ namespace soil
         horizon.texture.silt = horizon.dbData.silt;
         horizon.texture.clay = horizon.dbData.clay;
         if (! isEqual(horizon.texture.sand, NODATA) && ! isEqual(horizon.texture.silt, NODATA) && ! isEqual(horizon.texture.clay, NODATA)
-            && (horizon.texture.sand + horizon.texture.silt + horizon.texture.clay) <= 1 )
+            && (horizon.texture.sand + horizon.texture.silt + horizon.texture.clay) <= 1.01 )
         {
             horizon.texture.sand *= 100;
             horizon.texture.silt *= 100;
@@ -927,8 +938,10 @@ namespace soil
         horizon.CEC = 50.0;
         horizon.PH = 7.7;
 
-        // new parameters for slope stability
+        // USCS: Unified Soil Classification System
         horizon.texture.classUSCS = getUSCSClass(horizon);
+
+        // parameters for slope stability
         if (horizon.dbData.effectiveCohesion != NODATA)
         {
             horizon.effectiveCohesion = horizon.dbData.effectiveCohesion;

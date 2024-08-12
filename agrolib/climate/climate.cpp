@@ -1101,7 +1101,7 @@ float thomDailyMean(TObsDataH* hourlyValues, float minimumPercentage)
     if ( (float(nData) / 24 * 100) < minimumPercentage)
         thomDailyMean = NODATA;
     else
-        thomDailyMean = statistics::mean(thomValues, nData);
+        thomDailyMean = statistics::mean(thomValues);
 
 
     return thomDailyMean;
@@ -3826,7 +3826,7 @@ bool parseXMLElaboration(Crit3DElabList *listXMLElab, Crit3DAnomalyList *listXML
                     meteoVariable var = getKeyMeteoVarMeteoMap(MapMonthlyMeteoVarToString, variable.toStdString());
                     if (var != noMeteoVar)
                     {
-                        listXMLDrought->updateVariable(var, listXMLDrought->listVariable().size() - 1);   //change var
+                        listXMLDrought->updateVariable(var, int(listXMLDrought->listVariable().size()) - 1);   //change var
                     }
                 }
                 if (myTag == "EXPORT")

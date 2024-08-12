@@ -18,6 +18,7 @@
     {
         QString type;
         QStringList value;
+        int number;
     };
     struct TXMLScenarioClimateField
     {
@@ -39,7 +40,7 @@
     struct TXMLScenarioPeriod
     {
         QString type;
-        TXMLScenarioValuesList seasonalScenarios[4];
+        std::vector<TXMLScenarioValuesList> seasonalScenarios;
     };
 
     struct TXMLPoint

@@ -1539,17 +1539,21 @@ bool PragaProject::downloadDailyDataArkimet(QList<QString> variables, bool prec0
             id = QString::fromStdString(meteoPoints[i].id);
             dataset = QString::fromStdString(meteoPoints[i].dataset);
 
-            if (!datasetList.contains(dataset))
+            // if the point doesn't have dataset, it is not downloaded from arkimet
+            if (! dataset.isEmpty())
             {
-                datasetList << dataset;
-                QList<QString> myList;
-                myList << id;
-                idList.append(myList);
-            }
-            else
-            {
-                index = datasetList.indexOf(dataset);
-                idList[index].append(id);
+                if (! datasetList.contains(dataset))
+                {
+                    datasetList << dataset;
+                    QList<QString> myList;
+                    myList << id;
+                    idList.append(myList);
+                }
+                else
+                {
+                    index = datasetList.indexOf(dataset);
+                    idList[index].append(id);
+                }
             }
         }
     }
@@ -1566,20 +1570,27 @@ bool PragaProject::downloadDailyDataArkimet(QList<QString> variables, bool prec0
         QDate date1 = startDate;
         QDate date2 = std::min(date1.addDays(MAXDAYS_DOWNLOAD_DAILY), endDate);
 
-        while (date1 <= endDate)
+        bool isOk = true;
+        while (date1 <= endDate && isOk)
         {
-            myDownload->downloadDailyData(date1, date2, datasetList[i], idList[i], arkIdVar, prec0024);
-
             if (showInfo)
             {
                 updateProgressBar(startDate.daysTo(date2) + 1);
+            }
+
+            isOk = myDownload->downloadDailyData(date1, date2, datasetList[i], idList[i], arkIdVar, prec0024, errorString);
+            if (! isOk)
+            {
+                logError();
+                errorString = "";
             }
 
             date1 = date2.addDays(1);
             date2 = std::min(date1.addDays(MAXDAYS_DOWNLOAD_DAILY), endDate);
         }
 
-        if (showInfo) closeProgressBar();
+        if (showInfo)
+            closeProgressBar();
     }
 
     delete myDownload;
@@ -1612,22 +1623,26 @@ bool PragaProject::downloadHourlyDataArkimet(QList<QString> variables, QDate sta
     bool isSelection = isSelectionPointsActive(meteoPoints, nrMeteoPoints);
     for( int i=0; i < nrMeteoPoints; i++ )
     {
-        if (!isSelection || meteoPoints[i].selected)
+        if (! isSelection || meteoPoints[i].selected)
         {
             id = QString::fromStdString(meteoPoints[i].id);
             dataset = QString::fromStdString(meteoPoints[i].dataset);
 
-            if (!datasetList.contains(dataset))
+            // if the point doesn't have dataset, it is not downloaded from arkimet
+            if (! dataset.isEmpty())
             {
-                datasetList << dataset;
-                QList<QString> myList;
-                myList << id;
-                idList.append(myList);
-            }
-            else
-            {
-                index = datasetList.indexOf(dataset);
-                idList[index].append(id);
+                if (! datasetList.contains(dataset))
+                {
+                    datasetList << dataset;
+                    QList<QString> myList;
+                    myList << id;
+                    idList.append(myList);
+                }
+                else
+                {
+                    index = datasetList.indexOf(dataset);
+                    idList[index].append(id);
+                }
             }
         }
     }
@@ -1643,15 +1658,20 @@ bool PragaProject::downloadHourlyDataArkimet(QList<QString> variables, QDate sta
         {
             setProgressBar("Download hourly data from: " + startDate.toString("yyyy-MM-dd") + " to:" + endDate.toString("yyyy-MM-dd") + " dataset:" + datasetList[i], nrDays);
         }
-        while (date1 <= endDate)
+        bool isOk = true;
+        while (date1 <= endDate && isOk)
         {
             if (showInfo)
             {
                 updateProgressBar(startDate.daysTo(date2) + 1);
             }
 
-            if (! myDownload->downloadHourlyData(date1, date2, datasetList[i], idList[i], arkIdVar))
-                updateProgressBarText("NO DATA");
+            isOk = myDownload->downloadHourlyData(date1, date2, datasetList[i], idList[i], arkIdVar, errorString);
+            if (! isOk)
+            {
+                updateProgressBarText(errorString);
+                errorString = "";
+            }
 
             date1 = date2.addDays(1);
             date2 = std::min(date1.addDays(MAXDAYS_DOWNLOAD_HOURLY), endDate);
@@ -1662,7 +1682,6 @@ bool PragaProject::downloadHourlyDataArkimet(QList<QString> variables, QDate sta
         }
     }
 
-
     delete myDownload;
     return true;
 }
@@ -1670,12 +1689,10 @@ bool PragaProject::downloadHourlyDataArkimet(QList<QString> variables, QDate sta
 
 bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoComputation elab1MeteoComp, QString aggregationString, float threshold, gis::Crit3DRasterGrid* zoneGrid, QDate startDate, QDate endDate, QString periodType, std::vector<float> &outputValues, bool showInfo)
 {
-
     aggregationMethod spatialElab = getAggregationMethod(aggregationString.toStdString());
     std::vector <std::vector<int> > meteoGridRow(zoneGrid->header->nrRows, std::vector<int>(zoneGrid->header->nrCols, NODATA));
     std::vector <std::vector<int> > meteoGridCol(zoneGrid->header->nrRows, std::vector<int>(zoneGrid->header->nrCols, NODATA));
     meteoGridDbHandler->meteoGrid()->saveRowColfromZone(zoneGrid, meteoGridRow, meteoGridCol);
-
 
     float percValue;
     bool isMeteoGrid = true;
@@ -1705,8 +1722,8 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
         for (int zoneCol = 0; zoneCol < zoneGrid->header->nrCols; zoneCol++)
         {
             float zoneValue = zoneGrid->value[zoneRow][zoneCol];
-            double utmx = zoneGrid->utmPoint(zoneRow,zoneCol)->x;
-            double utmy = zoneGrid->utmPoint(zoneRow,zoneCol)->y;
+            double utmx = zoneGrid->utmPoint(zoneRow, zoneCol)->x;
+            double utmy = zoneGrid->utmPoint(zoneRow, zoneCol)->y;
 
             if (! isEqual(zoneValue, zoneGrid->header->flag))
             {
@@ -1724,13 +1741,21 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
 
     for (unsigned int zonePos = 0; zonePos < zoneVector.size(); zonePos++)
     {
-        double lat;
-        double lon;
-       utmXvector[zonePos] = utmXvector[zonePos] / count[zonePos];
-       utmYvector[zonePos] = utmYvector[zonePos] / count[zonePos];
-       gis::getLatLonFromUtm(gisSettings, utmXvector[zonePos], utmYvector[zonePos], &lat, &lon);
-       latVector.push_back(lat);
-       lonVector.push_back(lon);
+        // average x, y
+        utmXvector[zonePos] = utmXvector[zonePos] / count[zonePos];
+        utmYvector[zonePos] = utmYvector[zonePos] / count[zonePos];
+        double lat, lon;
+        gis::getLatLonFromUtm(gisSettings, utmXvector[zonePos], utmYvector[zonePos], &lat, &lon);
+        latVector.push_back(lat);
+        lonVector.push_back(lon);
+    }
+
+    // save point properties
+    int nrAggregationPoints = int(zoneVector.size());
+    if (! aggregationDbHandler->writeAggregationPointProperties(nrAggregationPoints, aggregationString, lonVector, latVector))
+    {
+        errorString = aggregationDbHandler->error();
+        return false;
     }
 
     int infoStep = 0;
@@ -1748,10 +1773,8 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
 
          for (int col = 0; col < meteoGridDbHandler->gridStructure().header().nrCols; col++)
          {
-
             if (meteoGridDbHandler->meteoGrid()->getMeteoPointActiveId(row, col, &id))
             {
-
                 Crit3DMeteoPoint* meteoPoint = meteoGridDbHandler->meteoGrid()->meteoPointPointer(row, col);
 
                 // copy data to MPTemp
@@ -1786,7 +1809,6 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
          {
              for (int zoneCol = 0; zoneCol < zoneGrid->header->nrCols; zoneCol++)
              {
-
                 float zoneValue = zoneGrid->value[zoneRow][zoneCol];
                 if (! isEqual(zoneValue, zoneGrid->header->flag))
                 {
@@ -1794,6 +1816,7 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
                     if (zoneIndex < 1 || zoneIndex > zoneGrid->maximum)
                     {
                         errorString = "invalid zone index: " + QString::number(zoneIndex);
+                        errorString += "\nZone number has to be between 1 and " + QString::number(zoneGrid->maximum);
                         return false;
                     }
 
@@ -1828,12 +1851,11 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
             {
                 case aggrAverage:
                     {
-                        res = statistics::mean(validValues, size);
+                        res = statistics::mean(validValues);
                         break;
                     }
                 case aggrMedian:
                     {
-
                         res = sorting::percentile(validValues, size, 50.0, true);
                         break;
                     }
@@ -1850,7 +1872,7 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
                 default:
                     {
                         // default: average
-                        res = statistics::mean(validValues, size);
+                        res = statistics::mean(validValues);
                         break;
                     }
             }
@@ -1862,12 +1884,12 @@ bool PragaProject::averageSeriesOnZonesMeteoGrid(meteoVariable variable, meteoCo
          {
             zoneVector[zonePos].clear();
          }
-
      }
 
      // save dailyElabAggregation result into DB
      if (showInfo) setProgressBar("Save data...", 0);
-     if (! aggregationDbHandler->saveAggrData(int(zoneGrid->maximum), aggregationString, periodType, startDate, endDate, variable, dailyElabAggregation, lonVector, latVector))
+     if (! aggregationDbHandler->saveAggrData(int(zoneGrid->maximum), aggregationString, periodType,
+                                             startDate, endDate, variable, dailyElabAggregation))
      {
          errorString = aggregationDbHandler->error();
          if (showInfo) closeProgressBar();
@@ -3452,13 +3474,15 @@ bool PragaProject::loadXMLImportData(QString fileName)
     }
 
     errorString = "";
-    if (!inOutData->importDataMain(fileName, errorString))
+    if (! inOutData->importDataMain(fileName, errorString))
     {
+        logError();
         return false;
     }
 
     return true;
 }
+
 
 bool PragaProject::loadXMLExportData(QString code, QDateTime myFirstTime, QDateTime myLastTime)
 {
@@ -3486,23 +3510,27 @@ bool PragaProject::loadXMLExportData(QString code, QDateTime myFirstTime, QDateT
                 fixedString.insert(0, " ");
         }
     }
+
     int variableCodeFirstChar = inOutData->getVariableCodeFirstChar();
     int whiteSpaces = variableCodeFirstChar - (fixedString.length()+1);
-    for (int i = 0; i<whiteSpaces; i++)
+    for (int i = 0; i < whiteSpaces; i++)
     {
         fixedString.append(" ");
     }
+
     QString attribute = inOutData->getVariableCodeAttribute();
-    if (!attribute.isEmpty())
+    if (! attribute.isEmpty())
     {
         fixedString = fixedString + attribute;
     }
+
     int timeFirstChar = inOutData->getTimeFirstChar();
     whiteSpaces = timeFirstChar - (fixedString.length()+1);
-    for (int i = 0; i<whiteSpaces; i++)
+    for (int i = 0; i < whiteSpaces; i++)
     {
         fixedString.append(" ");
     }
+
     QString variableAlign = inOutData->getVariableAlign();
     int variableFirstChar = inOutData->getVariableFirstChar();
     int variableNrChar = inOutData->getVariableNrChar();
@@ -3653,6 +3681,7 @@ bool PragaProject::loadXMLExportDataGrid(QString code, QDateTime myFirstTime, QD
         errorString = "Invalid filename" ;
         return false;
     }
+
     QString variable = inOutData->getVariableExport();
     meteoVariable meteoVar = getMeteoVar(variable.toStdString());
     if (meteoVar == noMeteoVar)
@@ -3660,39 +3689,45 @@ bool PragaProject::loadXMLExportDataGrid(QString code, QDateTime myFirstTime, QD
         errorString = "Unknown meteo variable: " + variable;
         return false;
     }
+
     QString fixedString = "";
     int pointCodeFirstChar = inOutData->getPointCodeFirstChar();
     if (pointCodeFirstChar != NODATA)
     {
         fixedString = code;
-        for (int i = 0; i<pointCodeFirstChar-1; i++)
+        for (int i = 0; i < pointCodeFirstChar-1; i++)
         {
             fixedString.insert(0, " ");
         }
     }
+
     int variableCodeFirstChar = inOutData->getVariableCodeFirstChar();
     int whiteSpaces = variableCodeFirstChar - (fixedString.length()+1);
-    for (int i = 0; i<whiteSpaces; i++)
+    for (int i = 0; i < whiteSpaces; i++)
     {
         fixedString.append(" ");
     }
+
     QString attribute = inOutData->getVariableCodeAttribute();
-    if (!attribute.isEmpty())
+    if (! attribute.isEmpty())
     {
         fixedString = fixedString + attribute;
     }
+
     int timeFirstChar = inOutData->getTimeFirstChar();
     whiteSpaces = timeFirstChar - (fixedString.length()+1);
-    for (int i = 0; i<whiteSpaces; i++)
+    for (int i = 0; i < whiteSpaces; i++)
     {
         fixedString.append(" ");
     }
+
     QString variableAlign = inOutData->getVariableAlign();
     int variableFirstChar = inOutData->getVariableFirstChar();
     int variableNrChar = inOutData->getVariableNrChar();
     QString variableFormat = inOutData->getVariableFormat();
     QChar charFormat = variableFormat[variableFormat.length()-1];
     int nDecimals = variableFormat.mid(variableFormat.length()-2,1).toInt();
+
     if (variableAlign.isEmpty())
     {
         variableAlign = "right"; //default
@@ -3702,6 +3737,7 @@ bool PragaProject::loadXMLExportDataGrid(QString code, QDateTime myFirstTime, QD
         errorString = "Invalid alignment: " + variableAlign;
         return false;
     }
+
     QString flagAccepted = inOutData->getVariableFlagAccepted();
     int flagFirstChar = 0;
     if (!flagAccepted.isEmpty())
