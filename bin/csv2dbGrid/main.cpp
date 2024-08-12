@@ -9,8 +9,9 @@
 
 void usage()
 {
-    std::cout << "csv2dbGrid" << std::endl
-              << "Usage: csv2dbGrid <project.ini>" << std::endl;
+    std::cout << "*** csv2dbGrid ***" << std::endl
+              << "Import daily meteo series (single series or ensemble) into a PRAGA meteo grid" << std::endl
+              << "\nUsage: csv2dbGrid <project.ini>" << std::endl;
 }
 
 int main(int argc, char *argv[])
