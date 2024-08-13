@@ -198,7 +198,7 @@ int Bias::readReferenceSettings()
     logger.writeInfo("last computation date: " + lastDate.toString());
 
     // check dates
-    if (!refGrid.updateGridDate(&errorString))
+    if (! refGrid.updateMeteoGridDate(errorString))
     {
         logger.writeError("refGrid updateGridDate: " + errorString);
         return ERROR_DATE;
@@ -210,7 +210,7 @@ int Bias::readReferenceSettings()
         logger.writeError ("firstDate-lastDate interval not included in reference grid");
         return ERROR_DATE;
     }
-    if (!inputGrid.updateGridDate(&errorString))
+    if (! inputGrid.updateMeteoGridDate(errorString))
     {
         logger.writeError("inputGrid updateGridDate: " + errorString);
         return ERROR_DATE;
@@ -482,7 +482,7 @@ int Bias::readDebiasSettings()
         return ERROR_MISSINGPARAMETERS;
     }
 
-    if (!inputGrid.updateGridDate(&errorString))
+    if (! inputGrid.updateMeteoGridDate(errorString))
     {
         logger.writeError("inputGrid updateGridDate: " + errorString);
         return ERROR_DATE;
@@ -551,7 +551,7 @@ void Bias::matchCells()
                         inputGrid.meteoGrid()->getLatLonFromId(id,&lat,&lon);
                         int refRow;
                         int refCol;
-                        gis::getGridRowColFromXY(refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
+                        gis::getRowColFromLonLat(refGrid.gridStructure().header(), lon, lat, &refRow, &refCol);
                         QPoint refPoint(refRow,refCol);
                         referenceCells << refPoint;
                     }

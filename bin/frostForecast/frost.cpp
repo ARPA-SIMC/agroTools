@@ -325,13 +325,17 @@ int Frost::downloadMeteoPointsData()
     QList<QString> keys = mapDatasetId.uniqueKeys();
     for (int i = 0; i < keys.size(); i++)
     {
-        if (!myDownload->downloadHourlyData(runDate.addDays(-1), runDate.addDays(2), keys[i], mapDatasetId.values(keys[i]), arkIdVarList) )
+        QString errorString;
+        if (! myDownload->downloadHourlyData(runDate.addDays(-1), runDate.addDays(2), keys[i],
+                                            mapDatasetId.values(keys[i]), arkIdVarList, errorString) )
         {
+            logger.writeError(errorString);
             return ERROR_DBPOINTSDOWNLOAD;
         }
     }
     return FROSTFORECAST_OK;
 }
+
 
 int Frost::getForecastData(int paramPos)
 {
@@ -352,7 +356,7 @@ int Frost::getForecastData(int paramPos)
         }
     }
 
-    if (!found)
+    if (! found)
     {
         logger.writeError ("missing id " + QString::fromStdString(meteoPointsList[meteoPointListpos].id) +" into point_properties table");
         return ERROR_DBPOINT;
@@ -379,7 +383,7 @@ int Frost::getForecastData(int paramPos)
     //myRadPoint.height = meteoPointsList[meteoPointListpos].point.z;
 
     // load meteo point observed data
-    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(runDate.addDays(-1)), getCrit3DDate(runDate.addDays(2)), point))
+    if (! meteoPointsDbHandler.loadHourlyData(getCrit3DDate(runDate.addDays(-1)), getCrit3DDate(runDate.addDays(2)), point))
     {
         logger.writeError ("id: " + QString::fromStdString(point->id) + " meteo point load hourly data error");
         return ERROR_DBPOINT;
