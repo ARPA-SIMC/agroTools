@@ -2,15 +2,17 @@
 #include "utilities.h"
 #include "basicMath.h"
 #include "gammaFunction.h"
+
+#include <iostream>
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
 #include <QtSql>
 
-Bias::Bias()
-{
 
-}
+Bias::Bias()
+{ }
+
 
 void Bias::initialize()
 {
@@ -27,36 +29,15 @@ void Bias::initialize()
     referenceCells.clear();
 }
 
-void Bias::setSettingsFileName(const QString &value)
-{
-    settingsFileName = value;
-}
 
-bool Bias::getIsDebias() const
-{
-    return isDebias;
-}
-
-void Bias::setIsDebias(bool value)
-{
-    isDebias = value;
-}
-
-
-QList<QString> Bias::getVarList() const
-{
-    return varList;
-}
-
-int Bias::readReferenceSettings()
+int Bias::readClimateSettings()
 {
     QSettings* projectSettings;
 
-    // Configuration file
     QFile myFile(settingsFileName);
-    if (!myFile.exists())
+    if (! myFile.exists())
     {
-        logger.writeError("setting file doesn't exist");
+        logger.writeError("Settings file doesn't exist: " + settingsFileName);
         return ERROR_MISSINGFILE;
     }
     else
@@ -80,6 +61,7 @@ int Bias::readReferenceSettings()
     projectSettings->beginGroup("project");
     projectName = projectSettings->value("name","").toString();
 
+    // REFERENCE grid
     refererenceMeteoGrid = projectSettings->value("refererenceMeteoGrid","").toString();
     if (refererenceMeteoGrid.isEmpty())
     {
@@ -88,10 +70,9 @@ int Bias::readReferenceSettings()
     }
     if (refererenceMeteoGrid.left(1) == ".")
     {
-        refererenceMeteoGrid = path + QDir::cleanPath(refererenceMeteoGrid);
+        refererenceMeteoGrid = QDir::cleanPath(path + refererenceMeteoGrid);
     }
 
-    // open reference grid
     if (! refGrid.parseXMLGrid(refererenceMeteoGrid, &errorString))
     {
         logger.writeError (errorString);
@@ -111,6 +92,7 @@ int Bias::readReferenceSettings()
         return ERROR_DBGRID;
     }
 
+    // INPUT grid
     inputMeteoGrid = projectSettings->value("inputMeteoGrid","").toString();
     if (inputMeteoGrid.isEmpty())
     {
@@ -120,7 +102,7 @@ int Bias::readReferenceSettings()
     }
     if (inputMeteoGrid.left(1) == ".")
     {
-        inputMeteoGrid = path + QDir::cleanPath(inputMeteoGrid);
+        inputMeteoGrid = QDir::cleanPath(path + inputMeteoGrid);
     }
 
     // open input grid
@@ -146,29 +128,30 @@ int Bias::readReferenceSettings()
         return ERROR_DBGRID;
     }
 
-    // check input and reference area
+    // check input and reference areas
+    // TODO improve
     double refArea = (refGrid.gridStructure().header().nrRows*refGrid.gridStructure().header().dy)*(refGrid.gridStructure().header().nrCols*refGrid.gridStructure().header().dx);
     double inputArea = (inputGrid.gridStructure().header().nrRows*inputGrid.gridStructure().header().dy)*(inputGrid.gridStructure().header().nrCols*inputGrid.gridStructure().header().dx);
     if (refArea < inputArea)
     {
-        logger.writeError ("reference Grid area should be >= input Grid area");
+        logger.writeError ("Reference grid area should be >= of input grid area");
         inputGrid.closeDatabase();
         refGrid.closeDatabase();
         return ERROR_AREA;
     }
 
+    // OUTPUT grid
     outputMeteoGrid = projectSettings->value("outputMeteoGrid","").toString();
-
     if (outputMeteoGrid.left(1) == ".")
     {
-        outputMeteoGrid = path + QDir::cleanPath(outputMeteoGrid);
+        outputMeteoGrid = QDir::cleanPath(path + outputMeteoGrid);
     }
 
-    // var
+    // VARIABLES list
     QString varTemp = projectSettings->value("var","").toString();
     if (varTemp.isEmpty())
     {
-        logger.writeError ("missing var");
+        logger.writeError ("missing variables");
         return ERROR_MISSINGPARAMETERS;
     }
     else
@@ -176,54 +159,56 @@ int Bias::readReferenceSettings()
         varList = varTemp.split(",");
     }
 
-    // firstDate
+    // time range
     QString firstDateStr = projectSettings->value("firstDate","").toString();
     firstDate = QDate::fromString(firstDateStr,"yyyy-MM-dd");
-    if (!firstDate.isValid())
+    if (! firstDate.isValid())
     {
         logger.writeError ("missing or invalid first date");
         return ERROR_MISSINGPARAMETERS;
     }
 
-    // lastDate
     QString lastDateStr = projectSettings->value("lastDate","").toString();
     lastDate = QDate::fromString(lastDateStr,"yyyy-MM-dd");
-    if (!lastDate.isValid())
+    if (! lastDate.isValid())
     {
         logger.writeError ("missing or invalid last date");
         return ERROR_MISSINGPARAMETERS;
     }
 
-    logger.writeInfo("first computation date: " + firstDate.toString());
-    logger.writeInfo("last computation date: " + lastDate.toString());
+    logger.writeInfo("first computation date requested by the user: " + firstDate.toString());
+    logger.writeInfo("last computation date requested by the user: " + lastDate.toString());
 
-    // check dates
+    // check reference grid time range
     if (! refGrid.updateMeteoGridDate(errorString))
     {
-        logger.writeError("refGrid updateGridDate: " + errorString);
+        logger.writeError("Error in updateGridDate (reference grid): " + errorString);
         return ERROR_DATE;
     }
-    logger.writeInfo("refGrid.firstDate(): " + refGrid.firstDate().toString());
-    logger.writeInfo("refGrid.lastDate(): " + refGrid.lastDate().toString());
+    logger.writeInfo("referenceGrid.firstDate(): " + refGrid.firstDate().toString());
+    logger.writeInfo("referenceGrid.lastDate(): " + refGrid.lastDate().toString());
+
     if (refGrid.firstDate() > firstDate || refGrid.lastDate() < lastDate)
     {
-        logger.writeError ("firstDate-lastDate interval not included in reference grid");
+        logger.writeError ("The time range of the reference grid data does not cover the requested period.");
         return ERROR_DATE;
     }
+
+    // check input grid time range
     if (! inputGrid.updateMeteoGridDate(errorString))
     {
-        logger.writeError("inputGrid updateGridDate: " + errorString);
+        logger.writeError("Error in updateGridDate (input grid): " + errorString);
         return ERROR_DATE;
     }
     logger.writeInfo("inputGrid.firstDate(): " + inputGrid.firstDate().toString());
     logger.writeInfo("inputGrid.lastDate(): " + inputGrid.lastDate().toString());
     if (inputGrid.firstDate() > firstDate || inputGrid.lastDate() < lastDate)
     {
-        logger.writeError ("firstDate-lastDate interval not included in input grid");
+        logger.writeError ("The time range of the input grid data does not cover the requested period.");
         return ERROR_DATE;
     }
 
-    // db Climate
+    // CLIMATE db
     dbClimateName = projectSettings->value("dbClimate","").toString();
     if (dbClimateName.isEmpty())
     {
@@ -234,10 +219,10 @@ int Bias::readReferenceSettings()
     }
     if (dbClimateName.left(1) == ".")
     {
-        dbClimateName = path + QDir::cleanPath(dbClimateName);
+        dbClimateName = QDir::cleanPath(path + dbClimateName);
     }
 
-    // create an empty dbClimate, if exists overwrite.
+    // creates an empty dbClimate, overwrites if it exists
     QFile dbFile(dbClimateName);
     if (dbFile.exists())
     {
@@ -251,11 +236,20 @@ int Bias::readReferenceSettings()
             return ERROR_DBCLIMATE;
         }
     }
+
+    // check path
+    QString climateDbPath = getFilePath(dbClimateName);
+    if (! QDir(climateDbPath).exists())
+    {
+        QDir().mkdir(climateDbPath);
+    }
+
     dbClimate = QSqlDatabase::addDatabase("QSQLITE", QUuid::createUuid().toString());
     dbClimate.setDatabaseName(dbClimateName);
-    if (!dbClimate.open())
+
+    if (! dbClimate.open())
     {
-        logger.writeError ("Problem opening: " + dbClimateName + dbClimate.lastError().text()+"\n");
+        logger.writeError ("Problem opening the file: " + dbClimateName + "\n" + dbClimate.lastError().text());
         refGrid.closeDatabase();
         inputGrid.closeDatabase();
         return ERROR_DBCLIMATE;
@@ -263,9 +257,9 @@ int Bias::readReferenceSettings()
 
     projectSettings->endGroup();
 
-
     return BIASCORRECTION_OK;
 }
+
 
 int Bias::readDebiasSettings()
 {
@@ -453,7 +447,8 @@ int Bias::readDebiasSettings()
             }
         }
     }
-    // var
+
+    // variables list
     QString varTemp = projectSettings->value("var","").toString();
     if (varTemp.isEmpty())
     {
@@ -527,6 +522,7 @@ int Bias::readDebiasSettings()
     return BIASCORRECTION_OK;
 }
 
+
 void Bias::matchCells()
 {
     if (inputGrid.gridStructure().header().dx > refGrid.gridStructure().header().dx || inputGrid.gridStructure().header().dy > refGrid.gridStructure().header().dy)
@@ -573,13 +569,25 @@ void Bias::matchCells()
     }
 }
 
-int Bias::computeMonthlyDistribution(QString variable)
+
+int Bias::computeMonthlyDistribution(const QString &variable)
 {
     meteoVariable var = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, variable.toStdString());
     bool deletePreviousData = true;
     int res = 0;
-    for (int i = 0; i<inputCells.size(); i++)
+
+    int lastPercentage = 0;
+    int deltaPercentage = 1;
+    std::cout << "0%..";
+    for (int i = 0; i < inputCells.size(); i++)
     {
+        int currentPercentage = (i * 100) / inputCells.size();
+        if (currentPercentage > (lastPercentage + deltaPercentage))
+        {
+            std::cout << QString::number(currentPercentage).toStdString() << "%..";
+            lastPercentage = currentPercentage;
+        }
+
         int row = inputCells[i].x();
         int col = inputCells[i].y();
         int refRow = referenceCells[i].x();
@@ -588,21 +596,23 @@ int Bias::computeMonthlyDistribution(QString variable)
         std::string refInput;
         inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &idInput);  // store id
         refGrid.meteoGrid()->getMeteoPointActiveId(refRow, refCol, &refInput);  // store id
-        if (!inputGrid.gridStructure().isFixedFields())
+
+        if (! inputGrid.gridStructure().isFixedFields())
         {
-            if (!inputGrid.loadGridDailyData(errorString, QString::fromStdString(idInput), firstDate, lastDate))
+            if (! inputGrid.loadGridDailyData(errorString, QString::fromStdString(idInput), firstDate, lastDate))
             {
                 continue;
             }
         }
         else
         {
-            if (!inputGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(idInput), firstDate, lastDate))
+            if (! inputGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(idInput), firstDate, lastDate))
             {
                 continue;
             }
         }
-        if (!refGrid.gridStructure().isFixedFields())
+
+        if (! refGrid.gridStructure().isFixedFields())
         {
             refGrid.loadGridDailyData(errorString, QString::fromStdString(refInput), firstDate, lastDate);
         }
@@ -610,6 +620,7 @@ int Bias::computeMonthlyDistribution(QString variable)
         {
             refGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(refInput), firstDate, lastDate);
         }
+
         Crit3DMeteoPoint mpInput = inputGrid.meteoGrid()->meteoPoint(row,col);
         Crit3DMeteoPoint mpRef = refGrid.meteoGrid()->meteoPoint(refRow,refCol);
         std::vector<double> monthlyPar1Input;
@@ -646,7 +657,8 @@ int Bias::computeMonthlyDistribution(QString variable)
                         }
                         seriesInput.push_back(myDailyValue);
                     }
-                    // ref Grid
+
+                    // reference Grid
                     myDailyValue = mpRef.getMeteoPointValueD(getCrit3DDate(tempDate), var, &meteoSettings);
                     if (myDailyValue != NODATA)
                     {
@@ -656,9 +668,11 @@ int Bias::computeMonthlyDistribution(QString variable)
                         }
                         seriesRef.push_back(myDailyValue);
                     }
+
                     tempDate = tempDate.addDays(1);
                 }
             }
+
             if (seriesInput.size() != 0)
             {
                 int nrValues = int(seriesInput.size());
@@ -713,60 +727,66 @@ int Bias::computeMonthlyDistribution(QString variable)
                 monthlyPar3Ref.push_back(NODATA);
             }
         }
+
         // save values
-        res = res + saveDistributionParam(QString::fromStdString(idInput),variable,monthlyPar1Input,monthlyPar2Input,monthlyPar3Input,monthlyPar1Ref,monthlyPar2Ref,monthlyPar3Ref,deletePreviousData);
+        res += saveDistributionParam(QString::fromStdString(idInput),variable,monthlyPar1Input,monthlyPar2Input,monthlyPar3Input,monthlyPar1Ref,monthlyPar2Ref,monthlyPar3Ref,deletePreviousData);
     }
-    if (res == 0)
-    {
-        return BIASCORRECTION_OK;
-    }
-    else
+
+    if (res != 0)
     {
         return ERROR_SAVINGPARAM;
     }
+
+    return BIASCORRECTION_OK;
 }
 
-int Bias::saveDistributionParam(QString idCell, QString variable, std::vector<double> monthlyPar1Input, std::vector<double> monthlyPar2Input, std::vector<double> monthlyPar3Input,
-                                std::vector<double> monthlyPar1Ref,std::vector<double> monthlyPar2Ref, std::vector<double> monthlyPar3Ref, bool deletePreviousData)
+
+int Bias::saveDistributionParam(const QString& idCell, const QString &variable, const std::vector<double> &monthlyPar1Input,
+                                const std::vector<double> &monthlyPar2Input, const std::vector<double> &monthlyPar3Input,
+                                const std::vector<double> &monthlyPar1Ref, const std::vector<double> &monthlyPar2Ref,
+                                const std::vector<double> &monthlyPar3Ref, bool deletePreviousData)
 {
     QString queryStr;
+
     if (deletePreviousData)
     {
         queryStr = "DROP TABLE IF EXISTS " + idCell;
         dbClimate.exec(queryStr);
     }
 
-    queryStr = QString("CREATE TABLE IF NOT EXISTS `%1`"
-                                "(var TEXT(20), month INTEGER, par1 REAL, par2 REAL, par3 REAL, reference_par1 REAL, reference_par2 REAL, reference_par3 REAL, PRIMARY KEY(var, month))").arg(idCell);
+    queryStr = QString("CREATE TABLE IF NOT EXISTS `%1` (var TEXT(20), month INTEGER, par1 REAL, par2 REAL, par3 REAL,"
+                       " reference_par1 REAL, reference_par2 REAL, reference_par3 REAL, PRIMARY KEY(var, month))").arg(idCell);
     QSqlQuery qry(dbClimate);
     qry.prepare(queryStr);
-    if (!qry.exec())
+    if (! qry.exec())
     {
-        logger.writeError ("Error in create table: " + idCell + qry.lastError().text()+"\n");
+        logger.writeError ("Error in create table: " + idCell + qry.lastError().text());
         return ERROR_SAVINGPARAM;
     }
 
-    queryStr = QString(("INSERT OR REPLACE INTO `%1`"
-                                " VALUES ")).arg(idCell);
+    queryStr = QString("INSERT OR REPLACE INTO `%1` VALUES ").arg(idCell);
 
-    for (int i = 0; i<monthlyPar1Input.size(); i++)
+    for (int i = 0; i < monthlyPar1Input.size(); i++)
     {
-        queryStr += "('"+variable+"',"+QString::number(i+1)+","+QString::number(monthlyPar1Input[i], 'f', 2)+","+QString::number(monthlyPar2Input[i], 'f', 2)+","+QString::number(monthlyPar3Input[i], 'f', 2)+
-                ","+QString::number(monthlyPar1Ref[i], 'f', 2)+","+QString::number(monthlyPar2Ref[i], 'f', 2)+","+QString::number(monthlyPar3Ref[i], 'f', 2)+"),";
+        queryStr += "('" + variable + "'," + QString::number(i+1) + "," + QString::number(monthlyPar1Input[i], 'f', 2)
+                    + "," + QString::number(monthlyPar2Input[i], 'f', 2) + "," + QString::number(monthlyPar3Input[i], 'f', 2)
+                    + "," + QString::number(monthlyPar1Ref[i], 'f', 2) + "," + QString::number(monthlyPar2Ref[i], 'f', 2)
+                    + "," + QString::number(monthlyPar3Ref[i], 'f', 2) + "),";
     }
-    queryStr.chop(1); // remove last ,
+    queryStr.chop(1); // remove last comma
 
-    if( !qry.exec(queryStr) )
+    if(! qry.exec(queryStr))
     {
-        logger.writeError ("Error in execute query: " + qry.lastError().text()+"\n");
+        logger.writeError ("Error in execute query: " + qry.lastError().text());
         return ERROR_SAVINGPARAM;
     }
-    else
-        return BIASCORRECTION_OK;
+
+    return BIASCORRECTION_OK;
 }
 
-int Bias::getDistributionParam(QString idCell, QString variable, std::vector<double> &monthlyPar1Input, std::vector<double> &monthlyPar2Input, std::vector<double> &monthlyPar3Input,
-                                std::vector<double> &monthlyPar1Ref,std::vector<double> &monthlyPar2Ref, std::vector<double> &monthlyPar3Ref)
+
+int Bias::getDistributionParam(const QString &idCell, const QString &variable, std::vector<double> &monthlyPar1Input, std::vector<double> &monthlyPar2Input, std::vector<double> &monthlyPar3Input,
+                                std::vector<double> &monthlyPar1Ref, std::vector<double> &monthlyPar2Ref, std::vector<double> &monthlyPar3Ref)
 {
     QSqlQuery qry(dbClimate);
 
@@ -806,13 +826,16 @@ int Bias::getDistributionParam(QString idCell, QString variable, std::vector<dou
             monthlyPar3Ref[month] = par;
         }
     }
+
     return BIASCORRECTION_OK;
 }
 
-int Bias::numericalDataReconstruction(QString variable)
+
+int Bias::numericalDataReconstruction(const QString &variable)
 {
     meteoVariable var = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, variable.toStdString());
-    int res = 0;
+
+    // initialize
     std::vector<double> monthlyPar1Input;
     std::vector<double> monthlyPar2Input;
     std::vector<double> monthlyPar3Input;
@@ -829,32 +852,34 @@ int Bias::numericalDataReconstruction(QString variable)
         monthlyPar2Ref.push_back(NODATA);
         monthlyPar3Ref.push_back(NODATA);
     }
+
     for (int row = 0; row < inputGrid.gridStructure().header().nrRows; row++)
     {
         for (int col = 0; col < inputGrid.gridStructure().header().nrCols; col++)
         {
             std::string idInput;
             inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &idInput);  // store id
+
             if (!inputGrid.gridStructure().isFixedFields())
             {
-                if (!inputGrid.loadGridDailyData(errorString, QString::fromStdString(idInput), firstDate, lastDate))
+                if (! inputGrid.loadGridDailyData(errorString, QString::fromStdString(idInput), firstDate, lastDate))
                 {
                     continue;
                 }
             }
             else
             {
-                if (!inputGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(idInput), firstDate, lastDate))
+                if (! inputGrid.loadGridDailyDataFixedFields(errorString, QString::fromStdString(idInput), firstDate, lastDate))
                 {
                     continue;
                 }
             }
 
-            int res = getDistributionParam(QString::fromStdString(idInput), variable, monthlyPar1Input, monthlyPar2Input, monthlyPar3Input,
+            int result = getDistributionParam(QString::fromStdString(idInput), variable, monthlyPar1Input, monthlyPar2Input, monthlyPar3Input,
                                             monthlyPar1Ref, monthlyPar2Ref, monthlyPar3Ref);
-            if (res != BIASCORRECTION_OK)
+            if (result != BIASCORRECTION_OK)
             {
-                return res;
+                return result;
             }
 
             float y;
@@ -909,16 +934,14 @@ int Bias::numericalDataReconstruction(QString variable)
 
                 outputValues.push_back(y);
             }
+
             // save values
-            res = res + outputGrid.saveListDailyData(&errorString, QString::fromStdString(idInput), firstDate, var, outputValues, false);
+            if (! outputGrid.saveListDailyData(&errorString, QString::fromStdString(idInput), firstDate, var, outputValues, false))
+            {
+                return ERROR_SAVINGVALUES;
+            }
         }
     }
-    if (res == 0)
-    {
-        return BIASCORRECTION_OK;
-    }
-    else
-    {
-        return ERROR_SAVINGPARAM;
-    }
+
+    return BIASCORRECTION_OK;
 }
