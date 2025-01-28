@@ -269,7 +269,6 @@
         bool loadGlocalStationsCsv(QString fileName, std::vector<std::vector<std::string> > &areaPoints);
         bool groupCellsInArea(std::vector<int> &areaPoints, unsigned index, bool isGrid);
         bool writeGlocalWeightsMaps(float windowWidth);
-		void macroAreaDetrending(Crit3DMacroArea myArea, meteoVariable myVar, std::vector<Crit3DInterpolationDataPoint> interpolationPoints, std::vector<Crit3DInterpolationDataPoint> &subsetInterpolationPoints, int elevationPos);
 
 
         bool checkInterpolation(meteoVariable myVar);
@@ -306,6 +305,7 @@
         bool setActiveStatePointList(QString fileName, bool isActive);
         bool setActiveStateWithCriteria(bool isActive);
         bool setMarkedFromPointList(QString fileName);
+        bool setMarkedPointsOfMacroArea(int areaNumber);
         bool deleteMeteoPoints(const QList<QString>& pointList);
         bool deleteMeteoPointsData(const QList<QString>& pointList);
         bool loadOutputPointList(QString fileName);
@@ -332,6 +332,7 @@
 
         Crit3DCrossValidationStatistics getCrossValidationStatistics() const;
         void setCrossValidationStatistics(const Crit3DCrossValidationStatistics &newCrossValidationStatistics);
+        void MeteoPointsToVector(std::vector<float> *validValues);
 
     private slots:
         void deleteMeteoWidgetPoint(int id);

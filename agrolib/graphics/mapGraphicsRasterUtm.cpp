@@ -212,11 +212,11 @@ Position RasterUtmObject::getRasterCenter()
  * \brief getRasterMaxSize
  * \return the maximum size of the raster in decimal degrees (width or height)
  */
-float RasterUtmObject::getRasterMaxSize()
+double RasterUtmObject::getRasterMaxSize()
 {
-    return float(MAXVALUE(_latLonHeader.nrRows * _latLonHeader.dy,
-                          _latLonHeader.nrCols * _latLonHeader.dx));
+    return MAXVALUE(_latLonHeader.nrRows * _latLonHeader.dy, _latLonHeader.nrCols * _latLonHeader.dx);
 }
+
 
 
 /*!
@@ -370,7 +370,7 @@ bool RasterUtmObject::drawRaster(QPainter* painter)
             // check outliers (transparent)
             if (_rasterPointer->colorScale->isHideOutliers())
             {
-                if (value <= _rasterPointer->colorScale->minimum() || value > _rasterPointer->colorScale->maximum())
+                if (isEqual(value, 0) || value <= _rasterPointer->colorScale->minimum() || value > _rasterPointer->colorScale->maximum())
                     continue;
             }
 

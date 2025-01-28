@@ -35,9 +35,6 @@
     #ifndef INTERPOLATIONPOINT_H
         #include "interpolationPoint.h"
     #endif
-    #ifndef VECTOR_H
-        #include <vector>
-    #endif
 
     float getMinHeight(const std::vector <Crit3DInterpolationDataPoint> &myPoints, bool useLapseRateCode);
     float getMaxHeight(const std::vector <Crit3DInterpolationDataPoint> &myPoints, bool useLapseRateCode);
@@ -79,6 +76,10 @@
     void detrending(std::vector <Crit3DInterpolationDataPoint> &myPoints, Crit3DProxyCombination inCombination,
                     Crit3DInterpolationSettings *mySettings, Crit3DClimateParameters *myClimate,
                     meteoVariable myVar, Crit3DTime myTime);
+
+    void macroAreaDetrending(Crit3DMacroArea myArea, meteoVariable myVar, Crit3DInterpolationSettings &mySettings, Crit3DMeteoSettings* meteoSettings,
+                             Crit3DMeteoPoint* meteoPoints, std::vector <Crit3DInterpolationDataPoint> interpolationPoints,
+                             std::vector <Crit3DInterpolationDataPoint> &subsetInterpolationPoints, int elevationPos);
 
     bool multipleDetrendingMain(std::vector <Crit3DInterpolationDataPoint> &myPoints,
                                 Crit3DInterpolationSettings* mySettings, meteoVariable myVar, std::string &errorStr);
