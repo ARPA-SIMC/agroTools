@@ -9,11 +9,18 @@
 // uncomment to compute test
 //#define TEST
 
+
+void version()
+{
+    std::cout << "CriteriaOutput V1.8.5" << std::endl;
+    std::cout << "Manages the agro-hydrological outputs of CRITERIA1D-GEO" << std::endl;
+}
+
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
               << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
-              << "Notes: computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
+              << "computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
     std::cout << std::flush;
 }
 
@@ -21,8 +28,7 @@ void usage()
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
-    std::cout << "CriteriaOutput V1.8.4" << std::endl;
-    std::cout << "*** Shell command to manage the agro-hydrological output of CRITERIA1D-GEO" << std::endl;
+    version();
 
     CriteriaOutputProject myProject;
 

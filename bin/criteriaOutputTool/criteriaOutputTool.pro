@@ -8,8 +8,8 @@
 #
 #-----------------------------------------------------------
 
-QT -= gui
-QT += core widgets sql
+QT   -= gui
+QT   += sql
 
 CONFIG += console
 TEMPLATE = app
