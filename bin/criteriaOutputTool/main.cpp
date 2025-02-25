@@ -12,7 +12,7 @@
 
 void version()
 {
-    std::cout << "CriteriaOutput V1.8.6" << std::endl;
+    std::cout << "CriteriaOutput V1.8.7" << std::endl;
     std::cout << "Manages the agro-hydrological outputs of CRITERIA1D-GEO" << std::endl;
 }
 
