@@ -43,9 +43,9 @@ int main(int argc, char *argv[])
                 return -1;
 
             //settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_AL.ini";
-            settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollAgro.ini";
+            settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/test.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operationStr = "MAPS";
+            operationStr = "SHAPE";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
