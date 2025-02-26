@@ -13,13 +13,13 @@
 void version()
 {
     std::cout << "CriteriaOutput V1.8.7" << std::endl;
-    std::cout << "Manages the agro-hydrological outputs of CRITERIA1D-GEO" << std::endl;
+    std::cout << "Post processing of the agro-hydrological outputs of CRITERIA1D-GEO" << std::endl;
 }
 
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
-              << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
+              << "CriteriaOutput <CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|DTX> <projectName.ini> [computationDate]" << std::endl
               << "computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
     std::cout << std::flush;
 }
