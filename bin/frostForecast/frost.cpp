@@ -169,7 +169,7 @@ int Frost::readSettings()
     QFile myFile(settingsFileName);
     if (!myFile.exists())
     {
-        logger.writeError("setting file doesn't exist");
+        logger.writeError("setting file does not exist");
         return ERROR_MISSINGFILE;
     }
     else
@@ -240,19 +240,19 @@ int Frost::readSettings()
 
     if (!meteoPointsDbHandler.setAndOpenDb(dbMeteoPointsName))
     {
-        logger.writeError (errorString);
+        logger.writeError (meteoPointsDbHandler.getErrorString());
         return ERROR_DBPOINT;
     }
 
     if (!meteoPointsDbHandler.loadVariableProperties())
     {
-        logger.writeError (errorString);
+        logger.writeError (meteoPointsDbHandler.getErrorString());
         return ERROR_DBPOINT;
     }
 
     if (!meteoPointsDbHandler.getPropertiesFromDb(meteoPointsList, gisSettings, errorString))
     {
-        logger.writeError (errorString);
+        logger.writeError (meteoPointsDbHandler.getErrorString());
         return ERROR_DBPOINT;
     }
 
