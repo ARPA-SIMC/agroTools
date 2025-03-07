@@ -9,11 +9,18 @@
 // uncomment to compute test
 //#define TEST
 
+
+void version()
+{
+    std::cout << "CriteriaOutput V1.8.7" << std::endl;
+    std::cout << "Post processing of the agro-hydrological outputs of CRITERIA1D-GEO" << std::endl;
+}
+
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
-              << "CriteriaOutput <DTX|CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION> <projectName.ini> [computationDate]" << std::endl
-              << "Notes: computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
+              << "CriteriaOutput <CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|DTX> <projectName.ini> [computationDate]" << std::endl
+              << "computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
     std::cout << std::flush;
 }
 
@@ -21,13 +28,12 @@ void usage()
 int main(int argc, char *argv[])
 {
     QCoreApplication myApp(argc, argv);
-    std::cout << "CriteriaOutput V1.8.2" << std::endl;
-    std::cout << "*** Shell command to manage the agro-hydrological output of CRITERIA1D-GEO" << std::endl;
+    version();
 
     CriteriaOutputProject myProject;
 
     QString appPath = myApp.applicationDirPath() + "/";
-    QString settingsFileName, dateComputationStr;
+    QString settingsFileName, dateComputationStr, operationStr;
 
     if (argc <= 2)
     {
@@ -36,9 +42,10 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "//tomei-smr/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/bollagro.ini";
+            //settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_AL.ini";
+            settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/test.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            myProject.operation = "MAPS";
+            operationStr = "SHAPE";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -46,8 +53,8 @@ int main(int argc, char *argv[])
     }
     else
     {
-        myProject.operation = argv[1];
-        myProject.operation = myProject.operation.toUpper();
+        operationStr = argv[1];
+        operationStr = operationStr.toUpper();
 
         settingsFileName = argv[2];
         if (settingsFileName.right(3) != "ini")
@@ -90,7 +97,7 @@ int main(int argc, char *argv[])
     }
 
     // initialize
-    int myResult = myProject.initializeProject(settingsFileName, myProject.operation, dateComputation, true);
+    int myResult = myProject.initializeProject(settingsFileName, operationStr, dateComputation, true);
     if (myResult != CRIT1D_OK)
     {
         myProject.logger.writeError(myProject.projectError);
@@ -129,7 +136,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        myProject.logger.writeError("Wrong parameter: " + myProject.operation);
+        myProject.logger.writeError("Wrong operation: " + myProject.operation);
         usage();
         return ERROR_WRONGPARAMETER;
     }

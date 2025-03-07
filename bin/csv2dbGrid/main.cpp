@@ -9,8 +9,10 @@
 
 void usage()
 {
-    std::cout << "csv2dbGrid" << std::endl
-              << "Usage: csv2dbGrid <project.ini>" << std::endl;
+    std::cout << "*** csv2dbGrid ***" << std::endl
+              << "Import daily or hourly meteo series (single series or ensemble) into a PRAGA meteo grid." << std::endl
+              << "WARNING for ensembles: only daily data are supported." << std::endl
+              << "\nUsage: csv2dbGrid <project.ini>" << std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -54,11 +56,11 @@ int main(int argc, char *argv[])
 
     // import value from csv file
     QDir csvDir(import.getCsvFilePath());
-    QStringList listOfCsv = csvDir.entryList(QStringList() << "*.csv", QDir::Files); // get a list of file
+    QStringList listOfCsv = csvDir.entryList(QStringList() << "*.csv", QDir::Files);    // get a list of file
     QString fileName;
     QList<QString> varList = import.getMeteoVar();
     bool isFirst = false;
-    for(int i=0; i<listOfCsv.count(); i++)
+    for(int i=0; i < listOfCsv.count(); i++)
     {
         fileName = listOfCsv.at(i);
         bool interest = false;
@@ -77,7 +79,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        import.setCsvFileName(import.getCsvFilePath()+"/"+fileName);
+        import.setCsvFileName(import.getCsvFilePath() + "/" + fileName);
         import.logger.writeInfo("read file: " + fileName);
 
         if (!isFirst)
@@ -95,7 +97,7 @@ int main(int argc, char *argv[])
             if (import.getIsEnsemble())
             {
                 result = import.loadEnsembleDailyValues();
-                if (result!=CSV2DBGRID_OK)
+                if (result != CSV2DBGRID_OK)
                 {
                     import.logger.writeError("Loading daily data ERROR");
                     return result;
@@ -103,7 +105,7 @@ int main(int argc, char *argv[])
                 else
                 {
                     result = import.writeEnsembleDailyValues();
-                    if (result!=CSV2DBGRID_OK)
+                    if (result != CSV2DBGRID_OK)
                     {
                         import.logger.writeError("Writing daily data ERROR");
                         return result;
@@ -113,7 +115,7 @@ int main(int argc, char *argv[])
             else
             {
                 result = import.loadDailyValues();
-                if (result!=CSV2DBGRID_OK)
+                if (result != CSV2DBGRID_OK)
                 {
                     import.logger.writeError("Loading daily data ERROR");
                     return result;
@@ -121,7 +123,7 @@ int main(int argc, char *argv[])
                 else
                 {
                     result = import.writeDailyValues();
-                    if (result!=CSV2DBGRID_OK)
+                    if (result != CSV2DBGRID_OK)
                     {
                         import.logger.writeError("Writing daily data ERROR");
                         return result;
@@ -133,12 +135,13 @@ int main(int argc, char *argv[])
         {
             if (import.getIsEnsemble())
             {
-                // TO DO
+                import.logger.writeError("Ensembles hourly are not supported.");
+                return ERROR_BAD_REQUEST;
             }
             else
             {
                 result = import.loadMultiTimeValues();
-                if (result!=CSV2DBGRID_OK)
+                if (result != CSV2DBGRID_OK)
                 {
                     import.logger.writeError("Loading hourly data ERROR");
                     return result;
@@ -146,7 +149,7 @@ int main(int argc, char *argv[])
                 else
                 {
                     result = import.writeMultiTimeValues();
-                    if (result!=CSV2DBGRID_OK)
+                    if (result != CSV2DBGRID_OK)
                     {
                         import.logger.writeError("Writing daily data ERROR");
                         return result;
@@ -154,7 +157,6 @@ int main(int argc, char *argv[])
                 }
             }
         }
-
     }
 
     return CSV2DBGRID_OK;

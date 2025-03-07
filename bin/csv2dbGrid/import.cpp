@@ -283,6 +283,7 @@ int Import::loadDailyValues()
     return CSV2DBGRID_OK;
 }
 
+
 int Import::loadMultiTimeValues()
 {
     hoursList.clear();

@@ -5,12 +5,12 @@
 #include "bias.h"
 
 // uncomment to execute test
-//#define TEST
+#define TEST
 
 void usage()
 {
     std::cout << "biasCorrection" << std::endl
-              << "Usage: biasCorrection <project.ini> <REFERENCE|DEBIAS>" << std::endl;
+              << "Usage: biasCorrection <project.ini> <CLIMATE|DEBIAS>" << std::endl;
     std::cout << std::flush;
 }
 
@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "PROJECT/testHighlanderBias/testHighlanderBiasSettings.ini";
-            bias.setIsDebias(false); // REFERENCE
+            settingsFileName = dataPath + "PROJECT/testDebias/testDebias.ini";
+            bias.setIsDebias(false);    // COMPUTE CLIMATE
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGFILE;
         }
+
         QString operation = argv[2];
         operation = operation.toUpper();
         if (operation == "REFERENCE" || operation == "CLIMATE")
@@ -58,7 +59,6 @@ int main(int argc, char *argv[])
             usage();
             return ERROR_MISSINGPARAMETERS;
         }
-
     }
 
     bias.initialize();
@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
 
     if (! bias.getIsDebias())
     {
-        // reference
-        int result = bias.readReferenceSettings();
+        // compute climate
+        int result = bias.readClimateSettings();
         if (result != BIASCORRECTION_OK)
         {
             return result;
@@ -79,11 +79,11 @@ int main(int argc, char *argv[])
         QList<QString> varList = bias.getVarList();
         for (int i = 0; i < varList.size(); i++)
         {
-            bias.logger.writeInfo ("Compute variable: " + varList[i] + "...");
+            bias.logger.writeInfo ("Compute variable: " + varList[i]);
             result = bias.computeMonthlyDistribution(varList[i]);
             if (result != BIASCORRECTION_OK)
             {
-                std::cout << "ERROR nr:" << result << " in compute climate of variable:" << varList[i].toStdString();
+                bias.logger.writeError("ERROR in compute monthly distribution of variable: " + varList[i]);
                 return result;
             }
         }
@@ -92,17 +92,20 @@ int main(int argc, char *argv[])
     {
         // debias
         int result = bias.readDebiasSettings();
-        if (result!=BIASCORRECTION_OK)
+        if (result != BIASCORRECTION_OK)
         {
             return result;
         }
+
         QList<QString> varList = bias.getVarList();
+
         for (int i = 0; i < varList.size(); i++)
         {
             bias.logger.writeInfo ("Compute variable: " + varList[i] + "...");
             result = bias.numericalDataReconstruction(varList[i]);
-            if (result!=BIASCORRECTION_OK)
+            if (result != BIASCORRECTION_OK)
             {
+                bias.logger.writeError("Error in numericalDataReconstruction");
                 return result;
             }
         }
