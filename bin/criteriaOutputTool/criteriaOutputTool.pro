@@ -14,6 +14,8 @@ QT   += sql
 CONFIG += console
 TEMPLATE = app
 
+VERSION = 1.8.7
+
 unix:{
     CONFIG(debug, debug|release) {
         TARGET = debug/CriteriaOutput
