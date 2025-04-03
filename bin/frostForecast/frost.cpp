@@ -769,7 +769,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
     QDateTime lastTime = meteoPointsDbHandler.getLastDate(hourly, point->id);
 
     // load meteo point observed data
-    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(firstTime.date()), getCrit3DDate(lastTime.date()), *point))
+    if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(historyDateStart), getCrit3DDate(historyDateEnd), *point))
     {
         logger.writeError ("id: " + QString::fromStdString(point->id) +" meteo point load hourly data error");
         return false;
