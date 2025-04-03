@@ -105,6 +105,7 @@ double Crit3D_Hydrall::photosynthesisAndTranspiration()
     TweatherDerivedVariable weatherDerivedVariable;
 
     Crit3D_Hydrall::radiationAbsorption();
+    Crit3D_Hydrall::photosynthesisAndTranspirationUnderstorey();
     Crit3D_Hydrall::aerodynamicalCoupling();
     Crit3D_Hydrall::upscale();
 
@@ -116,23 +117,29 @@ double Crit3D_Hydrall::photosynthesisAndTranspiration()
 
 double Crit3D_Hydrall::photosynthesisAndTranspirationUnderstorey()
 {
-    const double rootEfficiencyInWaterExtraction = 1.25e-3;  //[kgH2O kgDM-1 s-1]
-    const double understoreyLightUtilization = 1.77e-9;      //[kgC J-1]
-    double cumulatedUnderstoreyTranspirationRate = 0;
-    double waterUseEfficiency;                               //[molC molH2O-1]
+    understoreyTranspirationRate.resize(1);
+    understoreyTranspirationRate[0] = 0;
 
     if (understorey.absorbedPAR > EPSILON)
     {
+        const double rootEfficiencyInWaterExtraction = 1.25e-3;  //[kgH2O kgDM-1 s-1]
+        const double understoreyLightUtilization = 1.77e-9;      //[kgC J-1]
+        double cumulatedUnderstoreyTranspirationRate = 0;
+        double waterUseEfficiency;                               //[molC molH2O-1]
+
         waterUseEfficiency = environmentalVariable.CO2 * 0.1875 / weatherVariable.vaporPressureDeficit;
 
         double lightLimitedUnderstoreyAssimilation;          //[molC m-2 s-1]
         double waterLimitedUnderstoreyAssimilation;          //[molC m-2 s-1]
 
         lightLimitedUnderstoreyAssimilation = understoreyLightUtilization * understorey.absorbedPAR / MC; //convert units from kgC m-2 s-1 into molC m-2 s-1
+        double density=1;
+        if (soil.layersNr > 1)
+            density = 1/(soil.layersNr-1);
 
         for (int i = 1; i < soil.layersNr; i++)
         {
-            understoreyTranspirationRate[i] = rootEfficiencyInWaterExtraction * understoreyBiomass.fineRoot * soil.stressCoefficient[i];
+            understoreyTranspirationRate.push_back(rootEfficiencyInWaterExtraction * understoreyBiomass.fineRoot * soil.stressCoefficient[i]*density);
             cumulatedUnderstoreyTranspirationRate += understoreyTranspirationRate[i];
         }
 
@@ -155,8 +162,8 @@ double Crit3D_Hydrall::photosynthesisAndTranspirationUnderstorey()
     }
     else
     {
-        for (int i = 1; i < understoreyTranspirationRate.size(); i++)
-            understoreyTranspirationRate[i] = 0;
+        for (int i = 1; i < soil.layersNr; i++)
+            understoreyTranspirationRate.push_back(0);
         understoreyAssimilationRate = 0;
     }
     return 0;
@@ -227,24 +234,44 @@ void Crit3D_Hydrall::setStateVariables(Crit3DHydrallMaps &stateMap, int row, int
     stateVariable.rootBiomass = stateMap.rootBiomassMap->value[row][col];
 }
 
-void Crit3D_Hydrall::setSoilVariables(int iLayer, int currentNode,float checkFlag, int horizonIndex, double waterContent, double waterContentFC, double waterContentWP, int firstRootLayer, int lastRootLayer, double rootDensity)
+void Crit3D_Hydrall::setSoilVariables(int iLayer, int currentNode,float checkFlag, int horizonIndex, double waterContent, double waterContentFC, double waterContentWP, int firstRootLayer, int lastRootLayer, double rootDensity,double clay, double sand,double thickness,double bulkDensity,double waterContentSat)
 {
     if (iLayer == 0)
     {
-        soil.layersNr = 1;
+        soil.layersNr = 0;
     }
     (soil.layersNr)++;
     soil.waterContent.resize(soil.layersNr);
     soil.stressCoefficient.resize(soil.layersNr);
     soil.rootDensity.resize(soil.layersNr);
+    soil.clay.resize(soil.layersNr);
+    soil.sand.resize(soil.layersNr);
+    soil.silt.resize(soil.layersNr);
+    soil.nodeThickness.resize(soil.layersNr);
+    soil.bulkDensity.resize(soil.layersNr);
+    soil.saturation.resize(soil.layersNr);
+    soil.fieldCapacity.resize(soil.layersNr);
+    soil.wiltingPoint.resize(soil.layersNr);
 
     if (currentNode != checkFlag)
     {
         soil.waterContent[iLayer] = waterContent;
         soil.stressCoefficient[iLayer] = MINVALUE(1.0, (10*(soil.waterContent[iLayer]-waterContentWP))/(3*(waterContentFC-waterContentWP)));
+        soil.clay[iLayer] = clay/100.;
+        soil.sand[iLayer] = sand/100.;
+        soil.silt[iLayer] = 1 - soil.sand[iLayer] - soil.clay[iLayer];
+        soil.nodeThickness[iLayer] = thickness;
+        soil.bulkDensity[iLayer] = bulkDensity;
+        soil.fieldCapacity[iLayer] = waterContentFC;
+        soil.wiltingPoint[iLayer] = waterContentWP;
+        soil.saturation[iLayer] = waterContentSat;
+        soil.rootDensity[iLayer] = LOGICAL_IO((iLayer >= firstRootLayer && iLayer <= lastRootLayer),rootDensity,0);
     }
-    soil.rootDensity[iLayer] = LOGICAL_IO((iLayer >= firstRootLayer && iLayer <= lastRootLayer),rootDensity,0);
 
+    //soil.clayAverage = statistics::weighedMean(soil.nodeThickness,soil.clay);
+    //soil.clayAverage = statistics::weighedMean(soil.nodeThickness,soil.sand);
+    //soil.siltAverage = 1 - soil.clayAverage - soil.sandAverage;
+    //soil.bulkDensityAverage = statistics::weighedMean(soil.nodeThickness,soil.bulkDensity);
 }
 
 void Crit3D_Hydrall::getStateVariables(Crit3DHydrallMaps &stateMap, int row, int col)
@@ -693,7 +720,7 @@ void Crit3D_Hydrall::carbonWaterFluxesProfile()
                                                                  &(sunlit.transpiration));
             }
 
-            treeAssimilationRate += sunlit.assimilation * soil.rootDensity[i] ;
+            //treeAssimilationRate += sunlit.assimilation * soil.rootDensity[i] ;
 
             // shaded big leaf
             Crit3D_Hydrall::photosynthesisKernel(shaded.compensationPoint, shaded.aerodynamicConductanceCO2Exchange,shaded.aerodynamicConductanceHeatExchange, shaded.minimalStomatalConductance,
@@ -702,7 +729,7 @@ void Crit3D_Hydrall::carbonWaterFluxesProfile()
                                                              parameterWangLeuning.alpha * soil.stressCoefficient[i], shaded.maximalCarboxylationRate,
                                                              &(shaded.assimilation), &(shaded.stomatalConductance),
                                                              &(shaded.transpiration));
-            treeAssimilationRate += shaded.assimilation * soil.rootDensity[i] ; //canopy gross assimilation (mol m-2 s-1)
+            treeAssimilationRate += ( shaded.assimilation + sunlit.assimilation) * soil.rootDensity[i] ; //canopy gross assimilation (mol m-2 s-1)
         }
         treeTranspirationRate[i] += (shaded.transpiration + sunlit.transpiration) * soil.rootDensity[i] ;
     }
@@ -786,7 +813,7 @@ void Crit3D_Hydrall::cumulatedResults()
     deltaTime.respiration = HOUR_SECONDS * Crit3D_Hydrall::plantRespiration() ;
     deltaTime.netAssimilation = deltaTime.grossAssimilation - deltaTime.respiration ;
     deltaTime.netAssimilation = deltaTime.netAssimilation*12/1000.0 ; // KgC m-2 TODO da motiplicare dopo per CARBONFACTOR DA METTERE dopo convert to kg DM m-2
-
+    deltaTime.understoreyNetAssimilation = HOUR_SECONDS * MH2O * understoreyAssimilationRate - MH2O*understoreyRespiration();
     statePlant.treeNetPrimaryProduction += deltaTime.netAssimilation ;
 
     //understorey
@@ -796,10 +823,10 @@ void Crit3D_Hydrall::cumulatedResults()
 
     for (int i=1; i < soil.layersNr; i++)
     {
-        treeTranspirationRate[i] = HOUR_SECONDS * MH2O * treeTranspirationRate[i]; // [mm]
-        deltaTime.transpiration += treeTranspirationRate[i];
+        treeTranspirationRate[i] *= (HOUR_SECONDS * MH2O); // [mm]
+        understoreyTranspirationRate[i] *= (HOUR_SECONDS * MH2O); // [mm]
+        deltaTime.transpiration += (treeTranspirationRate[i] + understoreyTranspirationRate[i]);
     }
-    deltaTime.transpiration += understorey.transpiration;
 
     //evaporation
     deltaTime.evaporation = computeEvaporation();
@@ -815,6 +842,58 @@ double Crit3D_Hydrall::computeEvaporation()
         return 0.2 * ETP;
     else
         return -0.8 / LAIMAX *ETP;
+}
+
+double Crit3D_Hydrall::understoreyRespiration()
+{
+    double understorey10DegRespirationFoliage;
+    double understorey10DegRespirationFineroot;
+    double correctionFactorFoliage;
+    double correctionFactorFineroot;
+    std::vector<double> correctionFactorFoliageVector;
+    std::vector<double> correctionFactorFinerootVector;
+    correctionFactorFinerootVector.push_back(0);
+    correctionFactorFoliageVector.push_back(0);
+    if(firstMonthVegetativeSeason)
+    {
+        understorey10DegRespirationFoliage = 0.0106/2. * (understoreyBiomass.leaf * nitrogenContent.leaf);
+        understorey10DegRespirationFineroot= 0.0106/2. * (understoreyBiomass.fineRoot * nitrogenContent.root);
+    }
+    //double understoreyRespirationFoliage,understoreyRespirationFineroot;
+    //understoreyRespirationFoliage = understorey10DegRespirationFoliage*;
+    const double PSIS0 = -2;// MPa * 101.972; //(m)
+    const double K_VW= 1.5;
+    const double A_Q10= 0.503;
+    const double B_Q10= 1.619;
+    double PENTRY,BSL,RVW_0,RVW_50,SIGMAG,Q10;
+    double VWCORR;
+    double RVWSL;
+    for (int iLayer = 1; iLayer<soil.layersNr; iLayer++)
+    {
+        PENTRY = std::sqrt(std::exp(soil.clay[iLayer]*std::log(0.001) + soil.silt[iLayer]*std::log(0.026) + soil.sand[iLayer]*std::log(1.025)));
+        PENTRY = -0.5 / PENTRY / 1000;
+        SIGMAG =std::exp(std::sqrt(soil.clay[iLayer]*POWER2(std::log(0.001)) + soil.silt[iLayer]*POWER2(std::log(0.026)) + soil.sand[iLayer]*POWER2(std::log(1.025))));
+        BSL = -2*PENTRY*1000 + 0.2*SIGMAG;
+        PENTRY *= (std::pow(soil.bulkDensity[iLayer]/1.3,0.67*BSL));
+        RVW_0= std::pow((PSIS0/PENTRY),(-1/BSL)); // soil water content for null respiration
+        RVW_50= RVW_0 + (1.-RVW_0)/K_VW; //
+        RVWSL= soil.waterContent[iLayer]/ soil.saturation[iLayer];//relative soil water content (as a fraction of value at saturation)
+
+        if (RVWSL < RVW_0)
+        {
+            VWCORR = 1.;
+        }
+        else
+        {
+            VWCORR= 1-((RVWSL-RVW_0)/((RVWSL-RVW_0)+(RVW_50-RVW_0))); //!effects of soil water content
+        }
+        Q10= A_Q10 + B_Q10 * RVWSL; // effects of soil humidity on sensitivity to temperature
+        correctionFactorFoliageVector.push_back(VWCORR * std::pow(Q10,((weatherVariable.myInstantTemp-25)/10.))); //temperature dependence of respiration, based on Q10 approach
+        correctionFactorFinerootVector.push_back(VWCORR * std::pow(Q10,((soil.temperature-25)/10.)));
+    }
+    correctionFactorFoliage = statistics::weighedMean(soil.nodeThickness,correctionFactorFoliageVector);
+    correctionFactorFineroot = statistics::weighedMean(soil.nodeThickness,correctionFactorFinerootVector);
+    return (understorey10DegRespirationFoliage * correctionFactorFoliage + understorey10DegRespirationFineroot * correctionFactorFineroot);
 }
 
 double Crit3D_Hydrall::plantRespiration()
@@ -1030,7 +1109,7 @@ void Crit3D_Hydrall::rootfind(double &allf, double &allr, double &alls, bool &so
     //new foliage biomass of tree after growth
     allf = MAXVALUE(0,allf);
     //if (allf < 0) allf = 0;
-
+    // TODO verificare le unità di misura di rootfind con la routine originale di hydrall c'è un fattore 1000
     statePlant.treecumulatedBiomassFoliage += (allf*annualGrossStandGrowth);
 
     //new tree height after growth

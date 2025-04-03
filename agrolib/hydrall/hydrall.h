@@ -171,7 +171,10 @@
         std::vector <double> hydraulicConductivity;
         std::vector <double> satHydraulicConductivity;
         std::vector <double> nodeThickness;
-
+        std::vector <double> clay;
+        std::vector <double> sand;
+        std::vector <double> silt;
+        std::vector <double> bulkDensity;
 
     };
 
@@ -226,19 +229,20 @@
         double transpirationNoStress;
         double evaporation;
         double evapoTranspiration;
+        double understoreyNetAssimilation;
     };
 
     struct ThydrallNitrogen {
-        double interceptLeaf, slopeLeaf, leafNitrogen;
+        double interceptLeaf, slopeLeaf;
         double leaf , stem , root;
     };
 
     struct ThydrallBiomass {
 
-        double total ;
-        double leaf ;
-        double sapwood ;
-        double fineRoot ;
+        double total;
+        double leaf = EPSILON;
+        double sapwood = EPSILON;
+        double fineRoot = EPSILON;
     };
 
     struct TallocationCoefficient {
@@ -309,9 +313,9 @@
         std::vector<double> understoreyTranspirationRate;
         double understoreyAssimilationRate;
 
-
+        double understoreyRespiration();
         void radiationAbsorption();
-        void setSoilVariables(int iLayer, int currentNode, float checkFlag, int horizonIndex, double waterContent, double waterContentFC, double waterContentWP, int firstRootLayer, int lastRootLayer, double rootDensity);
+        void setSoilVariables(int iLayer, int currentNode, float checkFlag, int horizonIndex, double waterContent, double waterContentFC, double waterContentWP, int firstRootLayer, int lastRootLayer, double rootDensity, double clay, double sand, double thickness, double bulkDensity, double waterContentSat);
         void setHourlyVariables(double temp, double irradiance , double prec , double relativeHumidity , double windSpeed, double directIrradiance, double diffuseIrradiance, double cloudIndex, double atmosphericPressure, Crit3DDate currentDate, double sunElevation,double meanTemp30Days);
         bool setWeatherVariables(double temp, double irradiance , double prec , double relativeHumidity , double windSpeed, double directIrradiance, double diffuseIrradiance, double cloudIndex, double atmosphericPressure, double meanTemp30Days);
         void setDerivedWeatherVariables(double directIrradiance, double diffuseIrradiance, double cloudIndex);
