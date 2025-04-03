@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
         QList<Crit3DMeteoPoint> pointList = frost.getMeteoPointsList();
 
         frost.initializeFrostParam();
+        if (! frost.setCalibrationLog())
+           frost.logger.writeError("Error opening calibration log file");
 
         for (int i=0; i < pointList.size(); i++)
         {

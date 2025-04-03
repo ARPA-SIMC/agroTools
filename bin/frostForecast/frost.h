@@ -45,11 +45,14 @@ public:
 
     QList<QString> getIdList() const;
 
-    bool getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData);
+    bool getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData, std::vector<QDate> &frostDates);
     bool calibrateModel(int idPos);
 
     QList<Crit3DMeteoPoint> getMeteoPointsList() const;
     void setMeteoPointsList(const QList<Crit3DMeteoPoint> &newMeteoPointsList);
+
+    bool setCalibrationLog();
+    QFile* calibrationLog;
 
 private:
     gis::Crit3DGisSettings gisSettings;
@@ -85,6 +88,7 @@ private:
     float thresholdTrange;
     QDate historyDateStart;
     QDate historyDateEnd;
+    QString logCalibrationName;
 
     QList<float> myForecast;
     QList<float> myForecastMin;

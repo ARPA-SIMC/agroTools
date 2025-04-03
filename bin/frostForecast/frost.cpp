@@ -4,6 +4,7 @@
 #include "commonConstants.h"
 #include "utilities.h"
 #include "solarRadiation.h"
+#include <iostream>
 #include <math.h>
 #include <QSettings>
 #include <QDir>
@@ -32,6 +33,7 @@ void Frost::initialize()
     thresholdTrange = 10;
     historyDateEnd = QDate::currentDate().addDays(-1);
     historyDateStart = historyDateStart.addDays(-365);
+    logCalibrationName = "";
 }
 
 void Frost::initializeFrostParam()
@@ -288,6 +290,9 @@ int Frost::readSettings()
 
     if (projectSettings->contains("history_date_end") && !projectSettings->value("history_date_end").toString().isEmpty())
         historyDateEnd = projectSettings->value("history_date_end").toDate();
+
+    if (projectSettings->contains("logCalibrationFile") && !projectSettings->value("logCalibrationFile").toString().isEmpty())
+        logCalibrationName = projectSettings->value("logCalibrationFile").toString();
 
     projectSettings->endGroup();
 
@@ -761,12 +766,9 @@ void fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int
     }
 }
 
-bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData)
+bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<float>>& outData, std::vector <std::vector <float>>& sunsetData, std::vector <QDate>& frostDates)
 {
     Crit3DMeteoPoint* point = &meteoPointsList[pos];
-
-    QDateTime firstTime = meteoPointsDbHandler.getFirstDate(hourly, point->id);
-    QDateTime lastTime = meteoPointsDbHandler.getLastDate(hourly, point->id);
 
     // load meteo point observed data
     if (!meteoPointsDbHandler.loadHourlyData(getCrit3DDate(historyDateStart), getCrit3DDate(historyDateEnd), *point))
@@ -852,7 +854,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                     T = NODATA;
                     if (d <= point->nrObsDataDaysH && d >= 0)
                     {
-                        dateTmp = firstTime.date().addDays(d);
+                        dateTmp = historyDateStart.addDays(d);
                         T = point->getMeteoPointValueH(getCrit3DDate(dateTmp), h, 0, airTemperature);
                     }
                     hourlyT.push_back(T);
@@ -892,6 +894,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                         {
                             outData.push_back(hourlyT);
                             sunsetData.push_back(ssData);
+                            frostDates.push_back(getQDate(today));
                         }
                     }
                     else
@@ -914,9 +917,24 @@ bool Frost::calibrateModel(int idPos)
     std::vector <float> weights;
     float regrConst, R2, stdError, regrConstStdError;
     std::vector <float> regrCoeff, regrCoeffStdError;
+    std::vector <QDate> frostDates;
 
-    if (getRadiativeCoolingHistory(idPos, outData, sunsetData))
+    if (getRadiativeCoolingHistory(idPos, outData, sunsetData, frostDates))
     {
+        if (logCalibrationName != "")
+        {
+            QString text = QString::fromStdString(meteoPointsList[idPos].id) + ",";
+            QTextStream out(calibrationLog);
+
+            for (int i=0; i<frostDates.size(); i++)
+            {
+                text += frostDates[i].toString("yyyy-MM-dd");
+                if (i < frostDates.size()-1) text += ",";
+            }
+
+            out << text + "\n";
+        }
+
         fitCoolingCoefficient(outData, 10000, float(0.001), float(0), float(10), outCoeff);
 
         for (int j=0; j < sunsetData.size(); j++)
@@ -947,4 +965,25 @@ QList<Crit3DMeteoPoint> Frost::getMeteoPointsList() const
 void Frost::setMeteoPointsList(const QList<Crit3DMeteoPoint> &newMeteoPointsList)
 {
     meteoPointsList = newMeteoPointsList;
+}
+
+bool Frost::setCalibrationLog()
+{
+    if (! QDir(path + "log").exists())
+    {
+        QDir().mkdir(path + "log");
+    }
+
+    if (!logCalibrationName.isEmpty())
+    {
+        calibrationLog = new QFile;
+
+        QString logFileName = path + "log/" + logCalibrationName + ".txt";
+        calibrationLog->setFileName(logFileName);
+        return calibrationLog->open(QIODevice::WriteOnly | QIODevice::Text);
+    }
+    else
+    {
+        return false;
+    }
 }
