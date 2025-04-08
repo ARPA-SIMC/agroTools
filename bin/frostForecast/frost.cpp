@@ -4,7 +4,6 @@
 #include "commonConstants.h"
 #include "utilities.h"
 #include "solarRadiation.h"
-#include <iostream>
 #include <math.h>
 #include <QSettings>
 #include <QDir>
@@ -33,6 +32,7 @@ void Frost::initialize()
     thresholdTrange = 10;
     historyDateEnd = QDate::currentDate().addDays(-1);
     historyDateStart = historyDateStart.addDays(-365);
+    minPercentage = 0.8;
     logCalibrationName = "";
 }
 
@@ -293,6 +293,9 @@ int Frost::readSettings()
 
     if (projectSettings->contains("logCalibrationFile") && !projectSettings->value("logCalibrationFile").toString().isEmpty())
         logCalibrationName = projectSettings->value("logCalibrationFile").toString();
+
+    if (projectSettings->contains("minPercentage") && !projectSettings->value("minPercentage").toString().isEmpty())
+        minPercentage = projectSettings->value("minPercentage").toFloat() / 100;
 
     projectSettings->endGroup();
 
@@ -747,8 +750,11 @@ void fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int
             time = 0;
             for (float T : hourlyT)
             {
-                mySum1 += pow((Tsunset - myMin * sqrt(time) - T), 2);
-                mySum2 += pow((Tsunset - myMax * sqrt(time) - T), 2);
+                if (! isEqual(T, NODATA))
+                {
+                    mySum1 += pow((Tsunset - myMin * sqrt(time) - T), 2);
+                    mySum2 += pow((Tsunset - myMax * sqrt(time) - T), 2);
+                }
                 time++;
             }
 
@@ -759,6 +765,8 @@ void fitCoolingCoefficient(std::vector <std::vector <float>>& hourly_series, int
                 myMax = (myMin + myMax) / 2;
             else
                 myMin = (myMin + myMax) / 2;
+
+            iteration++;
 
         } while (fabs(myFirstError - mySecondError) > tolerance && iteration <= nrIterations);
 
@@ -795,10 +803,11 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
     std::vector <float> hourlyT;
     float T;
     float minT, maxT;
-    bool dataPresent, dataSunsetPresent;
+    bool dataSunsetPresent;
     std::vector <float> ssData;
     float RH_SS;
     bool isSunRise, isSunset;
+    int nrValidData;
 
     //TODO use historyDateStart and historyDateEnd
     for (int i = 0; i < point->nrObsDataDaysH; i++)
@@ -834,9 +843,9 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                 isSunset = true;
                 minT = NODATA;
                 maxT = NODATA;
-                dataPresent = false;
                 dataSunsetPresent = false;
                 hourlyT.clear();
+                nrValidData = 0;
 
                 while (! isSunRise)
                 {
@@ -874,7 +883,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
 
                     if (! isEqual(T, NODATA))
                     {
-                        dataPresent = true;
+                        nrValidData++;
 
                         if (isEqual(minT, NODATA))
                             minT = T;
@@ -890,7 +899,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                     if (h == hourSunRiseUtc && d == dateIndexSunRiseUtc)
                     {
                         isSunRise = true;
-                        if (dataPresent && dataSunsetPresent && minT < thresholdTmin && (maxT - minT >= thresholdTrange))
+                        if (nrValidData/hourlyT.size() >= minPercentage && dataSunsetPresent && minT < thresholdTmin && (maxT - minT >= thresholdTrange))
                         {
                             outData.push_back(hourlyT);
                             sunsetData.push_back(ssData);

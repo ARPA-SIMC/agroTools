@@ -88,6 +88,7 @@ private:
     float thresholdTrange;
     QDate historyDateStart;
     QDate historyDateEnd;
+    float minPercentage;
     QString logCalibrationName;
 
     QList<float> myForecast;
