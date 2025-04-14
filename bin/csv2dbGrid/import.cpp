@@ -88,7 +88,7 @@ int Import::readSettings()
         return ERROR_DBGRID;
     }
 
-    if (! grid.loadCellProperties(&errorString))
+    if (! grid.loadCellProperties(errorString))
     {
         logger.writeError (errorString);
         grid.closeDatabase();
