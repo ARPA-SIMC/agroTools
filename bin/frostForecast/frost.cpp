@@ -4,10 +4,12 @@
 #include "commonConstants.h"
 #include "utilities.h"
 #include "solarRadiation.h"
+
 #include <math.h>
 #include <QSettings>
 #include <QDir>
 #include <QTextStream>
+
 
 Frost::Frost()
 {
@@ -20,7 +22,6 @@ void Frost::initialize()
     projectName = "";
     settingsFileName = "";
     csvFileName = "";
-    //xmlDbGrid = "";
     dbMeteoPointsName = "";
     errorString = "";
 
@@ -32,7 +33,7 @@ void Frost::initialize()
     thresholdTrange = 10;
     historyDateEnd = QDate::currentDate().addDays(-1);
     historyDateStart = historyDateStart.addDays(-365);
-    minPercentage = 0.8;
+    minPercentage = 0.8f;
     logCalibrationName = "";
 }
 
@@ -196,39 +197,6 @@ int Frost::readSettings()
     projectSettings->beginGroup("project");
     projectName = projectSettings->value("name","").toString();
 
-    /*
-    xmlDbGrid = projectSettings->value("meteoGrid","").toString();
-    if (xmlDbGrid.isEmpty())
-    {
-        logger.writeError ("missing xml DB grid");
-        return ERROR_MISSINGPARAMETERS;
-    }
-    if (xmlDbGrid.left(1) == ".")
-    {
-        xmlDbGrid = path + QDir::cleanPath(xmlDbGrid);
-    }
-
-    // open grid
-    if (! grid.parseXMLGrid(xmlDbGrid, &errorString))
-    {
-        logger.writeError (errorString);
-        return ERROR_DBGRID;
-    }
-
-    if (! grid.openDatabase(&errorString))
-    {
-        logger.writeError (errorString);
-        return ERROR_DBGRID;
-    }
-
-    if (! grid.loadCellProperties(&errorString))
-    {
-        logger.writeError (errorString);
-        grid.closeDatabase();
-        return ERROR_DBGRID;
-    }
-    */
-
     dbMeteoPointsName = projectSettings->value("meteo_points","").toString();
     if (dbMeteoPointsName.isEmpty())
     {
@@ -309,10 +277,7 @@ void Frost::setRunDate(const QDate &value)
 
 int Frost::downloadMeteoPointsData()
 {
-    Download* myDownload = new Download(meteoPointsDbHandler.getDbName());
-
     QList<int> arkIdVarList;
-
     for (int i = 0; i<varList.size(); i++)
     {
         int id = meteoPointsDbHandler.getArkIdFromVar(varList[i]);
@@ -322,6 +287,8 @@ int Frost::downloadMeteoPointsData()
         }
         arkIdVarList.append(id);
     }
+
+    Download* myDownload = new Download(meteoPointsDbHandler.getDbName());
 
     QMultiMap<QString, QString> mapDatasetId;
     for( int i=0; i < idList.size(); i++ )
@@ -341,6 +308,9 @@ int Frost::downloadMeteoPointsData()
             return ERROR_DBPOINTSDOWNLOAD;
         }
     }
+
+    delete myDownload;
+
     return FROSTFORECAST_OK;
 }
 

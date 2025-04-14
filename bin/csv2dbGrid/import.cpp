@@ -76,13 +76,13 @@ int Import::readSettings()
 
     // open grid
     QString errorString;
-    if (! grid.parseXMLGrid(xmlDbGrid, &errorString))
+    if (! grid.parseXMLGrid(xmlDbGrid, errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
     }
 
-    if (! grid.openDatabase(&errorString))
+    if (! grid.openDatabase(errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
@@ -370,7 +370,7 @@ int Import::loadMultiTimeValues()
 int Import::writeMultiTimeValues()
 {
     QString errorString;
-    if (! grid.openDatabase(&errorString))
+    if (! grid.openDatabase(errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
@@ -578,14 +578,14 @@ int Import::writeMultiTimeValues()
                     }
                 }
             }
-            if (!grid.saveListHourlyData(&errorString, key, dateTime.addSecs(hoursList[0]*3600), meteoVar, interpolatedValueList))
+            if (!grid.saveListHourlyData(errorString, key, dateTime.addSecs(hoursList[0]*3600), meteoVar, interpolatedValueList))
             {
                 return ERROR_WRITING_DATA;
             }
             // copy wind vector intensity in wind scalar intensity
             if (meteoVar == windVectorIntensity)
             {
-                if (!grid.saveListHourlyData(&errorString, key, dateTime.addSecs(hoursList[0]*3600), windScalarIntensity, interpolatedValueList))
+                if (!grid.saveListHourlyData(errorString, key, dateTime.addSecs(hoursList[0]*3600), windScalarIntensity, interpolatedValueList))
                 {
                     return ERROR_WRITING_DATA;
                 }
@@ -594,9 +594,11 @@ int Import::writeMultiTimeValues()
     }
 
     grid.closeDatabase();
+
     return CSV2DBGRID_OK;
     // TO DO check che gli ID compaiano una sola volta per cella
 }
+
 
 int Import::loadEnsembleDailyValues()
 {
@@ -675,10 +677,11 @@ int Import::loadEnsembleDailyValues()
     return CSV2DBGRID_OK;
 }
 
+
 int Import::writeDailyValues()
 {
     QString errorString;
-    if (! grid.openDatabase(&errorString))
+    if (! grid.openDatabase(errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
@@ -704,7 +707,7 @@ int Import::writeDailyValues()
         if ( key != "-9999")
         {
             valueList = valuesMap.values(key);
-            if (!grid.saveListDailyData(&errorString, key, date.addDays(dayList[0]), meteoVar, valueList,true))
+            if (!grid.saveListDailyData(errorString, key, date.addDays(dayList[0]), meteoVar, valueList,true))
             {
                 return ERROR_WRITING_DATA;
             }
@@ -712,14 +715,16 @@ int Import::writeDailyValues()
     }
 
     grid.closeDatabase();
+
     return CSV2DBGRID_OK;
     // TO DO check che gli ID compaiano una sola volta per cella
 }
 
+
 int Import::writeEnsembleDailyValues()
 {
     QString errorString;
-    if (! grid.openDatabase(&errorString))
+    if (! grid.openDatabase(errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
@@ -746,7 +751,7 @@ int Import::writeEnsembleDailyValues()
     {
         QDate lastDateToKeep = date.addDays(-nrStoredDays);
         logger.writeInfo("clean data before: " + lastDateToKeep.toString("yyyy-MM-dd"));
-        grid.cleanDailyOldData(&errorString, lastDateToKeep);
+        grid.cleanDailyOldData(errorString, lastDateToKeep);
     }
 
     for (int i=0; i<IDList.size(); i++)
@@ -755,16 +760,18 @@ int Import::writeEnsembleDailyValues()
         if ( key != "-9999")
         {
             valueList = valuesMap.values(key);
-            if (!grid.saveListDailyDataEnsemble(&errorString, key, date, meteoVar, valueList))
+            if (! grid.saveListDailyDataEnsemble(errorString, key, date, meteoVar, valueList))
             {
                 return ERROR_WRITING_DATA;
             }
         }
     }
     grid.closeDatabase();
+
     return CSV2DBGRID_OK;
     // TO DO check che gli ID compaiano una sola volta per cella
 }
+
 
 QString Import::getCsvFilePath() const
 {

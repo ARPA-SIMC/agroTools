@@ -31,13 +31,12 @@ win32:{
 
 INCLUDEPATH +=  ../../agrolib/crit3dDate ../../agrolib/mathFunctions ../../agrolib/gis \
                 ../../agrolib/utilities ../../agrolib/meteo ../../agrolib/interpolation \
-                ../../agrolib/dbMeteoGrid ../../agrolib/dbMeteoPoints ../../agrolib/solarRadiation
+                ../../agrolib/dbMeteoPoints ../../agrolib/solarRadiation
 
 CONFIG(debug, debug|release) {
 
     LIBS += -L../../agrolib/solarRadiation/debug -lsolarRadiation
     LIBS += -L../../agrolib/dbMeteoPoints/debug -ldbMeteoPoints
-    LIBS += -L../../agrolib/dbMeteoGrid/debug -ldbMeteoGrid
     LIBS += -L../../agrolib/interpolation/debug -linterpolation
     LIBS += -L../../agrolib/meteo/debug -lmeteo
     LIBS += -L../../agrolib/utilities/debug -lutilities
@@ -49,7 +48,6 @@ CONFIG(debug, debug|release) {
 
     LIBS += -L../../agrolib/solarRadiation/release -lsolarRadiation
     LIBS += -L../../agrolib/dbMeteoPoints/release -ldbMeteoPoints
-    LIBS += -L../../agrolib/dbMeteoGrid/release -ldbMeteoGrid
     LIBS += -L../../agrolib/interpolation/release -linterpolation
     LIBS += -L../../agrolib/meteo/release -lmeteo
     LIBS += -L../../agrolib/utilities/release -lutilities
