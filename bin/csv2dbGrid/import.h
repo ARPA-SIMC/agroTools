@@ -48,6 +48,7 @@ private:
     QString settingsFileName;
     QString csvFilePath;
     QString csvFileName;
+    QString csvSeparator;
     QString projectName;
     QString path;
     QString xmlDbGrid;

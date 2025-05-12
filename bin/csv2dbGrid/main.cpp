@@ -5,7 +5,7 @@
 #include <iostream>
 
 // uncomment to execute test
-//#define TEST
+#define TEST
 
 void usage()
 {
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "PROJECT/highlander_trento/trento.ini";
+            settingsFileName = dataPath + "PROJECT/importaOreEquivalenti/importaOreEquivalenti.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     import.logger.writeInfo ("settingsFileName: " + settingsFileName);
 
     int result = import.readSettings();
-    if (result!=CSV2DBGRID_OK)
+    if (result != CSV2DBGRID_OK)
     {
         return result;
     }
@@ -63,18 +63,18 @@ int main(int argc, char *argv[])
     for(int i=0; i < listOfCsv.count(); i++)
     {
         fileName = listOfCsv.at(i);
-        bool interest = false;
-        for (int j= 0; j<varList.size(); j++)
+        bool isAvbVariable = false;
+        for (int j= 0; j < varList.size(); j++)
         {
             // check file of interest
             if(fileName.left(varList[j].size()) == varList[j])
             {
-                interest = true;
+                isAvbVariable = true;
                 import.setMeteoVar(varList[j]);
                 break;
             }
         }
-        if (interest == false)
+        if (isAvbVariable == false)
         {
             continue;
         }
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         import.setCsvFileName(import.getCsvFilePath() + "/" + fileName);
         import.logger.writeInfo("read file: " + fileName);
 
-        if (!isFirst)
+        if (! isFirst)
         {
             import.setIsFirstCsv(true);
             isFirst = true;
