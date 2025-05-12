@@ -1745,13 +1745,12 @@ bool Crit3DMeteoGridDbHandler::loadGridDailyData(QString &errorStr, const QStrin
 
     QSqlQuery qry(_db);
     QString statement;
+
     bool isSingleDate = false;
-    QDate date;
     if (firstDate == lastDate)
     {
         statement = QString("SELECT * FROM `%1` WHERE %2 = '%3'").arg(tableD, _tableDaily.fieldTime, firstDate.toString("yyyy-MM-dd"));
         isSingleDate = true;
-        date = firstDate;
     }
     else
     {
@@ -1774,13 +1773,18 @@ bool Crit3DMeteoGridDbHandler::loadGridDailyData(QString &errorStr, const QStrin
 
         if (value != NODATA)
         {
+            QDate currentDate;
             if (! isSingleDate)
             {
-                if (! getValue(qry.value(_tableDaily.fieldTime), &date))
+                if (! getValue(qry.value(_tableDaily.fieldTime), &currentDate))
                 {
                     errorStr = "Missing " + _tableDaily.fieldTime;
                     return false;
                 }
+            }
+            else
+            {
+                currentDate = firstDate;
             }
 
             if (! getValue(qry.value("VariableCode"), &varCode))
@@ -1791,7 +1795,7 @@ bool Crit3DMeteoGridDbHandler::loadGridDailyData(QString &errorStr, const QStrin
 
             meteoVariable variable = getDailyVarEnum(varCode);
 
-            if (! _meteoGrid->meteoPointPointer(row, col)->setMeteoPointValueD(getCrit3DDate(date), variable, value))
+            if (! _meteoGrid->meteoPointPointer(row, col)->setMeteoPointValueD(getCrit3DDate(currentDate), variable, value))
             {
                 errorStr = "Error in setMeteoPointValueD";
                 return false;
@@ -3385,7 +3389,7 @@ bool Crit3DMeteoGridDbHandler::saveCellCurrentGridDailyFF(QString& errorStr, QSt
 
 
 bool Crit3DMeteoGridDbHandler::saveCellGridMonthlyData(QString &errorStr, const QString &meteoPointID, int row, int col,
-                                                       QDate firstDate, QDate lastDate, QList<meteoVariable> meteoVariableList)
+                                                       QDate firstDate, QDate lastDate, const QList<meteoVariable> &meteoVariableList)
 {
     QSqlQuery qry(_db);
     QString table = "MonthlyData";
@@ -3922,8 +3926,8 @@ bool Crit3DMeteoGridDbHandler::getYearList(QString &errorStr, QString meteoPoint
                 yearList->append(year);
             }
         }
-
     }
+
     return true;
 }
 

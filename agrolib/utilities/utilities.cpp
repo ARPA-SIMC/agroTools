@@ -15,13 +15,13 @@
 #include <QTextStream>
 
 
-QList<QString> getFields(QSqlDatabase* db_, QString tableName)
+QList<QString> getFields(QSqlDatabase* dbPointer, QString tableName)
 {
-    QSqlDriver* driver_ = db_->driver();
-    QSqlRecord record_ = driver_->record(tableName);
+    QSqlDriver* driver = dbPointer->driver();
+    QSqlRecord record = driver->record(tableName);
     QList<QString> fieldList;
-    for (int i=0; i < record_.count(); i++)
-        fieldList.append(record_.fieldName(i));
+    for (int i=0; i < record.count(); i++)
+        fieldList.append(record.fieldName(i));
 
     return fieldList;
 }
@@ -291,11 +291,11 @@ void intervalDecade(int decade, int year, int* dayStart, int* dayEnd, int* month
     else
     {
         *dayStart = 21;
-        QDate temp(year, *month, 1);
-        *dayEnd = temp.daysInMonth();
+        QDate firstDateMonth(year, *month, 1);
+        *dayEnd = firstDateMonth.daysInMonth();
     }
-
 }
+
 
 int getSeasonFromDate(QDate date)
 {
@@ -544,6 +544,7 @@ bool searchDataPath(QString* dataPath)
     *dataPath = QDir::cleanPath(myPath) + "/DATA/";
     return true;
 }
+
 
 void clearDir( const QString path )
 {

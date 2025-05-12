@@ -65,7 +65,6 @@ bool loadCropParameters(const QSqlDatabase &dbCrop, QString idCrop, Crit3DCrop &
     myCrop.roots.shapeDeformation = query.value("root_shape_deformation").toDouble();
     myCrop.roots.rootDepthMin = query.value("root_depth_zero").toDouble();
     myCrop.roots.rootDepthMax = query.value("root_depth_max").toDouble();
-    myCrop.roots.actualRootDepthMax = myCrop.roots.rootDepthMax;
 
     if (fieldExists(query, "roots_additional_cohesion"))
     {
@@ -89,7 +88,7 @@ bool loadCropParameters(const QSqlDatabase &dbCrop, QString idCrop, Crit3DCrop &
     if (! getValue(query.value("psi_leaf"), &(myCrop.psiLeaf)))
     {
         // default
-        myCrop.psiLeaf = 16000;
+        myCrop.psiLeaf = 16000;          // Attenzione Giulia! [cm]
     }
 
     myCrop.stressTolerance = query.value("stress_tolerance").toDouble();

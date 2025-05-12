@@ -2,47 +2,42 @@
 #include "well.h"
 #include <algorithm>
 
+
 Well::Well()
 {
-    lat = NODATA;
-    lon = NODATA;
-    utmX = NODATA;
-    utmY = NODATA;
+    initialize();
+}
 
-    id = "";
+
+void Well::initialize()
+{
+    _lat = NODATA;
+    _lon = NODATA;
+    _utmX = NODATA;
+    _utmY = NODATA;
+
+    _id = "";
     depths.clear();
 }
 
 
-QDate Well::getFirstDate()
+void Well::updateDates()
 {
-    QList<QDate> allDates = depths.keys();
-    firstDate = allDates[0];
-    for (int i = 0; i < allDates.size(); i++)
+    QList<QDate> obsDateList = depths.keys();
+    _firstDate = obsDateList[0];
+    _lastDate = obsDateList[0];
+
+    for (int i = 0; i < obsDateList.size(); i++)
     {
-        if (allDates[i] < firstDate)
+        if (obsDateList[i] < _firstDate)
         {
-            firstDate = allDates[i];
+            _firstDate = obsDateList[i];
+        }
+        if (obsDateList[i] > _lastDate)
+        {
+            _lastDate = obsDateList[i];
         }
     }
-
-    return firstDate;
-}
-
-
-QDate Well::getLastDate()
-{
-    QList<QDate> allDates = depths.keys();
-    lastDate = allDates[0];
-    for (int i = 0; i < allDates.size(); i++)
-    {
-        if (allDates[i] > lastDate)
-        {
-            lastDate = allDates[i];
-        }
-    }
-
-    return lastDate;
 }
 
 
@@ -50,17 +45,18 @@ int Well::minValuesPerMonth()
 {
     QMapIterator<QDate, float> it(depths);
     std::vector<int> H_num;
-    for (int myMonthIndex = 0; myMonthIndex < 12; myMonthIndex++)
+    for (int monthIndex = 0; monthIndex < 12; monthIndex++)
     {
         H_num.push_back(0);
     }
+
     while (it.hasNext())
     {
         it.next();
         QDate myDate = it.key();
         int myMonth = myDate.month();
-        int myMonthIndex = myMonth - 1;
-        H_num[myMonthIndex] = H_num[myMonthIndex] + 1;
+        int monthIndex = myMonth - 1;
+        H_num[monthIndex] = H_num[monthIndex] + 1;
     }
 
     auto min = min_element(H_num.begin(), H_num.end());
