@@ -21,14 +21,18 @@
 #include <QDebug>
 #include <QDate>
 
-// #define TEST
+#define TEST
 
 
 void cleanAllDataTable(QSqlDatabase &myDB);
+
 bool cleanTable(QString tableName, QSqlDatabase& myDB);
 bool insertData(QString fileName, QString tableName, QSqlDatabase& myDB);
+
 bool cleanTableTPrec(QString tableName, QSqlDatabase &myDB);
-bool insertDataTPrec(QString fileName, QString tableName, QSqlDatabase& myDB);
+bool cleanTableTPrecWaterTable(QString tableName, QSqlDatabase &myDB);
+bool insertDataTPrecWaterTable(QString fileName, QString tableName, int nrColumns, QSqlDatabase& myDB);
+
 int getNrColumns(QString fileName);
 
 
@@ -39,8 +43,8 @@ int main(int argc, char *argv[])
     QString pathName, dataBaseName, tableName, fn, fileName;
 
 #ifdef TEST
-    pathName = "//moses-arpae/DATA/INPUT/MN/climate";
-    dataBaseName = "//moses-arpae/CRITERIA1D/PROJECTS/CLARA/seasonal_data/climate_MN.db";
+    pathName = "//icolt-smr/ICOLT/INPUT/C1/2025/sfOutput/JJA";
+    dataBaseName = "//icolt-smr/CRITERIA1D/PROJECTS/icolt2025_JJA/seasonal_data/seasonal_C1.db";
 #else
     if (argc < 3)
     {
@@ -71,7 +75,7 @@ int main(int argc, char *argv[])
     QDir myDir = QDir(pathName);
     if(!myDir.exists())
     {
-        qDebug() << "\n-----ERROR-----\n" << "Directory doesn't exist.";
+        qDebug() << "\n-----ERROR-----\n" << "Directory doesn't exist: " << pathName;
         myDB.close();
         exit(-1);
     }
@@ -86,16 +90,32 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    int nrColumn = getNrColumns(pathName + fileList[0]);
-    if (nrColumn == 0)
+    int nrColumns = getNrColumns(pathName + fileList[0]);
+    if (nrColumns == 0)
     {
         qDebug() << "\n-----ERROR-----\n";
+        qDebug() << "Missing data.";
         myDB.close();
         exit(-1);
     }
-    if (nrColumn == 4)
+    else if (nrColumns == 4)
     {
         qDebug() << "File format: Date, Tmin, Tmax, Prec";
+    }
+    else if (nrColumns == 5)
+    {
+        qDebug() << "File format: Date, Tmin, Tmax, Prec, WaterTable";
+    }
+    else if (nrColumns == 7)
+    {
+        qDebug() << "File format: Date, Tmin, Tmax, Tavg, Prec, ET0, WaterTable";
+    }
+    else
+    {
+        qDebug() << "\n-----ERROR-----\n";
+        qDebug() << "wrong nr of column: " << nrColumns;
+        myDB.close();
+        exit(-1);
     }
 
     qDebug() << "Clean previous data on DB...";
@@ -108,11 +128,17 @@ int main(int argc, char *argv[])
 
         tableName = fn.left(fn.length()-4);
         fileName = pathName + fn;
+        qDebug() << fileName;
 
-        if (nrColumn == 4)
+        if (nrColumns == 4)
         {
             cleanTableTPrec(tableName, myDB);
-            insertDataTPrec(fileName, tableName, myDB);
+            insertDataTPrecWaterTable(fileName, tableName, nrColumns, myDB);
+        }
+        else if (nrColumns == 5)
+        {
+            cleanTableTPrecWaterTable(tableName, myDB);
+            insertDataTPrecWaterTable(fileName, tableName, nrColumns, myDB);
         }
         else
         {
@@ -180,6 +206,25 @@ bool cleanTableTPrec(QString tableName, QSqlDatabase &myDB)
 }
 
 
+bool cleanTableTPrecWaterTable(QString tableName, QSqlDatabase &myDB)
+{
+    QString query = "DROP TABLE '" + tableName + "'";
+    myDB.exec(query);
+
+    query = "CREATE TABLE '" + tableName + "'";
+    query += "(date char(10), tmin float, tmax float, prec float, watertable float);";
+    myDB.exec(query);
+
+    if (myDB.lastError().type() != QSqlError::NoError)
+    {
+        qDebug() << "---Error---\n" << myDB.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+
 // date (yyyy-mm-dd), tmin, tmax, tavg, prec, et0, watertable
 bool insertData(QString fileName, QString tableName, QSqlDatabase &myDB)
 {
@@ -197,14 +242,14 @@ bool insertData(QString fileName, QString tableName, QSqlDatabase &myDB)
     QList<QString> line;
     int nrLine = 0;
 
-    while(!myStream.atEnd())
+    while(! myStream.atEnd())
     {
         line = myStream.readLine().split(',');
         // skip header or void lines
         if ((nrLine > 0) && (line.length()>1))
         {
             query.append("(");
-            for(int i=0; i<7; ++i)
+            for(int i=0; i <7; ++i)
             {
                 if (i > 0) query.append(",");
                 if (i >= line.length())
@@ -245,8 +290,8 @@ bool insertData(QString fileName, QString tableName, QSqlDatabase &myDB)
 }
 
 
-// only date (yyyy-mm-dd), tmin, tmax, prec
-bool insertDataTPrec(QString fileName, QString tableName, QSqlDatabase& myDB)
+// format: date (yyyy-mm-dd), tmin, tmax, prec, watertable
+bool insertDataTPrecWaterTable(QString fileName, QString tableName, int nrColumns, QSqlDatabase& myDB)
 {
     QFile myFile(fileName);
     if(! myFile.open (QIODevice::ReadOnly))
@@ -260,7 +305,7 @@ bool insertDataTPrec(QString fileName, QString tableName, QSqlDatabase& myDB)
 
     QTextStream myStream (&myFile);
     QList<QString> line;
-    while(!myStream.atEnd())
+    while(! myStream.atEnd())
     {
         line = myStream.readLine().split(',');
         // check date
@@ -270,7 +315,7 @@ bool insertDataTPrec(QString fileName, QString tableName, QSqlDatabase& myDB)
         if ( nrLine > 0 && line.length() > 1 && myDate.isValid() )
         {
             query.append("(");
-            for(int i=0; i<4; ++i)
+            for(int i=0; i < nrColumns; ++i)
             {
                 if (i > 0) query.append(",");
 
