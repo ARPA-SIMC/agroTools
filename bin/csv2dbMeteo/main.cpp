@@ -21,7 +21,7 @@
 #include <QDebug>
 #include <QDate>
 
-#define TEST
+//#define TEST
 
 
 void cleanAllDataTable(QSqlDatabase &myDB);
