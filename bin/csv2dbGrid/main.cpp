@@ -9,10 +9,10 @@
 
 void usage()
 {
-    std::cout << "*** csv2dbGrid ***" << std::endl
+    std::cout << "\nUsage: csv2dbGrid <project.ini>" << std::endl << std::endl
               << "Import daily or hourly meteo series (single series or ensemble) into a PRAGA meteo grid." << std::endl
-              << "WARNING for ensembles: only daily data are supported." << std::endl
-              << "\nUsage: csv2dbGrid <project.ini>" << std::endl;
+              << "WARNING (for ensembles): only daily data are supported." << std::endl << std::endl;
+
 }
 
 int main(int argc, char *argv[])

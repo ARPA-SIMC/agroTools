@@ -131,5 +131,4 @@ int main(int argc, char *argv[])
     }
 
     return FROSTFORECAST_OK;
-
 }

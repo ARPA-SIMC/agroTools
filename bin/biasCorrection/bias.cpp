@@ -73,19 +73,19 @@ int Bias::readClimateSettings()
         refererenceMeteoGrid = QDir::cleanPath(path + refererenceMeteoGrid);
     }
 
-    if (! refGrid.parseXMLGrid(refererenceMeteoGrid, &errorString))
+    if (! refGrid.parseXMLGrid(refererenceMeteoGrid, errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
     }
 
-    if (! refGrid.openDatabase(&errorString, "refGrid"))
+    if (! refGrid.openDatabase(errorString, "refGrid"))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
     }
 
-    if (! refGrid.loadCellProperties(&errorString))
+    if (! refGrid.loadCellProperties(errorString))
     {
         logger.writeError (errorString);
         refGrid.closeDatabase();
@@ -106,21 +106,21 @@ int Bias::readClimateSettings()
     }
 
     // open input grid
-    if (! inputGrid.parseXMLGrid(inputMeteoGrid, &errorString))
+    if (! inputGrid.parseXMLGrid(inputMeteoGrid, errorString))
     {
         logger.writeError (errorString);
         refGrid.closeDatabase();
         return ERROR_DBGRID;
     }
 
-    if (! inputGrid.openDatabase(&errorString, "inputGrid"))
+    if (! inputGrid.openDatabase(errorString, "inputGrid"))
     {
         logger.writeError (errorString);
         refGrid.closeDatabase();
         return ERROR_DBGRID;
     }
 
-    if (! inputGrid.loadCellProperties(&errorString))
+    if (! inputGrid.loadCellProperties(errorString))
     {
         logger.writeError (errorString);
         inputGrid.closeDatabase();
@@ -305,19 +305,19 @@ int Bias::readDebiasSettings()
     }
 
     // open input grid
-    if (! inputGrid.parseXMLGrid(inputMeteoGrid, &errorString))
+    if (! inputGrid.parseXMLGrid(inputMeteoGrid, errorString))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
     }
 
-    if (! inputGrid.openDatabase(&errorString, "inputGrid"))
+    if (! inputGrid.openDatabase(errorString, "inputGrid"))
     {
         logger.writeError (errorString);
         return ERROR_DBGRID;
     }
 
-    if (! inputGrid.loadCellProperties(&errorString))
+    if (! inputGrid.loadCellProperties(errorString))
     {
         logger.writeError (errorString);
         inputGrid.closeDatabase();
@@ -374,24 +374,24 @@ int Bias::readDebiasSettings()
 
         // new db
         outputGrid.meteoGrid()->setGisSettings(this->gisSettings);
-        if (! outputGrid.parseXMLGrid(outputMeteoGrid, &errorString))
+        if (! outputGrid.parseXMLGrid(outputMeteoGrid, errorString))
         {
             return ERROR_DBOUTPUT;
         }
 
-        if (! outputGrid.newDatabase(&errorString, "outputGrid"))
+        if (! outputGrid.newDatabase(errorString, "outputGrid"))
         {
             return ERROR_DBOUTPUT;
         }
 
-        if (! outputGrid.newCellProperties(&errorString))
+        if (! outputGrid.newCellProperties(errorString))
         {
             return ERROR_DBOUTPUT;
         }
 
         Crit3DMeteoGridStructure structure = outputGrid.meteoGrid()->gridStructure();
 
-        if (! outputGrid.writeCellProperties(&errorString, structure.nrRow(), structure.nrCol()))
+        if (! outputGrid.writeCellProperties(structure.nrRow(), structure.nrCol(), errorString))
         {
             return ERROR_DBOUTPUT;
         }
@@ -405,16 +405,16 @@ int Bias::readDebiasSettings()
     else
     {
         // open output grid
-        if (! outputGrid.parseXMLGrid(outputMeteoGrid, &errorString))
+        if (! outputGrid.parseXMLGrid(outputMeteoGrid, errorString))
         {
             logger.writeError (errorString);
             return ERROR_DBGRID;
         }
 
-        if (outputGrid.openDatabase(&errorString, "outputGrid"))
+        if (outputGrid.openDatabase(errorString, "outputGrid"))
         {
             // database exists, open it
-            if (! outputGrid.loadCellProperties(&errorString))
+            if (! outputGrid.loadCellProperties(errorString))
             {
                 logger.writeError (errorString);
                 outputGrid.closeDatabase();
@@ -424,19 +424,19 @@ int Bias::readDebiasSettings()
         else
         {
             // maybe database does not exist, try to create it
-            if (! outputGrid.newDatabase(&errorString, "outputGrid"))
+            if (! outputGrid.newDatabase(errorString, "outputGrid"))
             {
                 return ERROR_DBOUTPUT;
             }
 
-            if (! outputGrid.newCellProperties(&errorString))
+            if (! outputGrid.newCellProperties(errorString))
             {
                 return ERROR_DBOUTPUT;
             }
 
             Crit3DMeteoGridStructure structure = outputGrid.meteoGrid()->gridStructure();
 
-            if (! outputGrid.writeCellProperties(&errorString, structure.nrRow(), structure.nrCol()))
+            if (! outputGrid.writeCellProperties(structure.nrRow(), structure.nrCol(), errorString))
             {
                 return ERROR_DBOUTPUT;
             }
@@ -536,7 +536,7 @@ void Bias::matchCells()
             for (int col = 0; col<inputGrid.gridStructure().header().nrCols; col++)
             {
                 std::string id;
-                if (inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &id))
+                if (inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, id))
                 {
                     QPoint inputPoint(row,col);
                     inputCells << inputPoint;
@@ -594,8 +594,8 @@ int Bias::computeMonthlyDistribution(const QString &variable)
         int refCol = referenceCells[i].y();
         std::string idInput;
         std::string refInput;
-        inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &idInput);  // store id
-        refGrid.meteoGrid()->getMeteoPointActiveId(refRow, refCol, &refInput);  // store id
+        inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, idInput);  // store id
+        refGrid.meteoGrid()->getMeteoPointActiveId(refRow, refCol, refInput);  // store id
 
         if (! inputGrid.gridStructure().isFixedFields())
         {
@@ -858,9 +858,9 @@ int Bias::numericalDataReconstruction(const QString &variable)
         for (int col = 0; col < inputGrid.gridStructure().header().nrCols; col++)
         {
             std::string idInput;
-            inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, &idInput);  // store id
+            inputGrid.meteoGrid()->getMeteoPointActiveId(row, col, idInput);    // store id
 
-            if (!inputGrid.gridStructure().isFixedFields())
+            if (! inputGrid.gridStructure().isFixedFields())
             {
                 if (! inputGrid.loadGridDailyData(errorString, QString::fromStdString(idInput), firstDate, lastDate))
                 {
@@ -936,7 +936,7 @@ int Bias::numericalDataReconstruction(const QString &variable)
             }
 
             // save values
-            if (! outputGrid.saveListDailyData(&errorString, QString::fromStdString(idInput), firstDate, var, outputValues, false))
+            if (! outputGrid.saveListDailyData(errorString, QString::fromStdString(idInput), firstDate, var, outputValues, false))
             {
                 return ERROR_SAVINGVALUES;
             }

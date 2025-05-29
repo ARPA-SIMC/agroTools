@@ -7,7 +7,7 @@
 #include <iostream>
 
 // uncomment to compute test
-//#define TEST
+// #define TEST
 
 
 void version()
@@ -42,10 +42,10 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            //settingsFileName = "//Icolt-smr/criteria1d/PROJECTS/icolt2024_JJA/seasonalIrriClimate_AL.ini";
-            settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/test.ini";
+            settingsFileName = "//Icolt-smr/criteria1D/PROJECTS/icolt2025_JJA/seasonalIrriForecast_AL.ini";
+            //settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/test.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operationStr = "SHAPE";
+            operationStr = "AGGREGATION";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
@@ -123,7 +123,8 @@ int main(int argc, char *argv[])
     }
     else if (myProject.operation == "AGGREGATION")
     {
-        myResult = myProject.createAggregationFile();
+        bool isReorder = true;
+        myResult = myProject.createAggregationFile(isReorder);
     }
     else if (myProject.operation == "MAPS")
     {

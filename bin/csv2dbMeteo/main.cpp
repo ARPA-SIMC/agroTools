@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 #else
     if (argc < 3)
     {
-       qDebug() << "USAGE:\ncvsToMeteoDb [inputPath] [outputName.db]";
+       qDebug() << "USAGE: cvsToMeteoDb [inputPath] [outputName.db]";
        qDebug() << "\ninputPath: input directory of csv data files";
        qDebug() << "outputName.db: output database (SQLite)\n";
        exit (0);
