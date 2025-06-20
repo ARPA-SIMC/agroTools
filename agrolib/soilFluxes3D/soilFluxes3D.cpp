@@ -73,7 +73,6 @@ void DLL_EXPORT __STDCALL cleanMemory()
 {
     cleanNodes();
     cleanArrays();
-    // TODO clean balance
 }
 
 void DLL_EXPORT __STDCALL initializeHeat(short myType, bool computeAdvectiveHeat, bool computeLatentHeat)
@@ -152,8 +151,6 @@ int DLL_EXPORT __STDCALL setNumericalParameters(double minDeltaT, double maxDelt
     if (maxDeltaT > HOUR_SECONDS) maxDeltaT = HOUR_SECONDS;
     if (maxDeltaT < minDeltaT) maxDeltaT = minDeltaT;
     myParameters.delta_t_max = maxDeltaT;
-
-    myParameters.current_delta_t = myParameters.delta_t_max;
 
     if (maxIterationNumber < 10) maxIterationNumber = 10;
     if (maxIterationNumber > MAX_NUMBER_ITERATIONS) maxIterationNumber = MAX_NUMBER_ITERATIONS;
@@ -728,7 +725,7 @@ int DLL_EXPORT __STDCALL setHydraulicProperties(int waterRetentionCurve,
     else
     {
         // sub-surface
-        return MAXVALUE(0.0, theta_from_Se(index) - theta_from_sign_Psi(-160, index));
+        return std::max(0., theta_from_Se(index) - theta_from_sign_Psi(-160, index));
     }
  }
 
@@ -967,7 +964,7 @@ int DLL_EXPORT __STDCALL setHydraulicProperties(int waterRetentionCurve,
     }
     else
     {
-        balanceWholePeriod.heatMBR = 1.;
+        balanceWholePeriod.heatMBR = 0.;
     }
 }
 
@@ -1031,50 +1028,60 @@ int DLL_EXPORT __STDCALL setHydraulicProperties(int waterRetentionCurve,
 
  /*!
   * \brief computePeriod
+  * compute water and heat fluxes for a time period (maximum 1 hour)
+  * assume that meteo conditions are constant during the time period
   * \param timePeriod     [s]
   */
  void DLL_EXPORT __STDCALL computePeriod(double timePeriod)
+{
+    double sumCurrentTime = 0.0;
+
+    balanceCurrentPeriod.sinkSourceWater = 0.;
+    balanceCurrentPeriod.sinkSourceHeat = 0.;
+
+    while (sumCurrentTime < timePeriod)
     {
-        double sumCurrentTime = 0.0;
-
-        balanceCurrentPeriod.sinkSourceWater = 0.;
-        balanceCurrentPeriod.sinkSourceHeat = 0.;
-
-        while (sumCurrentTime < timePeriod)
-        {
-            double ResidualTime = timePeriod - sumCurrentTime;
-            sumCurrentTime += computeStep(ResidualTime);
-        }
-
-        if (myStructure.computeWater) updateBalanceWaterWholePeriod();
-        if (myStructure.computeHeat) updateBalanceHeatWholePeriod();
+        double ResidualTime = timePeriod - sumCurrentTime;
+        sumCurrentTime += computeStep(ResidualTime);
     }
+
+    if (myStructure.computeWater) updateBalanceWaterWholePeriod();
+    if (myStructure.computeHeat) updateBalanceHeatWholePeriod();
+}
 
 
  /*!
  * \brief computeStep
+ * compute a single step of water and heat fluxes
+ * assume that meteo conditions are constant during the time step
  * \param maxTimeStep           [s]
  * \return computed time step   [s]
  */
 double DLL_EXPORT __STDCALL computeStep(double maxTimeStep)
 {
+    // initialize current dt
+    if (myParameters.current_delta_t == NODATA)
+    {
+        myParameters.current_delta_t = myParameters.delta_t_max;
+    }
+
     if (myStructure.computeHeat)
     {
         initializeHeatFluxes(false, true);
         updateConductance();
     }
 
-    double dtWater;
+    double dtWater, dtHeat;
     if (myStructure.computeWater)
     {
-        computeWater(maxTimeStep, &dtWater);
+        computeWaterFluxes(maxTimeStep, &dtWater);
+        dtHeat = dtWater;
     }
     else
     {
-        dtWater = MINVALUE(maxTimeStep, myParameters.delta_t_max);
+        dtHeat = std::min(maxTimeStep, myParameters.delta_t_max);
+        dtWater = dtHeat;
     }
-
-    double dtHeat = dtWater;
 
     if (myStructure.computeHeat)
     {
@@ -1099,6 +1106,7 @@ double DLL_EXPORT __STDCALL computeStep(double maxTimeStep)
 
     return dtWater;
 }
+
 
 /*!
  * \brief setTemperature
