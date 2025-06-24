@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
        qDebug() << "\ninputPath: input directory of csv data files";
        qDebug() << "outputName.db: output database (SQLite)\n";
        qDebug() << "options:";
-       qDebug() << "-wt         specify that there is watertable data\n";
+       qDebug() << "-wt         specify that there are watertable data\n";
        exit (0);
     }
     else
