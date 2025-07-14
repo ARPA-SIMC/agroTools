@@ -5,13 +5,13 @@
 #include <iostream>
 
 // uncomment to execute test
-//#define TEST
+#define TEST
 
 void usage()
 {
     std::cout << "\nUsage: csv2dbGrid <project.ini>" << std::endl << std::endl
               << "Import daily or hourly meteo series (single series or ensemble) into a PRAGA meteo grid." << std::endl
-              << "WARNING (for ensembles): only daily data are supported." << std::endl << std::endl;
+              << "WARNING (for ensemble data): only daily data are supported." << std::endl << std::endl;
 
 }
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = dataPath + "PROJECT/importaOreEquivalenti/importaOreEquivalenti.ini";
+            settingsFileName = "//praga2-smr/PRAGA_STABLE/DATA/PROJECT/ARCADIA/importDailyArcadiaProj.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -58,38 +58,53 @@ int main(int argc, char *argv[])
     QDir csvDir(import.getCsvFilePath());
     QStringList listOfCsv = csvDir.entryList(QStringList() << "*.csv", QDir::Files);    // get a list of file
     QString fileName;
-    QList<QString> varList = import.getMeteoVar();
-    bool isFirst = false;
+    QList<QString> varList = import.getMeteoVarList();
+    bool isFirst = true;
     for(int i=0; i < listOfCsv.count(); i++)
     {
         fileName = listOfCsv.at(i);
-        bool isAvbVariable = false;
-        for (int j= 0; j < varList.size(); j++)
+
+        if (! import.getIsMultiVariable())
         {
-            // check file of interest
-            if(fileName.left(varList[j].size()) == varList[j])
+            bool isAvbVariable = false;
+            for (int j= 0; j < varList.size(); j++)
             {
-                isAvbVariable = true;
-                import.setMeteoVar(varList[j]);
-                break;
+                // check file of interest
+                if(fileName.left(varList[j].size()) == varList[j])
+                {
+                    isAvbVariable = true;
+                    import.setMeteoVar(varList[j]);
+                    break;
+                }
             }
-        }
-        if (isAvbVariable == false)
-        {
-            continue;
+            if (isAvbVariable == false)
+            {
+                continue;
+            }
         }
 
         import.setCsvFileName(import.getCsvFilePath() + "/" + fileName);
         import.logger.writeInfo("read file: " + fileName);
 
-        if (! isFirst)
+        if (isFirst)
         {
             import.setIsFirstCsv(true);
-            isFirst = true;
+            isFirst = false;
         }
         else
         {
             import.setIsFirstCsv(false);
+        }
+
+        if (import.getIsMultiVariable())
+        {
+            QString errorStr;
+            result = import.importDailyValuesMultiVariable(errorStr);
+            if (result != CSV2DBGRID_OK)
+            {
+                import.logger.writeError(errorStr);
+            }
+            continue;
         }
 
         if (import.getIsDaily())

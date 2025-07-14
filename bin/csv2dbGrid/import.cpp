@@ -9,9 +9,7 @@
 #include <qdebug.h>
 
 Import::Import()
-{
-
-}
+{ }
 
 void Import::initialize()
 {
@@ -27,6 +25,7 @@ void Import::initialize()
     isHourlyStep = false;
     nrStoredDays = DEFAULT_NR_STORED_DAYS;
     isPrecProgressive = false;
+    isMultiVariable = false;
     radConversion = false;
 }
 
@@ -187,6 +186,20 @@ int Import::readSettings()
         nrStoredDays = projectSettings->value("nrStoredDays","").toInt();
     }
 
+    if (projectSettings->value("isMultiVariable","").toString().isEmpty())
+    {
+        isMultiVariable = false;
+    }
+    else
+    {
+        isMultiVariable = projectSettings->value("isMultiVariable","").toBool();
+        if (isMultiVariable && ! isDaily)
+        {
+            logger.writeError ("Wrong parameters: multiple variables are available only with daily data.");
+            return ERROR_BAD_REQUEST;
+        }
+    }
+
     if (projectSettings->value("radConversion","").toString().isEmpty())
     {
         radConversion = false;
@@ -197,6 +210,22 @@ int Import::readSettings()
     }
 
     projectSettings->endGroup();
+
+    return CSV2DBGRID_OK;
+}
+
+
+int Import::importDailyValuesMultiVariable(QString &errorStr)
+{
+    if (! grid.openDatabase(errorStr))
+    {
+        return ERROR_DBGRID;
+    }
+
+    if (! grid.importDailyDataCsv(errorStr, csvFileName, meteoVarList))
+    {
+        return ERROR_BAD_REQUEST;
+    }
 
     return CSV2DBGRID_OK;
 }
@@ -223,7 +252,7 @@ int Import::loadDailyValues()
     std::string id;
     bool ok;
 
-    if (!myFile.open(QFile::ReadOnly | QFile::Text) )
+    if (! myFile.open(QFile::ReadOnly | QFile::Text) )
     {
         logger.writeError ("csvFileName file does not exist");
         return ERROR_MISSINGFILE;
@@ -315,7 +344,7 @@ int Import::loadMultiTimeValues()
     std::string id;
     bool ok;
 
-    if ( !myFile.open(QFile::ReadOnly | QFile::Text) )
+    if ( ! myFile.open(QFile::ReadOnly | QFile::Text) )
     {
         logger.writeError ("csvFileName file does not exist");
         return ERROR_MISSINGFILE;
@@ -325,7 +354,7 @@ int Import::loadMultiTimeValues()
         QTextStream in(&myFile);
         //skip header
         QString line = in.readLine();
-        while (!in.atEnd())
+        while (! in.atEnd())
         {
             line = in.readLine();
             QStringList items = line.split(" ");
@@ -341,7 +370,7 @@ int Import::loadMultiTimeValues()
                 // repeated header lat lon value perturbation number
                 continue;
             }
-            if (!hoursList.contains(hour))
+            if (! hoursList.contains(hour))
             {
                 // save hourly step
                 hoursList<<hour;
@@ -352,7 +381,7 @@ int Import::loadMultiTimeValues()
                 prev_hour = hour;
                 idListIndex = 0;
             }
-            if (isFirstCsv && hour==hoursList[0])
+            if (isFirstCsv && hour == hoursList[0])
             {
                 // make IDList
                 double lat = items[posLat].toDouble();
@@ -377,6 +406,7 @@ int Import::loadMultiTimeValues()
     myFile.close();
     return CSV2DBGRID_OK;
 }
+
 
 int Import::writeMultiTimeValues()
 {
@@ -405,7 +435,7 @@ int Import::writeMultiTimeValues()
     QString varname = QString::fromStdString(getMeteoVarName(meteoVar));
     logger.writeInfo("write data: " + varname + "  " + date.toString("yyyy-MM-dd"));
 
-    for (int i=0; i<IDList.size(); i++)
+    for (int i=0; i < IDList.size(); i++)
     {
         interpolatedValueList.clear();
         key = IDList[i];
@@ -784,20 +814,9 @@ int Import::writeEnsembleDailyValues()
     // TO DO check che gli ID compaiano una sola volta per cella
 }
 
-
-QString Import::getCsvFilePath() const
-{
-    return csvFilePath;
-}
-
 void Import::setIsFirstCsv(bool value)
 {
     isFirstCsv = value;
-}
-
-QList<QString> Import::getMeteoVar() const
-{
-    return meteoVarList;
 }
 
 void Import::setMeteoVar(const QString &value)
@@ -812,29 +831,10 @@ void Import::setMeteoVar(const QString &value)
     }
 }
 
-bool Import::getIsDaily() const
-{
-    return isDaily;
-}
-
-bool Import::getIsEnsemble() const
-{
-    return isEnsemble;
-}
-
-bool Import::getIsDeleteOldData() const
-{
-    return isDeleteOldData;
-}
 
 void Import::setIsDeleteOldData(bool value)
 {
     isDeleteOldData = value;
-}
-
-int Import::getNrStoredDays() const
-{
-    return nrStoredDays;
 }
 
 void Import::setNrStoredDays(int value)
