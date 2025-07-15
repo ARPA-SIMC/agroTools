@@ -211,15 +211,29 @@ int Import::readSettings()
 
     projectSettings->endGroup();
 
+    // check variables list
+    for (int i = 0; i < meteoVarList.size(); i++)
+    {
+        meteoVariable meteoVar = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, meteoVarList[i].toStdString());
+        if (meteoVar == noMeteoVar)
+        {
+            logger.writeError("Wrong variable in settings file: " + meteoVarList[i]);
+            return ERROR_WRONG_PARAMETER;
+        }
+    }
+
     return CSV2DBGRID_OK;
 }
 
 
 int Import::importDailyValuesMultiVariable(QString &errorStr)
 {
-    if (! grid.openDatabase(errorStr))
+    if (! grid.db().isOpen())
     {
-        return ERROR_DBGRID;
+        if (! grid.openDatabase(errorStr))
+        {
+            return ERROR_DBGRID;
+        }
     }
 
     if (! grid.importDailyDataCsv(errorStr, csvFileName, meteoVarList))
