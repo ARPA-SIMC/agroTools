@@ -14,7 +14,8 @@ QT   += sql
 CONFIG += console
 TEMPLATE = app
 
-VERSION = 1.8.7
+VERSION = 1.9.0
+QMAKE_TARGET_COPYRIGHT = "\\251 2025 ARPAE ER - Climate Observatory"
 
 unix:{
     CONFIG(debug, debug|release) {

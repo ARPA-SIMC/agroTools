@@ -7,7 +7,7 @@
 #include <iostream>
 
 // uncomment to compute test
-// #define TEST
+//#define TEST
 
 
 void version()
@@ -42,10 +42,10 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "//Icolt-smr/criteria1D/PROJECTS/icolt2025_JJA/seasonalIrriForecast_AL.ini";
-            //settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/test.ini";
+            //settingsFileName = "//Icolt-smr/criteria1D/PROJECTS/icolt2025_JJA/seasonalIrriForecast_AL.ini";
+            settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/test.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operationStr = "AGGREGATION";
+            operationStr = "CSV";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
