@@ -391,7 +391,7 @@ int Frost::getForecastData(int paramPos)
     float radSlope = 0;
     if (radiation::computeSunPosition(float(lon), float(lat), timeZone,
         runDate.year(), runDate.month(), runDate.day(), 0, 0, 0,
-        temperature, pressure, radAspect, radSlope, &sunPosition))
+        temperature, pressure, radAspect, radSlope, sunPosition))
     {
         int myHourSunSetInteger = round(sunPosition.set/3600);
         int myHourSunRiseInteger = round(sunPosition.rise/3600);
@@ -788,7 +788,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
         {
             if (radiation::computeSunPosition(float(point->longitude), float(point->latitude), gisSettings.timeZone,
                                               today.year, today.month, today.day, 0, 0, 0,
-                                              temperature, pressure, radAspect, radSlope, &sunPosition))
+                                              temperature, pressure, radAspect, radSlope, sunPosition))
             {
                 hourSunSetLocal = round(sunPosition.set/3600);
                 hourSunRiseLocal = round(sunPosition.rise/3600);

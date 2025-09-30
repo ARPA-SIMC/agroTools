@@ -574,7 +574,7 @@ int Import::writeMultiTimeValues()
                             myTime.date.year = tmp.date().year();
                             myTime.time = (tmp.time().hour()*3600-1800);
                             radiation::computeRadiationRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
-                                                            myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
+                                                            myClearSkyTransmissivity, myClearSkyTransmissivity, mySunPosition, myRadPoint, myDEM);
                             // global rad check
                             if (myRadPoint.global == 0)
                             {
@@ -601,7 +601,7 @@ int Import::writeMultiTimeValues()
                                 myTime.time = (tmp.time().hour()*3600-1800);
 
                                 radiation::computeRadiationRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
-                                                                myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
+                                                                myClearSkyTransmissivity, myClearSkyTransmissivity, mySunPosition, myRadPoint, myDEM);
                                 // global rad check
                                 if (myRadPoint.global == 0)
                                 {
@@ -619,7 +619,7 @@ int Import::writeMultiTimeValues()
                             myTime.time = (tmp.time().hour()*3600-1800);
 
                             radiation::computeRadiationRsun(&radSettings, TEMPERATURE_DEFAULT, PRESSURE_SEALEVEL, myTime, myLinke, myAlbedo,
-                                                            myClearSkyTransmissivity, myClearSkyTransmissivity, &mySunPosition, &myRadPoint, myDEM);
+                                                            myClearSkyTransmissivity, myClearSkyTransmissivity, mySunPosition, myRadPoint, myDEM);
 
                             if (myRadPoint.global == 0)
                             {
