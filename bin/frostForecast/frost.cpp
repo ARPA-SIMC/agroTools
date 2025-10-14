@@ -352,7 +352,7 @@ int Frost::getForecastData(int paramPos)
     //gis::getGridRowColFromXY(grid.gridStructure().header(), lon, lat, &row, &col);
 
     //TradPoint myRadPoint;
-    Crit3DRadiationSettings radSettings;
+    //Crit3DRadiationSettings radSettings;
 
     //radSettings.gisSettings = &gisSettings;
     /*! assign topographic height and coordinates */
