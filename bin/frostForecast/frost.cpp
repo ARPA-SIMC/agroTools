@@ -905,7 +905,7 @@ bool Frost::calibrateModel(int idPos)
             QString text = QString::fromStdString(meteoPointsList[idPos].id) + ",";
             QTextStream out(calibrationLog);
 
-            for (int i=0; i<frostDates.size(); i++)
+            for (size_t i=0; i < frostDates.size(); i++)
             {
                 text += frostDates[i].toString("yyyy-MM-dd");
                 if (i < frostDates.size()-1) text += ",";
@@ -916,7 +916,7 @@ bool Frost::calibrateModel(int idPos)
 
         fitCoolingCoefficient(outData, 10000, float(0.001), float(0), float(10), outCoeff);
 
-        for (int j=0; j < sunsetData.size(); j++)
+        for (size_t j=0; j < sunsetData.size(); j++)
             weights.push_back(1);
 
         statistics::weightedMultiRegressionLinearWithStats(sunsetData, outCoeff, weights, &regrConst, regrCoeff, false, true, &R2, &stdError, &regrConstStdError, regrCoeffStdError);

@@ -10,6 +10,20 @@ QT -= gui
 
 CONFIG += console
 TEMPLATE = app
+CONFIG += c++17
+
+win32:{
+    QMAKE_CXXFLAGS += -openmp -GL
+    QMAKE_LFLAGS   += -LTCG
+}
+unix:{
+    QMAKE_CXXFLAGS += -fopenmp #-flto
+    QMAKE_LFLAGS += -fopenmp #-flto
+}
+macx:{
+    QMAKE_CXXFLAGS += -fopenmp #-flto
+    QMAKE_LFLAGS += -fopenmp #-flto
+}
 
 unix:{
     CONFIG(debug, debug|release) {

@@ -11,7 +11,7 @@
 QT   -= gui
 QT   += sql
 
-CONFIG += console
+CONFIG += c++17 console
 TEMPLATE = app
 
 VERSION = 1.9.0
