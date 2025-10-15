@@ -1,8 +1,21 @@
 QT -= gui
 QT += core sql xml
 
-CONFIG += c++11 console
+CONFIG += c++17 console
 CONFIG -= app_bundle
+
+win32:{
+    QMAKE_CXXFLAGS += -openmp -GL
+    QMAKE_LFLAGS   += -LTCG
+}
+unix:{
+    QMAKE_CXXFLAGS += -fopenmp #-flto
+    QMAKE_LFLAGS += -fopenmp #-flto
+}
+macx:{
+    QMAKE_CXXFLAGS += -fopenmp #-flto
+    QMAKE_LFLAGS += -fopenmp #-flto
+}
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
