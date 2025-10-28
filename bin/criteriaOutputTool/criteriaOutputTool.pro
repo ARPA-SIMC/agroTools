@@ -11,10 +11,11 @@
 QT   -= gui
 QT   += sql
 
-CONFIG += c++17 console
+CONFIG += console
+CONFIG += c++17
 TEMPLATE = app
 
-VERSION = 1.9.0
+VERSION = 1.9.2
 QMAKE_TARGET_COPYRIGHT = "\\251 2025 ARPAE ER - Climate Observatory"
 
 unix:{
