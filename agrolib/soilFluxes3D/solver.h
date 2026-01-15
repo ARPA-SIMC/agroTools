@@ -23,7 +23,7 @@ namespace soilFluxes3D::v2
             virtual bool solveLinearSystem(u8_t approximationNumber, processType computationType) = 0;
 
         public:
-            Solver(solverType type, numericalMethod method) : _type(type), _method(method) {}
+            Solver(solverType type, numericalMethod method) : _method(method), _type(type) {}
 
             void updateParameters(const SolverParametersPartial &newParameters);
             void setTimeStep(double timeStep) noexcept;
@@ -69,6 +69,7 @@ namespace soilFluxes3D::v2
         updateFromPartial(_parameters, newParameters, enableOMP);
         updateFromPartial(_parameters, newParameters, numThreads);
     }
+
     inline void Solver::setTimeStep(double timeStep) noexcept
     {
         if(timeStep < _parameters.deltaTmin)

@@ -100,7 +100,6 @@
         int errorType;
 
         QString logFileName;
-        QString dataFileName;
         QString demFileName;
         QString dbPointsFileName;
         QString dbAggregationFileName;
@@ -120,8 +119,9 @@
         QSettings* projectSettings;
 
         bool meteoPointsLoaded;
-        int nrMeteoPoints;
-        Crit3DMeteoPoint* meteoPoints;
+        bool isMeteoPointsDaily;
+        bool isMeteoPointsHourly;
+        std::vector<Crit3DMeteoPoint> meteoPoints;
         std::vector<gis::Crit3DOutputPoint> outputPoints;
         std::vector<Well> wellPoints;
 
@@ -346,6 +346,7 @@
         bool exportMeteoGridToCsv(QString fileName);
         bool exportMeteoGridToRasterFlt(QString fileName, double cellSize);
         bool exportMeteoPointsDailyDataCsv(bool isTPrec, QDate firstDate, QDate lastDate, QString idListFileName, QString outputPath);
+        bool exportMeteoPointsHourlyDataCsv(bool isTPrec, QDate firstDate, QDate lastDate, QString idListFileName, QString outputPath);
 
         bool loadAndExportMeteoGridToRasterFlt(QString fileName, double cellSize, meteoVariable myVar, QDate dateIni, QDate dateFin);
         int computeDefaultCellSizeFromMeteoGrid(float resolutionRatio);
@@ -370,6 +371,8 @@
         bool readVmArkimetData(const QList<QString> &vmFileList, frequencyType frequency, bool isPrec0024);
 
         bool getProjectList(QList<QString> &projectList);
+
+        bool addOutputPoint(double myLat = NODATA, double myLon = NODATA);
 
     private slots:
         void deleteMeteoWidgetPoint(int id);

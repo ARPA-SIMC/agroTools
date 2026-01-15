@@ -87,6 +87,7 @@ void Crit3DMeteoPoint::clear()
     proxyValues.clear();
     lapseRateCode = primary;
     topographicDistance = nullptr;
+    glocalWeights.clear();
 }
 
 
@@ -910,7 +911,7 @@ bool Crit3DMeteoPoint::setMeteoPointValueM(const Crit3DDate &myDate, meteoVariab
     return true;
 }
 
-float Crit3DMeteoPoint::getMeteoPointValueH(const Crit3DDate& myDate, int myHour, int myMinutes, meteoVariable myVar)
+float Crit3DMeteoPoint::getMeteoPointValueH(const Crit3DDate& myDate, int myHour, int myMinutes, meteoVariable myVar) const
 {
     if (myVar == noMeteoVar)
     {
@@ -1177,7 +1178,7 @@ float Crit3DMeteoPoint::getMeteoPointValueD(const Crit3DDate &myDate, meteoVaria
         return NODATA;
 }
 
-float Crit3DMeteoPoint::getMeteoPointValueM(const Crit3DDate &myDate, meteoVariable myVar)
+float Crit3DMeteoPoint::getMeteoPointValueM(const Crit3DDate &myDate, meteoVariable myVar) const
 {
     //check
     if (myVar == noMeteoVar) return NODATA;
@@ -1442,12 +1443,13 @@ float Crit3DMeteoPoint::getPercValueVariable(const Crit3DDate &firstDate, const 
     return percValue;
 }
 
+
 // ---- end class
 
 
-bool isSelectionPointsActive(Crit3DMeteoPoint* meteoPoints,int nrMeteoPoints)
+bool isSelectionPointsActive(const std::vector<Crit3DMeteoPoint> &meteoPoints)
 {
-    for (int i = 0; i < nrMeteoPoints; i++)
+    for (int i = 0; i < meteoPoints.size(); i++)
     {
         if (meteoPoints[i].selected)
             return true;

@@ -41,11 +41,13 @@ namespace soilFluxes3D::v2
     std::vector<surfaceData_t> surfaceList = {};
     std::vector<culvertData_t> culvertList = {};
 
+
     /*!
      *  \brief initializes the node data grid and set simulation parameters
      *  \return Ok/Error
     */
-    SF3Derror_t initializeSF3D(SF3Duint_t nrNodes, u16_t nrLayers, u8_t nrLateralLinks, bool isComputeWater, bool isComputeHeat, bool isComputeSolutes, heatFluxSaveMode_t HFsm)
+    SF3Derror_t initializeSF3D(SF3Duint_t nrNodes, u16_t nrLayers, u8_t nrLateralLinks,
+                               bool isComputeWater, bool isComputeHeat, bool isComputeSolutes, heatFluxSaveMode_t HFsm)
     {
         //Cleans all the data structures
         SF3Derror_t cleanResult = cleanSF3D();
@@ -330,12 +332,12 @@ namespace soilFluxes3D::v2
         return SF3Derror_t::SF3Dok;
     }
 
+
     /*!
      *  \brief sets number of threads for parallel computing.
      *          if nrThreads < 1 or too large, hardware_concurrency get the number of logical processors
         \return setted number of threads
     */
-    // TODO enableOmp
     u32_t setThreadsNumber(u32_t nrThreads)
     {
         u32_t nrHWthreads = std::thread::hardware_concurrency();
@@ -345,12 +347,18 @@ namespace soilFluxes3D::v2
         SolverParametersPartial paramTemp;
         paramTemp.numThreads = nrThreads;
         if(solver)
+        {
             solver->updateParameters(paramTemp);
+            #ifndef CUDA_ENABLED
+                CPUSolverObject.setThreads();
+            #endif
+        }
 
         //Versione c++20
         //solver->updateParameters(SolverParametersPartial{.numThreads = nrThreads});
         return nrThreads;
     }
+
 
     /*!
      * \brief sets the soil properties of the nrSoil-nrHorizon soil type
@@ -453,8 +461,8 @@ namespace soilFluxes3D::v2
 
         if (ResidualToleranceExponent < 5)
             ResidualToleranceExponent = 5;
-        if (ResidualToleranceExponent > 16)
-            ResidualToleranceExponent = 16;
+        if (ResidualToleranceExponent > 12)
+            ResidualToleranceExponent = 12;
 
         if (MBRThresholdExponent < 1)
             MBRThresholdExponent = 1;
@@ -545,7 +553,6 @@ namespace soilFluxes3D::v2
         //Set the culvertData_t pointer
         nodeGrid.culvertPtr[nodeIndex] = culvertPtr;
         return SF3Derror_t::SF3Dok;
-
     }
 
 
@@ -553,7 +560,8 @@ namespace soilFluxes3D::v2
      *  \brief sets the principal data of the index node
      *  \return Ok/Error
     */
-    SF3Derror_t setNode(SF3Duint_t index, double x, double y, double z, double volume_or_area, bool isSurface, boundaryType_t boundaryType, double slope, double boundaryArea)
+    SF3Derror_t setNode(SF3Duint_t index, double x, double y, double z, double volume_or_area,
+                        bool isSurface, boundaryType_t boundaryType, double slope, double boundaryArea)
     {
         if(!nodeGrid.isInitialized)
             return SF3Derror_t::MemoryError;
@@ -1479,7 +1487,7 @@ namespace soilFluxes3D::v2
      * \param pressureHead  [m]
      * \return heat storage [J]
      */
-    double getNodeHeatStorage(SF3Duint_t nodeIndex, double h)
+    __cudaSpec double getNodeHeatStorage(SF3Duint_t nodeIndex, double h)
     {
         if(!nodeGrid.isInitialized)
             return getDoubleErrorValue(SF3Derror_t::MemoryError);

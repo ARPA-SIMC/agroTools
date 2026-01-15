@@ -14,16 +14,16 @@
 
 
 
-Crit3DProxyWidget::Crit3DProxyWidget(Crit3DInterpolationSettings &_interpolationSettings, Crit3DMeteoPoint *meteoPoints, int nrMeteoPoints,
+Crit3DProxyWidget::Crit3DProxyWidget(Crit3DInterpolationSettings &_interpolationSettings, const std::vector<Crit3DMeteoPoint> meteoPoints,
                                      frequencyType currentFrequency, QDate currentDate, int currentHour, Crit3DQuality *quality,
                                      Crit3DInterpolationSettings &SQinterpolationSettings, Crit3DMeteoSettings *meteoSettings,
                                      Crit3DClimateParameters *climateParameters, bool checkSpatialQuality, int macroAreaNumber)
-    :_interpolationSettings(_interpolationSettings), _meteoPoints(meteoPoints), _nrMeteoPoints(nrMeteoPoints),
+    :_interpolationSettings(_interpolationSettings), _meteoPoints(meteoPoints),
     _currentFrequency(currentFrequency), _currentDate(currentDate), _currentHour(currentHour), _quality(quality),
     _SQinterpolationSettings(SQinterpolationSettings), _meteoSettings(meteoSettings), _checkSpatialQuality(checkSpatialQuality),
     _macroAreaNumber(macroAreaNumber), _climateParameters(climateParameters)
 {
-    this->setWindowTitle("Proxy analysis over " + QString::number(nrMeteoPoints) +  " points");
+    this->setWindowTitle("Proxy analysis over " + QString::number(meteoPoints.size()) +  " points");
     this->resize(1024, 700);
     this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     this->setAttribute(Qt::WA_DeleteOnClose);
@@ -157,7 +157,6 @@ Crit3DProxyWidget::Crit3DProxyWidget(Crit3DInterpolationSettings &_interpolation
     connect(updateStations, &QAction::triggered, this, [=](){ this->plot(); });
     connect(changeLeftAxis, &QAction::triggered, this, &Crit3DProxyWidget::on_actionChangeLeftAxis);
 
-
     if (currentFrequency != noFrequency)
     {
         plot();
@@ -290,7 +289,7 @@ void Crit3DProxyWidget::plot()
     {
         _outInterpolationPoints.clear();
 
-        checkAndPassDataToInterpolation(_quality, myVar, _meteoPoints, _nrMeteoPoints, getCurrentTime(), _SQinterpolationSettings,
+        checkAndPassDataToInterpolation(_quality, myVar, _meteoPoints, getCurrentTime(), _SQinterpolationSettings,
                                         _interpolationSettings, _meteoSettings, _climateParameters,
                                         _outInterpolationPoints, _checkSpatialQuality, errorStdStr);
 
@@ -298,17 +297,17 @@ void Crit3DProxyWidget::plot()
     }
     else
     {
-        checkAndPassDataToInterpolation(_quality, myVar, _meteoPoints, _nrMeteoPoints, getCurrentTime(), _SQinterpolationSettings,
+        checkAndPassDataToInterpolation(_quality, myVar, _meteoPoints, getCurrentTime(), _SQinterpolationSettings,
                                         _interpolationSettings, _meteoSettings, _climateParameters,
                                         _outInterpolationPoints, _checkSpatialQuality, errorStdStr);
     }
-    QList<QPointF> pointListPrimary, pointListSecondary, pointListSupplemental, pointListMarked;
+    QList<QPointF> pointListPrimary, pointListSecondary, pointListSupplemental, pointListMarked, zeroLine;
     QMap< QString, QPointF > idPointMap1;
     QMap< QString, QPointF > idPointMap2;
     QMap< QString, QPointF > idPointMap3;
     QMap< QString, QPointF > idPointMapMarked;
-
     QPointF point;
+
     for (int i = 0; i < int(_outInterpolationPoints.size()); i++)
     {
         float proxyVal = _outInterpolationPoints[i].getProxyValue(_proxyPos);
@@ -321,7 +320,6 @@ void Crit3DProxyWidget::plot()
             QString text = "id: " + QString::fromStdString(_meteoPoints[_outInterpolationPoints[i].index].id) + "\n"
                            + "name: " + QString::fromStdString(_meteoPoints[_outInterpolationPoints[i].index].name) + "\n"
                            + "province: " + QString::fromStdString(_meteoPoints[_outInterpolationPoints[i].index].province);
-
             if (_outInterpolationPoints[i].isMarked)
             {
                 pointListMarked.append(point);
@@ -342,17 +340,34 @@ void Crit3DProxyWidget::plot()
                 pointListSupplemental.append(point);
                 idPointMap3.insert(text, point);
             }
+            point.setY(0);
+            zeroLine.append(point);
         }
     }
 
     chartView->setIdPointMap(idPointMap1, idPointMap2, idPointMap3, idPointMapMarked);
-    chartView->drawScatterSeries(pointListPrimary, pointListSecondary, pointListSupplemental, pointListMarked);
+    chartView->drawScatterSeries(pointListPrimary, pointListSecondary, pointListSupplemental, pointListMarked, zeroLine);
 
     chartView->axisX->setTitleText(comboAxisX.currentText());
     chartView->axisY->setTitleText(comboVariable.currentText());
 
     chartView->axisY->setMin(floor(chartView->axisY->min()));
     chartView->axisY->setMax(ceil(chartView->axisY->max()));
+/*
+    if (chartView->axisY->min() <= 0 && chartView->axisY->max() >= 0)
+    {
+        if (chartView->chart()->series().contains(zeroLine))
+        {
+            chartView->chart()->removeSeries(zeroLine);
+        }
+        chartView->chart()->addSeries(zeroLine);
+        zeroLine->attachAxis(chartView->axisX);
+        zeroLine->attachAxis(chartView->axisY);
+
+
+    }
+
+*/
 
     if (comboAxisX.currentText() == "elevation")
 /*    {

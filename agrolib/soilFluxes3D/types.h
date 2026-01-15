@@ -182,7 +182,7 @@ namespace soilFluxes3D { inline namespace v2
     // ...
 
     //Simulation
-    enum class balanceResult_t : u8_t {stepAccepted, stepRefused, stepHalved};
+    enum class balanceResult_t : u8_t {stepAccepted, stepRefused, stepHalved, stepNan};
     struct balanceData_t
     {
         double waterStorage = 0.;
@@ -214,16 +214,16 @@ namespace soilFluxes3D { inline namespace v2
     struct linkData_t
     {
         linkType_t *linkType = nullptr;
-        SF3Duint_t *linkIndex = nullptr;      /*!< index of linked elements */
-        double *interfaceArea = nullptr;    /*!< interface area [m2] */
+        SF3Duint_t *linkIndex = nullptr;        /*!< index of linked elements */
+        double *interfaceArea = nullptr;        /*!< interface area [m2] */
 
         //water data
-        double *waterFlowSum = nullptr;     /*!< [m3] sum of flow(i,j) */
+        double *waterFlowSum = nullptr;         /*!< [m3] sum of flow(i,j) */
 
         //heat data
-        double *waterFlux = nullptr;                    /*!< [m3 s-1] water volume flux*/
-        double *vaporFlux = nullptr;                    /*!< [kg s-1] vapor mass flux*/
-        double *fluxes[numTotalFluxTypes] = {nullptr};   /*!< [W] for heat fluxes; [m3 s-1] for water fluxes */
+        double *waterFlux = nullptr;                        /*!< [m3 s-1] water volume flux*/
+        double *vaporFlux = nullptr;                        /*!< [kg s-1] vapor mass flux*/
+        double *fluxes[numTotalFluxTypes] = {nullptr};      /*!< [W] for heat fluxes; [m3 s-1] for water fluxes */
     };
 
     //Boundary
@@ -301,8 +301,8 @@ namespace soilFluxes3D { inline namespace v2
         double MBRThreshold = 1e-3;
         double residualTolerance = 1e-10;
 
-        double deltaTmin = 1;       // [s]
-        double deltaTmax = 600;     // [s]
+        double deltaTmin = 1;           // [s]
+        double deltaTmax = 600;         // [s]
         double deltaTcurr = noDataD;
 
         u16_t maxApproximationsNumber = 10;
@@ -311,17 +311,16 @@ namespace soilFluxes3D { inline namespace v2
         WRCModel waterRetentionCurveModel = WRCModel::ModifiedVanGenuchten;
         meanType_t meanType = meanType_t::Logarithmic;
 
-        float lateralVerticalRatio = 10.;    //why float?
-        double heatWeightFactor = 0.5;      //???
+        double lateralVerticalRatio = 10.;
+        double heatWeightFactor = 0.5;          //???
 
-        double CourantWaterThreshold = 0.5; //used for evaluate stability
-        double instabilityFactor = 10.;     //used for evaluate stability
+        double CourantWaterThreshold = 0.5;     //used for evaluate stability
+        double instabilityFactor = 10.;         //used for evaluate stability
 
         bool enableOMP = true;
         u32_t numThreads = std::thread::hardware_concurrency();
     };
 
-    //Move to a different location?
     template<typename E>
     __cudaSpec constexpr auto castToUnderlyingType(E value)
     {
