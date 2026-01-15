@@ -7,20 +7,21 @@
 #include <iostream>
 
 // uncomment to compute test
-//#define TEST
+#define TEST
 
 
 void version()
 {
     std::cout << "CriteriaOutput " << CRITERIA_VERSION << std::endl;
-    std::cout << "Post processing of the agro-hydrological outputs of CRITERIA1D-GEO" << std::endl;
+    std::cout << "Post-processing of agro-hydrological outputs of CRITERIA1D" << std::endl;
 }
 
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
               << "CriteriaOutput <CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|DTX> <projectName.ini> [computationDate]" << std::endl
-              << "computationDate must be in YYYY-MM-DD format, default date is today." << std::endl << std::endl;
+              << "- computationDate must be in YYYY-MM-DD format" << std::endl
+              << "- the default date is today." << std::endl << std::endl;
     std::cout << std::flush;
 }
 
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
                 return -1;
 
             //settingsFileName = "//Icolt-smr/criteria1D/PROJECTS/icolt2025_JJA/seasonalIrriForecast_AL.ini";
-            settingsFileName = "C:/SOFTWARE/AGRO/CRITERIA/PROJECT/BOLLAGRO/test.ini";
+            settingsFileName = "C:/GITHUB/AGRODEVEL/AGRO/CRITERIA/PROJECT/RAINBO/Rainbo.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
             operationStr = "CSV";
         #else
