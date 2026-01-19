@@ -1,13 +1,16 @@
-# Note: define srcarchivename in Travis build only.
-%{!?srcarchivename: %global srcarchivename agroTools-%{version}}
+%global releaseno 2
+
+# Note: define srcarchivename in CI build only.
+%{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           agroTools
 Version:        2.0.0
-Release:        1%{?dist}
+Release:        %{releaseno}%{?dist}
 Summary:        Agro tools
 
 URL:            https://github.com/ARPA-SIMC/agroTools
-Source0:        https://github.com/ARPA-SIMC/agroTools/archive/v%{version}.tar.gz#/%{srcarchivename}.tar.gz
+Source0:        https://github.com/ARPA-SIMC/agroTools/archive/v%{version}-%{releaseno}.tar.gz#/%{srcarchivename}.tar.gz
+
 License:        GPL
 
 BuildRequires:  qt5-qtbase
@@ -67,6 +70,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Mon Jan 19 2026 Daniele Branchini  <dbranchini@arpae.it> - 2.0.0-2
+- Fixed Source format for CI
+
 * Fri Jan 16 2026 Fausto Tomei <ftomei@arpae.it> - 2.0.0-1
 - Release 2.0.0
 
