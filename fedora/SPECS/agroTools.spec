@@ -1,4 +1,4 @@
-%global releaseno 2
+%global releaseno 3
 
 # Note: define srcarchivename in CI build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
@@ -14,7 +14,7 @@ Source0:        https://github.com/ARPA-SIMC/agroTools/archive/v%{version}-%{rel
 License:        GPL
 
 BuildRequires:  qt5-qtbase
-#BuildRequires:  qt5-devel
+BuildRequires:  qt5-qtbase-devel
 BuildRequires:  gdal-libs
 BuildRequires:  gdal-devel
 BuildRequires:  geos
@@ -70,6 +70,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Tue Jan 20 2026 Daniele Branchini  <dbranchini@arpae.it> - 2.0.0-3
+- Fixed requires for fedora
+
 * Mon Jan 19 2026 Daniele Branchini  <dbranchini@arpae.it> - 2.0.0-2
 - Fixed Source format for CI
 
