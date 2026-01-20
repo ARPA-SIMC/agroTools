@@ -14,7 +14,7 @@ Source0:        https://github.com/ARPA-SIMC/agroTools/archive/v%{version}-%{rel
 License:        GPL
 
 BuildRequires:  qt5-qtbase
-BuildRequires:  qt5-devel
+#BuildRequires:  qt5-devel
 BuildRequires:  gdal-libs
 BuildRequires:  gdal-devel
 BuildRequires:  geos
