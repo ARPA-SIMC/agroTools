@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = "//praga2-smr/PRAGA_STABLE/DATA/PROJECT/ARCADIA/importDailyArcadiaProj.ini";
+            settingsFileName = "C:/GITHUB/agrodevel/CLIMA/PRAGA/DATA/PROJECT/importECMWFifs/importECMWFifsSettings.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -57,6 +57,12 @@ int main(int argc, char *argv[])
     // import value from csv file
     QDir csvDir(import.getCsvFilePath());
     QStringList listOfCsv = csvDir.entryList(QStringList() << "*.csv", QDir::Files);    // get a list of file
+    if (listOfCsv.isEmpty())
+    {
+        import.logger.writeInfo ("No csv file to read.");
+        return CSV2DBGRID_OK;
+    }
+
     QString fileName;
     QList<QString> varList = import.getMeteoVarList();
     bool isFirst = true;

@@ -214,7 +214,12 @@ int Import::readSettings()
     // check variables list
     for (int i = 0; i < meteoVarList.size(); i++)
     {
-        meteoVariable meteoVar = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, meteoVarList[i].toStdString());
+        meteoVariable meteoVar;
+        if (isDaily)
+            meteoVar = getKeyMeteoVarMeteoMap(MapDailyMeteoVarToString, meteoVarList[i].toStdString());
+        else
+            meteoVar = getKeyMeteoVarMeteoMap(MapHourlyMeteoVarToString, meteoVarList[i].toStdString());
+
         if (meteoVar == noMeteoVar)
         {
             logger.writeError("Wrong variable in settings file: " + meteoVarList[i]);
