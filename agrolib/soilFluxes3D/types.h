@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <limits>
 #include <thread>
+#include <optional>
 
 #include "commonConstants.h"
 #include "macro.h"
@@ -35,7 +36,8 @@ namespace soilFluxes3D { inline namespace v2
     enum class meanType_t : u8_t {Arithmetic, Geometric, Logarithmic};
 
     //Error Status
-    enum class SF3Derror_t : u8_t {SF3Dok, IndexError, MemoryError, TopographyError, BoundaryError, MissingDataError, ParameterError, SolverError, FileError};
+    enum class SF3Derror_t : u8_t {SF3Dok, IndexError, MemoryError, TopographyError, BoundaryError,
+                                    MissingDataError, ParameterError, SolverError, FileError};
 
     inline constexpr __cudaSpec double getDoubleErrorValue(const SF3Derror_t errorCode)
     {
@@ -94,19 +96,8 @@ namespace soilFluxes3D { inline namespace v2
     //Process implemented
     enum class processType : u8_t {Water, Heat, Solutes};
 
-    //Structure
-    /*enum class boundaryType_t : u8_t {NoBoundary = BOUNDARY_NONE,
-                                       Runoff = BOUNDARY_RUNOFF,
-                                       FreeDrainage = BOUNDARY_FREEDRAINAGE,
-                                       FreeLateraleDrainage = BOUNDARY_FREELATERALDRAINAGE,
-                                       PrescribedTotalWaterPotential = BOUNDARY_PRESCRIBEDTOTALPOTENTIAL,
-                                       Urban = BOUNDARY_URBAN,
-                                       Road = BOUNDARY_ROAD,
-                                       Culvert = BOUNDARY_CULVERT,
-                                       HeatSurface = BOUNDARY_HEAT_SURFACE,
-                                       SoluteFlux = BOUNDARY_SOLUTEFLUX};*/
-
-    enum class boundaryType_t : u8_t {NoBoundary, Runoff, FreeDrainage, FreeLateraleDrainage, PrescribedTotalWaterPotential, Urban, Road, Culvert, HeatSurface, SoluteFlux};
+    enum class boundaryType_t : u8_t {NoBoundary, Runoff, FreeDrainage, FreeLateraleDrainage,
+                                    PrescribedTotalWaterPotential, Urban, Road, Culvert, HeatSurface, SoluteFlux};
 
     enum class linkType_t : u8_t {NoLink, Up, Down, Lateral};
 
@@ -159,7 +150,6 @@ namespace soilFluxes3D { inline namespace v2
 
         //Courant data
         double *partialCourantWaterLevels = nullptr;
-        double CourantWaterLevel = 0.;
     };
 
     struct culvertData_t
@@ -266,6 +256,8 @@ namespace soilFluxes3D { inline namespace v2
         SF3Duint_t numNodes = 0;
         SF3Duint_t numLayers = 0;
 
+        double CourantWaterLevel = 0.;
+
         //Topology data
         double *size = nullptr;                             //volume_area
         double *x = nullptr, *y = nullptr, *z = nullptr;    //x, y, z
@@ -327,6 +319,29 @@ namespace soilFluxes3D { inline namespace v2
         static_assert(std::is_enum_v<E>, "type required to be enum to be casted");
         return static_cast<std::underlying_type_t<E>>(value);
     }
+
+
+    struct SolverParametersPartial
+    {
+        std::optional<double> MBRThreshold;
+        std::optional<double> residualTolerance;
+
+        std::optional<double> deltaTmin;
+        std::optional<double> deltaTmax;
+        std::optional<double> deltaTcurr;
+
+        std::optional<u16_t> maxApproximationsNumber;
+        std::optional<u16_t> maxIterationsNumber;
+
+        std::optional<WRCModel> waterRetentionCurveModel;
+        std::optional<meanType_t> meanType;
+
+        std::optional<float> lateralVerticalRatio;
+
+        std::optional<bool> enableOMP;
+        std::optional<u32_t> numThreads;
+    };
+
+    #define updateFromPartial(total, partial, field) if (partial.field) {total.field = *(partial.field);}
 }}
 
-#include "types_opt.h"

@@ -354,8 +354,6 @@ namespace soilFluxes3D::v2
             #endif
         }
 
-        //Versione c++20
-        //solver->updateParameters(SolverParametersPartial{.numThreads = nrThreads});
         return nrThreads;
     }
 
@@ -479,14 +477,9 @@ namespace soilFluxes3D::v2
         paramTemp.maxIterationsNumber = maxIterationNumber;
         solver->updateParameters(paramTemp);
 
-        //Versione c++20
-        // solver->updateParameters(SolverParametersPartial{.MBRThreshold = std::pow(10.0, -MBRThresholdExponent),
-        //                                                  .residualTolerance = std::pow(10.0, -ResidualToleranceExponent),
-        //                                                  .deltaTmin = minDeltaT, .deltaTmax = maxDeltaT, .deltaTcurr = maxDeltaT,
-        //                                                  .maxApproximationsNumber = maxApproximationsNumber, .maxIterationsNumber = maxIterationNumber});
-
         return SF3Derror_t::SF3Dok;
     }
+
 
     /*!
      * \brief sets the hydraulic proprerties used by the solver
@@ -893,7 +886,7 @@ namespace soilFluxes3D::v2
 
     /*!
      * \brief sets the nodeIndex node water sink source
-     * \param waterSinkSource  [m3 sec-1]
+     * \param waterSinkSource  [m3 s-1]
      * \return Ok/Error
      */
     SF3Derror_t setNodeWaterSinkSource(SF3Duint_t nodeIndex, double waterSinkSource)
@@ -1239,7 +1232,7 @@ namespace soilFluxes3D::v2
     }
 
     /*!
-     * \brief sets the nodeIndex node temperature
+     * \brief sets the node temperature
      * \return Ok/Error
      */
     SF3Derror_t setNodeTemperature(SF3Duint_t nodeIndex, double temperature)
@@ -1257,7 +1250,7 @@ namespace soilFluxes3D::v2
     }
 
     /*!
-     * \brief sets the nodeIndex node boundary fixed temperature
+     * \brief sets the node boundary fixed temperature
      * \return Ok/Error
      */
     SF3Derror_t setNodeBoundaryFixedTemperature(SF3Duint_t nodeIndex, double fixedTemperature, double depth)
