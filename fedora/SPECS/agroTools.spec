@@ -1,4 +1,4 @@
-%global releaseno 3
+%global releaseno 4
 
 # Note: define srcarchivename in CI build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
@@ -70,6 +70,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Thu Jan 22 2026 Fausto Tomei  <ftomei@arpae.it> - 2.0.0-4
+- Fixed bug in csv2dbGrid
+
 * Tue Jan 20 2026 Daniele Branchini  <dbranchini@arpae.it> - 2.0.0-3
 - Fixed requires for fedora
 
