@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            //settingsFileName = "//Icolt-smr/criteria1D/PROJECTS/icolt2025_JJA/seasonalIrriForecast_AL.ini";
             settingsFileName = "C:/GITHUB/AGRODEVEL/AGRO/CRITERIA/PROJECT/RAINBO/Rainbo.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
             operationStr = "CSV";
