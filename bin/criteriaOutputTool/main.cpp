@@ -12,16 +12,16 @@
 
 void version()
 {
-    std::cout << "CriteriaOutput " << CRITERIA_VERSION << std::endl;
-    std::cout << "Post-processing of agro-hydrological outputs of CRITERIA1D" << std::endl;
+    std::cout << "CriteriaOutput " << CRITERIA_OUTPUT_VERSION << std::endl;
+    std::cout << "Post-processing of CRITERIA1D agro-hydrological output" << std::endl;
 }
 
 void usage()
 {
     std::cout << std::endl << "Usage:" << std::endl
               << "CriteriaOutput <CSV|SHAPEFILE|MAPS|NETCDF|AGGREGATION|DTX> <projectName.ini> [computationDate]" << std::endl
-              << "- computationDate must be in YYYY-MM-DD format" << std::endl
-              << "- the default date is today." << std::endl << std::endl;
+              << "* computationDate must be in YYYY-MM-DD format" << std::endl
+              << "* the default date is today" << std::endl << std::endl;
     std::cout << std::flush;
 }
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "C:/GITHUB/AGRODEVEL/AGRO/CRITERIA/PROJECT/RAINBO/Rainbo.ini";
+            settingsFileName = "\\\\icolt-smr\\CRITERIA1D\\PROJECTS\\midasPo\\pratiStabili_C3.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
             operationStr = "CSV";
         #else
