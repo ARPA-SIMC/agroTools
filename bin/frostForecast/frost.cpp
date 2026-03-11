@@ -543,7 +543,7 @@ int Frost::createCsvFile(QString id)
         logger.writeInfo("Output file: " + outputCsvFileName);
     }
 
-    QString header = "dateTime,TAVG,FORECAST,FORECAST_MIN, FORECAST_MAX";
+    QString header = "dateTime,TAVG,FORECAST,FORECAST_MIN,FORECAST_MAX";
     QTextStream out(&outputFile);
     out << header << "\n";
     for (int i = 0; i<myObsData.size(); i++)
