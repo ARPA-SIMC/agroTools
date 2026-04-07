@@ -616,7 +616,7 @@ bool Project::loadParameters(QString parametersFileName)
                 radSettings.setShadowing(parametersSettings->value("shadowing").toBool());
 
             if (parametersSettings->contains("linke"))
-                radSettings.setLinke(parametersSettings->value("linke").toFloat());
+                radSettings.setLinkeDefault(parametersSettings->value("linke").toFloat());
 
             if (parametersSettings->contains("albedo"))
                 radSettings.setAlbedo(parametersSettings->value("albedo").toFloat());
@@ -1480,24 +1480,36 @@ bool Project::deleteMeteoGridDB()
 }
 
 
-bool Project::loadAggregationdDB(QString dbName)
+bool Project::loadAggregationDB(QString dbName)
 {
-    if (dbName == "") return false;
+    if (dbName == "")
+    {
+        errorString = "Missing db filename.";
+        return false;
+    }
+
+    if (aggregationDbHandler != nullptr)
+        delete aggregationDbHandler;
 
     dbAggregationFileName = dbName;
     dbName = getCompleteFileName(dbName, PATH_PROJECT);
 
     aggregationDbHandler = new Crit3DAggregationsDbHandler(dbName);
-    if (aggregationDbHandler->error() != "")
+
+    if (aggregationDbHandler->isError())
     {
-        logError(aggregationDbHandler->error());
+        errorString = aggregationDbHandler->error();
         return false;
     }
+
     if (! aggregationDbHandler->loadVariableProperties())
     {
+        errorString = aggregationDbHandler->error();
         return false;
     }
+
     aggregationPath = QFileInfo(dbAggregationFileName).absolutePath();
+
     return true;
 }
 
@@ -1548,9 +1560,9 @@ bool Project::loadMeteoPointsData(const QDate& firstDate, const QDate& lastDate,
             }
 
             // safe update
-            if (showInfo && omp_get_thread_num() == 0 && (i%step) == 0)
+            if (showInfo && omp_get_thread_num() == 0 && ((i*nrThreads)%step) == 0)
             {
-                updateProgressBar(i);
+                updateProgressBar(i*nrThreads);
             }
         }
 
@@ -2526,7 +2538,6 @@ bool Project::loadGlocalWeightMaps(std::vector<Crit3DMacroArea> &myAreas, bool i
         }
 
         //se  griglia, fai resampling del file
-        gis::Crit3DRasterGrid *newMacroAreasGrid = new gis::Crit3DRasterGrid();
         if (isGrid)
         {
             for (unsigned row = 0; row < unsigned(meteoGridDbHandler->gridStructure().header().nrRows); row++)
@@ -2536,10 +2547,8 @@ bool Project::loadGlocalWeightMaps(std::vector<Crit3DMacroArea> &myAreas, bool i
                             meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->glocalWeights.resize(myAreas.size());
                         }
 
-            meteoGridDbHandler->meteoGrid()->assignGridGlocalWeightValues(macroAreasGrid, i);
-            //
+            meteoGridDbHandler->meteoGrid()->assignGridGlocalWeightValues(macroAreasGrid, (int)i);
         }
-
 
         for (int row = 0; row < nrRows; row++)
         {
@@ -2549,14 +2558,12 @@ bool Project::loadGlocalWeightMaps(std::vector<Crit3DMacroArea> &myAreas, bool i
                 {
                     if (meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->active)
                         myValue = meteoGridDbHandler->meteoGrid()->meteoPoints()[row][col]->glocalWeights[i];
-
                 }
                 else
                 {
                     DEM.getXY(row, col, myX, myY);
                     myValue = macroAreasGrid->getValueFromXY(myX, myY); //solo per dem
                 }
-
 
                 if (! isEqual(myValue, NODATA) && ! isEqual(myValue, 0))
                 {
@@ -2565,7 +2572,6 @@ bool Project::loadGlocalWeightMaps(std::vector<Crit3DMacroArea> &myAreas, bool i
                 }
             }
         }
-
 
         if (areaCells.size() > 0)
             nrAreasWithCells++;
@@ -2587,6 +2593,7 @@ bool Project::loadGlocalWeightMaps(std::vector<Crit3DMacroArea> &myAreas, bool i
 
     return true;
 }
+
 
 bool Project::loadGlocalStationsCsv(QString fileName, std::vector<std::vector<std::string>> &areaPoints)
 {
@@ -3975,7 +3982,7 @@ void Project::saveRadiationParameters()
         parametersSettings->setValue("tilt_mode", QString::fromStdString(getKeyStringTiltMode(radSettings.getTiltMode())));
         parametersSettings->setValue("real_sky", radSettings.getRealSky());
         parametersSettings->setValue("shadowing", radSettings.getShadowing());
-        parametersSettings->setValue("linke", QString::number(double(radSettings.getLinke())));
+        parametersSettings->setValue("linke", QString::number(double(radSettings.getLinkeDefault())));
         parametersSettings->setValue("albedo", QString::number(double(radSettings.getAlbedo())));
         parametersSettings->setValue("tilt", QString::number(double(radSettings.getTilt())));
         parametersSettings->setValue("aspect", QString::number(double(radSettings.getAspect())));
@@ -4202,7 +4209,7 @@ bool Project::loadProject()
 
     if (dbAggregationFileName != "")
     {
-        if (! loadAggregationdDB(_projectPath + "/" + dbAggregationFileName))
+        if (! loadAggregationDB(_projectPath + "/" + dbAggregationFileName))
         {
             errorString = "load Aggregation DB failed";
             errorType = ERROR_DBPOINT;
@@ -4827,8 +4834,7 @@ bool Project::setActiveStateWithCriteria(bool isActive)
         return false;
     }
 
-    bool isSelect = false;
-    DialogSelectionMeteoPoint dialogPointSelection(isActive, isSelect, meteoPointsDbHandler);
+    DialogSelectionMeteoPoint dialogPointSelection("Active", isActive, meteoPointsDbHandler);
     if (dialogPointSelection.result() != QDialog::Accepted)
         return false;
 
@@ -6226,10 +6232,10 @@ void Project::getMeteoPointsCurrentValues(std::vector<float> &validValues)
 }
 
 
-bool Project::setSelectedStatePointList(QString fileName)
+bool Project::setSelectedStatePointList(QString fileName, bool isSelect, bool isShowVariable)
 {
     QList<QString> pointList = readListSingleColumn(fileName, errorString);
-    if (! selectPointList(pointList))
+    if (! selectPointList(pointList, isSelect, isShowVariable))
     {
         logWarning("No points to select.");
         return false;
@@ -6239,26 +6245,29 @@ bool Project::setSelectedStatePointList(QString fileName)
 }
 
 
-bool Project::selectPointList(const QList<QString> &pointList)
+bool Project::selectPointList(const QList<QString> &pointList, bool isSelect, bool isShowVariable)
 {
     if (pointList.size() == 0)
         return false;
 
-    int nrValidPoints = 0;
+    int nrPoints = 0;
     for (int i = 0; i < meteoPoints.size(); i++)
     {
         if (pointList.contains(QString::fromStdString(meteoPoints[i].id)))
         {
-            meteoPoints[i].selected = true;
-            nrValidPoints++;
+            if (! isShowVariable || ! isEqual(meteoPoints[i].currentValue, NODATA))
+            {
+                meteoPoints[i].selected = isSelect;
+                ++nrPoints;
+            }
         }
     }
 
-    return (nrValidPoints > 0);
+    return (nrPoints > 0);
 }
 
 
-bool Project::setSelectedStateWithCriteria()
+bool Project::setSelectedStateWithCriteria(bool isSelect, bool isShowVariable)
 {
     if (! meteoPointsLoaded)
     {
@@ -6266,20 +6275,16 @@ bool Project::setSelectedStateWithCriteria()
         return false;
     }
 
-    bool isActive = false;
-    bool isSelect = true;
-    DialogSelectionMeteoPoint dialogPointSelection(isActive, isSelect, meteoPointsDbHandler);
+    DialogSelectionMeteoPoint dialogPointSelection("Select", isSelect, meteoPointsDbHandler);
     if (dialogPointSelection.result() != QDialog::Accepted)
-    {
         return false;
-    }
 
     QString selection = dialogPointSelection.getSelection();
     QString operation = dialogPointSelection.getOperation();
     QString item = dialogPointSelection.getItem();
 
     QString condition;
-    QList<QString> selectedPointsList;
+    QList<QString> pointsList;
 
     if (operation == "Like")
     {
@@ -6292,7 +6297,7 @@ bool Project::setSelectedStateWithCriteria()
 
     if (selection != "DEM distance [m]")
     {
-        if (! meteoPointsDbHandler->getPointListWithCriteria(selectedPointsList, condition))
+        if (! meteoPointsDbHandler->getPointListWithCriteria(pointsList, condition))
         {
             logError(meteoPointsDbHandler->getErrorString());
             return false;
@@ -6319,41 +6324,41 @@ bool Project::setSelectedStateWithCriteria()
             {
                 if (isEqual(distance, item.toFloat()))
                 {
-                    selectedPointsList.append(QString::fromStdString(meteoPoints[i].id));
+                    pointsList.append(QString::fromStdString(meteoPoints[i].id));
                 }
             }
             else if (operation == "!=")
             {
                 if (! isEqual(distance, item.toFloat()))
                 {
-                    selectedPointsList.append(QString::fromStdString(meteoPoints[i].id));
+                    pointsList.append(QString::fromStdString(meteoPoints[i].id));
                 }
             }
             else if (operation == ">")
             {
                 if (distance > item.toFloat())
                 {
-                    selectedPointsList.append(QString::fromStdString(meteoPoints[i].id));
+                    pointsList.append(QString::fromStdString(meteoPoints[i].id));
                 }
             }
             else if (operation == "<")
             {
                 if (distance < item.toFloat())
                 {
-                    selectedPointsList.append(QString::fromStdString(meteoPoints[i].id));
+                    pointsList.append(QString::fromStdString(meteoPoints[i].id));
                 }
             }
         }
         closeProgressBar();
     }
 
-    if (selectedPointsList.isEmpty())
+    if (pointsList.isEmpty())
     {
         logWarning("No point matches your requirements.");
         return false;
     }
 
-    if (! selectPointList(selectedPointsList))
+    if (! selectPointList(pointsList, isSelect, isShowVariable))
     {
         logWarning("No points to select");
         return false;
@@ -6480,6 +6485,7 @@ bool Project::showMeteoWidgetMultiplePoints()
 
     return true;
 }
+
 
 bool Project::getProjectList(QList<QString> &projectList)
 {

@@ -1,4 +1,5 @@
 #include <math.h>
+#include <algorithm>
 
 #include "commonConstants.h"
 #include "basicMath.h"
@@ -7,6 +8,8 @@
 #include "interpolationPoint.h"
 #include "interpolationSettings.h"
 #include "statistics.h"
+#include "meteo.h"
+
 
 float findThreshold(meteoVariable myVar, Crit3DMeteoSettings* meteoSettings,
                     float value, float stdDev, float nrStdDev, float avgDeltaZ, float minDistance)
@@ -16,9 +19,9 @@ float findThreshold(meteoVariable myVar, Crit3DMeteoSettings* meteoSettings,
     if (   myVar == precipitation
         || myVar == dailyPrecipitation)
     {
-        distWeight = MAXVALUE(1.f, minDistance / 2000.f);
+        distWeight = std::max(1.f, minDistance / 2000.f);
         if (value <= meteoSettings->getRainfallThreshold())
-            threshold = MAXVALUE(5.f, distWeight + stdDev * (nrStdDev + 1));
+            threshold = std::max(5.f, distWeight + stdDev * (nrStdDev + 1));
         else
             return 900.f;
     }
@@ -32,7 +35,7 @@ float findThreshold(meteoVariable myVar, Crit3DMeteoSettings* meteoSettings,
         zWeight = avgDeltaZ / 100.f;
         distWeight = minDistance / 1000.f;
 
-        threshold = MINVALUE(MINVALUE(distWeight + threshold + zWeight, 12.f) + stdDev * nrStdDev, 15.f);
+        threshold = std::min(std::min(distWeight + threshold + zWeight, 12.f) + stdDev * nrStdDev, 15.f);
     }
     else if (   myVar == airRelHumidity
              || myVar == dailyAirRelHumidityMax
@@ -56,20 +59,23 @@ float findThreshold(meteoVariable myVar, Crit3DMeteoSettings* meteoSettings,
         distWeight = minDistance / 2000.f;
         threshold += zWeight + distWeight + stdDev * nrStdDev;
     }
-    else if (   myVar == globalIrradiance)
+    else if (myVar == globalIrradiance)
     {
         threshold = 500;
         distWeight = minDistance / 5000.f;
         threshold += distWeight + stdDev * (nrStdDev + 1.f);
     }
-    else if (   myVar ==  dailyGlobalRadiation)
+    else if (myVar ==  dailyGlobalRadiation)
     {
         threshold = 10;
         distWeight = minDistance / 5000.f;
         threshold += distWeight + stdDev * (nrStdDev + 1.f);
     }
     else if (myVar == atmTransmissivity)
-        threshold = MAXVALUE(stdDev * nrStdDev, 0.25f);
+    {
+        distWeight = minDistance / 5000.f;
+        threshold = std::max(stdDev * std::max(nrStdDev, distWeight), 0.3f);
+    }
     else
         threshold = stdDev * nrStdDev;
 
@@ -418,7 +424,7 @@ bool checkData(Crit3DQuality* myQuality, meteoVariable myVar, std::vector<Crit3D
     if (meteoPoints.empty())
         return false;
 
-    if (myVar == elaboration)
+    if (myVar == elaborationVar)
     {
         // assign data
         for (int i = 0; i < meteoPoints.size(); i++)
@@ -430,7 +436,7 @@ bool checkData(Crit3DQuality* myQuality, meteoVariable myVar, std::vector<Crit3D
                 meteoPoints[i].quality = quality::missing_data;
         }
     }
-    else if (myVar == anomaly)
+    else if (myVar == anomalyVar)
     {
         // assign data
         for (int i = 0; i < meteoPoints.size(); i++)
