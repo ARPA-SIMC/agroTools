@@ -4,12 +4,14 @@
 #include "utilities.h"
 #include "frost.h"
 
+#define FROST_VERSION "v1.0"
+
 // uncomment to execute test
 // #define TEST
 
 void usage()
 {
-    std::cout << "frostForecast" << std::endl
+    std::cout << "frostForecast " << FROST_VERSION << std::endl
               << "Usage: frostForecast <project.ini> [-calibrate] [-date]" << std::endl;
     std::cout << std::flush;
 }
