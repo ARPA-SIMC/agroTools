@@ -10,13 +10,12 @@ namespace soilFluxes3D::v2
     {
         private:
             MatrixCPU matrixA;
-            VectorCPU vectorB, vectorX;
+            VectorCPU vectorB, vectorX, vectorNewX;
             VectorCPU vectorC;
 
             bool waterMainLoop(double maxTimeStep, double& acceptedTimeStep);
             balanceResult_t waterApproximationLoop(double deltaT);
 
-            bool isLinked(bool& isPrevious, double& matrixElement, SF3Duint_t &matrixIndex, SF3Duint_t nodeIndex, u8_t linkIndex);
             void computeLinearSystemElement(SF3Duint_t row, u8_t approxNum, double deltaT);
             void computeDiagonalElement(SF3Duint_t row, double deltaT);
             void preconditioningMatrix();
@@ -24,7 +23,7 @@ namespace soilFluxes3D::v2
             bool checkSurfaceElements(double deltaT);
             bool checkCourant(double deltaT);
 
-            void heatLoop(double timeStepHeat, double timeStepWater);
+            bool heatLoop(double timeStepHeat, double timeStepWater);
 
             bool solveLinearSystem(u8_t approximationNr, processType computationType) override;
             bool linealSolver(u8_t approximationNr);

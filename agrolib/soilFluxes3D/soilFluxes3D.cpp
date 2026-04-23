@@ -143,7 +143,7 @@ namespace soilFluxes3D::v2
         hostAlloc(nodeGrid.waterData.invariantFluxes, nrNodes);
         // only surface
         hostAlloc(nodeGrid.waterData.partialCourantWater, nrSurfaceNodes);
-        // hostAlloc(nodeGrid.culvertPtr, nrSurfaceNodes);
+        //hostAlloc(nodeGrid.culvertPtr, nrSurfaceNodes);
 
         // Heat data
         if(isComputeHeat)
@@ -343,11 +343,15 @@ namespace soilFluxes3D::v2
         if (nrThreads < 1 || nrThreads > nrHWthreads)
             nrThreads = nrHWthreads;
 
-        SolverParametersPartial paramTemp;
-        paramTemp.numThreads = nrThreads;
         if(solver)
         {
+            SolverParametersPartial paramTemp;
+            paramTemp.numThreads = nrThreads;
+            if (nrThreads == 1)
+                paramTemp.enableOMP = false;
+
             solver->updateParameters(paramTemp);
+
             #ifndef CUDA_ENABLED
                 CPUSolverObject.setThreads();
             #endif
@@ -366,6 +370,14 @@ namespace soilFluxes3D::v2
             solver->useLineal = value;
     }
 
+    /*!
+     *  \brief sets lineal method
+    */
+    void setLinealMethod(int value)
+    {
+        if(solver)
+            solver->linealMethod = value;
+    }
 
     /*!
      * \brief sets the soil properties of the nrSoil-nrHorizon soil type
@@ -456,8 +468,8 @@ namespace soilFluxes3D::v2
         if (maxDeltaT < minDeltaT)
             maxDeltaT = minDeltaT;
 
-        if (maxIterationNumber < 10)
-            maxIterationNumber = 10;
+        if (maxIterationNumber < 20)
+            maxIterationNumber = 20;
         if (maxIterationNumber > MAX_NUMBER_ITERATIONS)
             maxIterationNumber = MAX_NUMBER_ITERATIONS;
 
@@ -473,8 +485,8 @@ namespace soilFluxes3D::v2
 
         if (MBRThresholdExponent < 1)
             MBRThresholdExponent = 1;
-        if (MBRThresholdExponent > 6)
-            MBRThresholdExponent = 6;
+        if (MBRThresholdExponent > 9)
+            MBRThresholdExponent = 9;
 
         SolverParametersPartial paramTemp;
         paramTemp.MBRThreshold = std::pow(10.0, -MBRThresholdExponent);
@@ -765,8 +777,8 @@ namespace soilFluxes3D::v2
     }
 
     /*!
-     * \brief sets the nodeIndex node water content and updates node pressure head and saturation degree accordingly
-     * \param waterContent  [m] surface - [m3 m-3] sub-surface
+     * \brief sets the node water content and updates node pressure head and saturation degree accordingly
+     * \param waterContent: water level on surface [m] - volumetric water content in the sub-surface [m3 m-3]
      * \return Ok/Error
      */
     SF3Derror_t setNodeWaterContent(SF3Duint_t nodeIndex, double waterContent)
@@ -782,6 +794,7 @@ namespace soilFluxes3D::v2
 
         if(nodeGrid.surfaceFlag[nodeIndex])
         {
+            // surface water level [m]
             nodeGrid.waterData.pressureHead[nodeIndex] = nodeGrid.z[nodeIndex] + waterContent;
             nodeGrid.waterData.oldPressureHead[nodeIndex] = nodeGrid.waterData.pressureHead[nodeIndex];
             nodeGrid.waterData.saturationDegree[nodeIndex] = 1.;
@@ -789,6 +802,7 @@ namespace soilFluxes3D::v2
         }
         else
         {
+            // volumetric water content in the sub-surface [m3 m-3]
             if(waterContent > 1.)
                 return SF3Derror_t::ParameterError;
 
@@ -928,7 +942,7 @@ namespace soilFluxes3D::v2
     }
 
     /*!
-     * \brief gets the nodeIndex sub-surface node maximum volumetric water content
+     * \brief gets the soil node maximum volumetric water content
      * \return theta_sat (maximum volumetric water content) [m3 m-3]
      */
     double getNodeMaximumWaterContent(SF3Duint_t nodeIndex)
@@ -944,6 +958,26 @@ namespace soilFluxes3D::v2
 
         return nodeGrid.soilSurfacePointers[nodeIndex].soilPtr->Theta_s;
     }
+
+
+    /*!
+     * \brief gets the soil node minimum volumetric water content
+     * \return theta_r (minimum volumetric water content) [m3 m-3]
+     */
+    double getNodeMinimumWaterContent(SF3Duint_t nodeIndex)
+    {
+        if(!nodeGrid.isInitialized)
+            return getDoubleErrorValue(SF3Derror_t::MemoryError);
+
+        if(nodeIndex >= nodeGrid.nrNodes)
+            return getDoubleErrorValue(SF3Derror_t::IndexError);
+
+        if(nodeGrid.surfaceFlag[nodeIndex])
+            return getDoubleErrorValue(SF3Derror_t::IndexError);
+
+        return nodeGrid.soilSurfacePointers[nodeIndex].soilPtr->Theta_r;
+    }
+
 
     /*!
      * \brief gets the nodeIndex node available water content
@@ -1749,18 +1783,18 @@ namespace soilFluxes3D::v2
             dtHeat = dtWater;
             saveWaterFluxValues(dtHeat, dtWater);
 
-            double dtHeatAccumulator = 0.;
-            while(dtHeatAccumulator < dtWater)
+            double dtHeatSum = 0.;
+            while(dtHeatSum < dtWater)
             {
-                dtHeat = std::min(dtHeat, dtWater - dtHeatAccumulator);
+                dtHeat = std::min(dtHeat, dtWater - dtHeatSum);
 
                 double reducedTimeStep;
-                while(!updateBoundaryHeatData(dtHeat, reducedTimeStep))
+                while(! updateBoundaryHeatData(dtHeat, reducedTimeStep))
                     dtHeat = reducedTimeStep;
 
                 solver->run(dtHeat, dtWater, processType::Heat);
 
-                dtHeatAccumulator += dtHeat;
+                dtHeatSum += dtHeat;
             }
         }
 

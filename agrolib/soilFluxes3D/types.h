@@ -95,7 +95,7 @@ namespace soilFluxes3D { inline namespace v2
     //Process implemented
     enum class processType : u8_t {Water, Heat, Solutes};
 
-    enum class boundaryType_t : u8_t {NoBoundary, Runoff, FreeDrainage, FreeLateraleDrainage,
+    enum class boundaryType_t : u8_t {NoBoundary, Runoff, FreeDrainage, FreeLateralDrainage,
                                     PrescribedTotalWaterPotential, Urban, Road, Culvert, HeatSurface, SoluteFlux};
 
     enum class linkType_t : u8_t {NoLink, Up, Down, Lateral};
@@ -135,19 +135,19 @@ namespace soilFluxes3D { inline namespace v2
     enum class WRCModel : u8_t {VanGenuchten, ModifiedVanGenuchten, Campbell};
     struct waterData_t
     {
-        double *saturationDegree = nullptr;   //Se
-        double *waterConductivity = nullptr;  //k
-        double *waterFlow = nullptr;          //Qw
-        double *pressureHead = nullptr;       //H
-        double *waterSinkSource = nullptr;    //waterSinkSource
-        double *pond = nullptr;               //pond
-        double *invariantFluxes = nullptr;    //invariantFlux
+        double *saturationDegree = nullptr;     // [-]
+        double *waterConductivity = nullptr;    // [m s-1]
+        double *waterFlow = nullptr;            // [m3 s-1]
+        double *pressureHead = nullptr;         // [m]
+        double *waterSinkSource = nullptr;      // [m3 s-1]
+        double *pond = nullptr;                 // [m]
+        double *invariantFluxes = nullptr;      // [m3 s-1]
 
-        //Temp variables
-        double *oldPressureHead = nullptr;    //oldH
-        double *bestPressureHead = nullptr;   //bestH
+        // temporary variables
+        double *oldPressureHead = nullptr;      // [m]
+        double *bestPressureHead = nullptr;     // [m]
 
-        //Courant data
+        // only surface (Courant)
         double *partialCourantWater = nullptr;
     };
 
@@ -303,7 +303,7 @@ namespace soilFluxes3D { inline namespace v2
         WRCModel waterRetentionCurveModel = WRCModel::ModifiedVanGenuchten;
         meanType_t meanType = meanType_t::Logarithmic;
 
-        double lateralVerticalRatio = 10.;
+        double lateralVerticalRatio = 4.;       // [-] default
         double heatWeightFactor = 0.5;
 
         double CourantWaterThreshold = 0.5;     // used for evaluate stability

@@ -20,6 +20,7 @@ namespace soilFluxes3D { inline namespace v2
 
     u32_t setThreadsNumber(u32_t nrThreads);
     void setUseLineal(bool value);
+    void setLinealMethod(int value);
 
     //Create types
     SF3Derror_t setSoilProperties(u16_t nrSoil, u8_t nrHorizon, double VG_alpha, double VG_n, double VG_m,
@@ -53,6 +54,7 @@ namespace soilFluxes3D { inline namespace v2
     //Get water data
     double getNodeWaterContent(SF3Duint_t nodeIndex);
     double getNodeMaximumWaterContent(SF3Duint_t nodeIndex);
+    double getNodeMinimumWaterContent(SF3Duint_t nodeIndex);
     double getNodeAvailableWaterContent(SF3Duint_t nodeIndex);
     double getNodeWaterDeficit(SF3Duint_t nodeIndex, double fieldCapacity);
     double getNodeDegreeOfSaturation(SF3Duint_t nodeIndex);
