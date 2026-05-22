@@ -38,6 +38,7 @@ bool initializeRasterFromShape(const Crit3DShapeHandler &shapeHandler, gis::Crit
     xmin = round(xmin * 10.) * 0.1;
     ymin = round(ymin * 10.) * 0.1;
     header.cellSize = cellSize;
+    header.invCellSize = 1.0 / cellSize;
     header.llCorner.x = xmin;
     header.llCorner.y = ymin;
     header.nrRows = int(floor((ymax - ymin) / cellSize)) + 1;
@@ -50,8 +51,8 @@ bool initializeRasterFromShape(const Crit3DShapeHandler &shapeHandler, gis::Crit
 
 bool fillRasterWithShapeNumber(gis::Crit3DRasterGrid &raster, const Crit3DShapeHandler &shapeHandler)
 {
-    int nrShape = shapeHandler.getShapeCount();
-    if (nrShape <= 0)
+    int nrShapes = shapeHandler.getShapeCount();
+    if (nrShapes <= 0)
     {
         // void shapefile
         return false;
@@ -64,7 +65,7 @@ bool fillRasterWithShapeNumber(gis::Crit3DRasterGrid &raster, const Crit3DShapeH
 
     raster.emptyGrid();
 
-    for (int shapeIndex = 0; shapeIndex < nrShape; shapeIndex++)
+    for (int shapeIndex = 0; shapeIndex < nrShapes; shapeIndex++)
     {
         shapeHandler.getShape(shapeIndex, object);
 
