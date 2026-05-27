@@ -43,9 +43,9 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "\\\\icolt-smr\\CRITERIA1D\\PROJECTS\\midasPo\\pratiStabili_C3.ini";
+            settingsFileName = "\\\\icolt-smr\\CRITERIA1D\\PROJECTS\\icolt2026_JJA\\seasonalIrriClimate_C4.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operationStr = "CSV";
+            operationStr = "AGGREGATION";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
