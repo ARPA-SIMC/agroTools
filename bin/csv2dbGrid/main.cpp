@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = "C:/GITHUB/agrodevel/CLIMA/PRAGA/DATA/PROJECT/importECMWFifs/importECMWFifsSettings.ini";
+            settingsFileName = "//icolt-smr/CRITERIA1D/PROJECTS/icolt_CRATER/wg/importCRATER.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
