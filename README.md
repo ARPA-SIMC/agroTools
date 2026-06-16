@@ -1,7 +1,7 @@
 [![Build Status](https://simc.arpae.it/moncic-ci/agroTools/rocky9.png)](https://simc.arpae.it/moncic-ci/agroTools/)
 [![Build Status](https://simc.arpae.it/moncic-ci/agroTools/rocky10.png)](https://simc.arpae.it/moncic-ci/agroTools/)
-[![Build Status](https://simc.arpae.it/moncic-ci/agroTools/fedora40.png)](https://simc.arpae.it/moncic-ci/agroTools/)
 [![Build Status](https://simc.arpae.it/moncic-ci/agroTools/fedora42.png)](https://simc.arpae.it/moncic-ci/agroTools/)
+[![Build Status](https://simc.arpae.it/moncic-ci/agroTools/fedora44.png)](https://simc.arpae.it/moncic-ci/agroTools/)
 [![Build Status](https://copr.fedorainfracloud.org/coprs/simc/stable/package/CRITERIA1D/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/simc/stable/package/agroTools/)
 
 ## CriteriaOutput tool
