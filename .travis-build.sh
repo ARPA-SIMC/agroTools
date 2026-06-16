@@ -21,6 +21,22 @@ then
     mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
     git archive --prefix=$pkgname/ --format=tar HEAD | gzip -c > ~/rpmbuild/SOURCES/$pkgname.tar.gz
     rpmbuild -ba --define "srcarchivename $pkgname" fedora/SPECS/agroTools.spec
+elif [[ $image =~ ^fedora: ]]
+then
+    pkgcmd="dnf"
+    builddep="dnf builddep"
+    sed -i '/^tsflags=/d' /etc/dnf/dnf.conf
+    dnf install -q -y 'dnf-command(builddep)'
+    dnf install -q -y git
+    dnf install -q -y rpmdevtools
+    dnf copr enable -y simc/stable
+    dnf builddep -y fedora/SPECS/agroTools.spec
+    pkgname=agroTools-HEAD
+    mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+	# rendi sicura la directory del repo
+	git config --global --add safe.directory /root/src
+    git archive --prefix=$pkgname/ --format=tar HEAD | gzip -c > ~/rpmbuild/SOURCES/$pkgname.tar.gz
+    rpmbuild -ba --define "srcarchivename $pkgname" fedora/SPECS/agroTools.spec
 elif [[ $image =~ ^ubuntu: ]]
 then
     apt-get update
