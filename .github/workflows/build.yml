@@ -5,7 +5,7 @@ jobs:
   build:
     strategy:
       matrix:
-        image: ["fedora:42"]
+        image: ["fedora:44"]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
