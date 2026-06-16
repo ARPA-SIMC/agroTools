@@ -1,14 +1,14 @@
-name: Build on Ubuntu Xenial
+name: Build on fedora
 on: [push]
 
 jobs:
   build:
     strategy:
       matrix:
-        image: ["ubuntu:xenial"]
+        image: ["fedora:42"]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build
         run: docker run -v ${{ github.workspace }}:/root/src/ -w /root/src/ ${{ matrix.image }} /bin/bash .travis-build.sh ${{ matrix.image }}
