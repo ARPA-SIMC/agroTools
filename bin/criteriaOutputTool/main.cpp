@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "\\\\icolt-smr\\CRITERIA1D\\PROJECTS\\icolt2026_JJA\\seasonalIrriClimate_C4.ini";
+            settingsFileName = "\\\\icolt-smr\\CRITERIA1D\\PROJECTS\\icolt_CRATER\\seasonalIrriClimate_CRATER.ini";
             dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
             operationStr = "AGGREGATION";
         #else
