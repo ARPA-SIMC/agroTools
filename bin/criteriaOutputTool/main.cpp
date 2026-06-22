@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     }
     else if (myProject.operation == "MAPS")
     {
-        #ifdef GDAL
+        #ifdef USE_GDAL
             myResult = myProject.createMaps();
         #else
             myProject.logger.writeError("MAPS are not available (need GDAL library).");
