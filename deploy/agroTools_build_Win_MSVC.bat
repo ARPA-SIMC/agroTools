@@ -12,13 +12,13 @@
 
 :: clean all
 cd ..\bin\csv2dbMeteo
-nmake /S /NOLOGO distclean
+nmake /S /NOLOGO distclean 2>nul
 cd ..\Makeall_csv2dbGrid
-nmake /S /NOLOGO distclean
+nmake /S /NOLOGO distclean 2>nul
 cd ..\Makeall_criteriaOutputTool
-nmake /S /NOLOGO distclean
+nmake /S /NOLOGO distclean 2>nul
 cd ..\Makeall_frostForecast
-nmake /S /NOLOGO distclean
+nmake /S /NOLOGO distclean 2>nul
 
 :: compile
 cd ..\csv2dbMeteo

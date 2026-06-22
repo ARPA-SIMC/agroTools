@@ -1,10 +1,10 @@
-%global releaseno 4
+%global releaseno 1
 
 # Note: define srcarchivename in CI build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           agroTools
-Version:        2.0.0
+Version:        2.0.2
 Release:        %{releaseno}%{?dist}
 Summary:        Agro tools
 
@@ -70,6 +70,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Mon Jun 22 2026 Fausto Tomei  <ftomei@arpae.it> - 2.0.2-1
+- Release 2.0.2
+
 * Thu Jan 22 2026 Fausto Tomei  <ftomei@arpae.it> - 2.0.0-4
 - Fixed bug in csv2dbGrid
 
