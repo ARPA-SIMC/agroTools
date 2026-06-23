@@ -43,8 +43,9 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "\\\\icolt-smr\\CRITERIA1D\\PROJECTS\\icolt_CRATER\\seasonalIrriClimate_CRATER.ini";
-            dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
+            settingsFileName = "C:\\SOFTWARE\\AGRO\\CRITERIA\\PROJECT\\RUNOFF\\incolto_runoff.ini";
+            dateComputationStr = "2023-05-16";
+            // dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
             operationStr = "AGGREGATION";
         #else
             usage();
