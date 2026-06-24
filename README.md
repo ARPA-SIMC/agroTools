@@ -1,4 +1,5 @@
 [![Build Status](https://github.com/arpa-simc/agroTools/actions/workflows/build.yml/badge.svg)](https://github.com/ARPA-SIMC/agroTools/actions/workflows/build.yml)
+[![Build Status](https://simc.arpae.it/moncic-ci/agroTools/rocky8.png)](https://simc.arpae.it/moncic-ci/agroTools/)
 [![Build Status](https://simc.arpae.it/moncic-ci/agroTools/rocky9.png)](https://simc.arpae.it/moncic-ci/agroTools/)
 [![Build Status](https://simc.arpae.it/moncic-ci/agroTools/rocky10.png)](https://simc.arpae.it/moncic-ci/agroTools/)
 [![Build Status](https://simc.arpae.it/moncic-ci/agroTools/fedora42.png)](https://simc.arpae.it/moncic-ci/agroTools/)
