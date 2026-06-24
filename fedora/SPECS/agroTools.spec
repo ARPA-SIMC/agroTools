@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 
 # Note: define srcarchivename in CI build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
@@ -70,6 +70,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Wed Jun 24 2026 Fausto Tomei <ftomei@arpae.it> - 2.0.2-2
+- risolto problema di compilazione su Rocky 8
+
 * Mon Jun 22 2026 Fausto Tomei  <ftomei@arpae.it> - 2.0.2-1
 - Release 2.0.2
 
