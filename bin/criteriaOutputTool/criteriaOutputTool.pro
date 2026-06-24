@@ -64,23 +64,10 @@ GDAL:{
 CONFIG(debug, debug|release) {
 
     LIBS += -L../../agrolib/criteriaOutput/debug -lcriteriaOutput
-
-    GDAL:{
-    LIBS += -L../../agrolib/gdalHandler/debug -lgdalHandler
-    }
-
-    LIBS += -L../../agrolib/netcdfHandler/debug -lnetcdfHandler
-    win32:{
-        LIBS += -L$$(NC4_INSTALL_DIR)/lib -lnetcdf
-    }
-    unix:{
-        LIBS += -lnetcdf
-    }
-    macx:{
-        LIBS += -L/usr/local/lib/ -lnetcdf
-    }
-
     LIBS += -L../../agrolib/shapeUtilities/debug -lshapeUtilities
+    GDAL:{
+        LIBS += -L../../agrolib/gdalHandler/debug -lgdalHandler
+    }
     LIBS += -L../../agrolib/shapeHandler/debug -lshapeHandler
     LIBS += -L../../agrolib/utilities/debug -lutilities
     LIBS += -L../../agrolib/gis/debug -lgis
@@ -90,26 +77,27 @@ CONFIG(debug, debug|release) {
 } else {
 
     LIBS += -L../../agrolib/criteriaOutput/release -lcriteriaOutput
-
-    GDAL:{
-    LIBS += -L../../agrolib/gdalHandler/release -lgdalHandler
-    }
-
     LIBS += -L../../agrolib/netcdfHandler/release -lnetcdfHandler
-    win32:{
-        LIBS += -L$$(NC4_INSTALL_DIR)/lib -lnetcdf
-    }
-    unix:{
-        LIBS += -lnetcdf
-    }
-    macx:{
-        LIBS += -L/usr/local/lib/ -lnetcdf
-    }
-
     LIBS += -L../../agrolib/shapeUtilities/release -lshapeUtilities
+    GDAL:{
+        LIBS += -L../../agrolib/gdalHandler/release -lgdalHandler
+    }
     LIBS += -L../../agrolib/shapeHandler/release -lshapeHandler
     LIBS += -L../../agrolib/utilities/release -lutilities
     LIBS += -L../../agrolib/gis/release -lgis
     LIBS += -L../../agrolib/crit3dDate/release -lcrit3dDate
     LIBS += -L../../agrolib/mathFunctions/release -lmathFunctions
+}
+
+
+win32:{
+    LIBS += -L$$(NC4_INSTALL_DIR)/lib -lnetcdf
+}
+unix:{
+    LIBS += -lnetcdf
+    LIBS += -lstdc++fs
+}
+macx:{
+    LIBS += -L/usr/local/lib/ -lnetcdf
+    LIBS += -lstdc++fs
 }
