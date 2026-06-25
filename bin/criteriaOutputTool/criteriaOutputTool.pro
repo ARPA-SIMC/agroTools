@@ -14,7 +14,7 @@ CONFIG += console
 CONFIG += c++17
 TEMPLATE = app
 
-VERSION = 2.0.2
+VERSION = 2.0.3
 QMAKE_TARGET_COPYRIGHT = "\\251 2026 ARPAE ER - Climate Observatory"
 
 unix:{
