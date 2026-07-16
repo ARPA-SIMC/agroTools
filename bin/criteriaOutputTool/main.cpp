@@ -1,13 +1,25 @@
+/*
+#-----------------------------------------------------------
+#
+#   CriteriaOutput Tool
+#   Post-processing of CRITERIA-1D output
+#
+#   This project is part of agroTools distribution
+#
+#-----------------------------------------------------------
+*/
+
+// uncomment to compute test
+//#define TEST
+
+
 #include <QCoreApplication>
 #include <QDir>
+#include <iostream>
 
 #include "commonConstants.h"
 #include "utilities.h"
 #include "criteriaOutputProject.h"
-#include <iostream>
-
-// uncomment to compute test
-//#define TEST
 
 
 void version()

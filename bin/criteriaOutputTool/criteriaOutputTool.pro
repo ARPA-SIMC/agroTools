@@ -3,7 +3,7 @@
 #   CriteriaOutput Tool
 #   Post-processing of CRITERIA-1D output
 #
-#   This project is part of CRITERIA-1D distribution
+#   This project is part of agroTools distribution
 #
 #-----------------------------------------------------------
 
@@ -14,7 +14,7 @@ CONFIG += console
 CONFIG += c++17
 TEMPLATE = app
 
-VERSION = 2.0.3
+VERSION = 2.0.4
 QMAKE_TARGET_COPYRIGHT = "\\251 2026 ARPAE ER - Climate Observatory"
 
 unix:{
