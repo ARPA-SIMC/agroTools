@@ -5,7 +5,7 @@
 #include <iostream>
 
 // uncomment to execute test
-//#define TEST
+#define TEST
 
 void usage()
 {
@@ -27,7 +27,8 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            settingsFileName = "//icolt-smr/CRITERIA1D/PROJECTS/icolt_CRATER/wg/importCRATER.ini";
+            //settingsFileName = "//icolt-smr/CRITERIA1D/PROJECTS/icolt_CRATER/wg/importCRATER.ini";
+            settingsFileName = "C:/temp/progetto/importEnsembleDailyECMWFSettings.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
         if (! import.getIsMultiVariable())
         {
             bool isAvbVariable = false;
-            for (int j= 0; j < varList.size(); j++)
+            for (size_t j= 0; j < varList.size(); ++j)
             {
                 // check file of interest
                 if(fileName.left(varList[j].size()) == varList[j])
@@ -83,10 +84,9 @@ int main(int argc, char *argv[])
                     break;
                 }
             }
-            if (isAvbVariable == false)
-            {
+
+            if (! isAvbVariable)
                 continue;
-            }
         }
 
         import.setCsvFileName(import.getCsvFilePath() + "/" + fileName);
