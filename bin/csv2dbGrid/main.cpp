@@ -5,7 +5,7 @@
 #include <iostream>
 
 // uncomment to execute test
-#define TEST
+//#define TEST
 
 void usage()
 {
