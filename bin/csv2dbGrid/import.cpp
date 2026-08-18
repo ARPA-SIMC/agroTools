@@ -684,15 +684,22 @@ int Import::loadEnsembleDailyValues()
     const int posLat = 0;
     const int posLon = 1;
     const int posValue = 2;
-    const int posPerturbationNumber = 3;
+    const int posMemberNr = 3;
     const int nFields = 4;
+
+    bool hasMember = false;
+    int firstMemberNr = -9999;
+    int previousMember = -9999;
+
     int idListIndex = 0;
-    int previousPerturbation = 0;
+    if (isFirstCsv)
+        IDList.clear();
 
     while (! in.atEnd())
     {
         line = in.readLine();
         QStringList items = line.split(csvSeparator, Qt::SkipEmptyParts);
+        items.removeAll({});
 
         if (items.size() < nFields)
         {
@@ -701,30 +708,49 @@ int Import::loadEnsembleDailyValues()
         }
 
         bool isOk;
-        int perturbation = items[posPerturbationNumber].toInt(&isOk, 10);
+        int memberNr = items[posMemberNr].toInt(&isOk, 10);
         if(! isOk)
         {
-            // repeated header lat lon value perturbation number
+            // repeated header lat lon value member number
             continue;
         }
 
-        if (perturbation != previousPerturbation)
+        if (! hasMember)
         {
-            // new ensemble, reset idListIndex
-            previousPerturbation = perturbation;
+            // first member
+            firstMemberNr = memberNr;
+            previousMember = memberNr;
+            hasMember = true;
+            idListIndex = 0;
+        }
+        else if (memberNr != previousMember)
+        {
+            // new member
+            previousMember = memberNr;
             idListIndex = 0;
         }
 
-        if (isFirstCsv && perturbation == 1)
+        if (isFirstCsv && memberNr == firstMemberNr)
         {
-            // make IDList
+            // add point to IDList
             std::string id;
-            double lat = items[posLat].toDouble();
-            double lon = items[posLon].toDouble();
+            bool latOk = false;
+            bool lonOk = false;
+
+            const double lat = items[posLat].toDouble(&latOk);
+            const double lon = items[posLon].toDouble(&lonOk);
+
+            if (!latOk || !lonOk)
+            {
+                logger.writeError("Invalid latitude/longitude in ensemble CSV");
+                return ERROR_BAD_REQUEST;
+            }
+
             if (! grid.meteoGrid()->getIdFromLatLon(lat, lon, &id))
             {
                 return ERROR_DBGRID;
             }
+
             if (! grid.meteoGrid()->isActiveMeteoPointFromId(id))
             {
                 id = "-9999";
@@ -756,6 +782,12 @@ int Import::loadEnsembleDailyValues()
     }
 
     myFile.close();
+
+    if (!hasMember)
+    {
+        logger.writeError("No ensemble members found");
+        return ERROR_BAD_REQUEST;
+    }
 
     return CSV2DBGRID_OK;
 }

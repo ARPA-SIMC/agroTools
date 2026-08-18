@@ -9,9 +9,9 @@
 
 void usage()
 {
-    std::cout << "\nUsage: csv2dbGrid <project.ini>" << std::endl << std::endl
-              << "Import daily or hourly meteo series (single series or ensemble) into a PRAGA meteo grid." << std::endl
-              << "WARNING (for ensemble data): only daily data are supported." << std::endl << std::endl;
+    std::cout << "\nUsage: \ncsv2dbGrid <project.ini>" << std::endl << std::endl
+              << "Imports daily or hourly meteorological series (single series or ensembles) into a MYSQL grid (PRAGA format)." << std::endl
+              << "WARNING: ensembles support only daily data." << std::endl << std::endl;
 
 }
 
@@ -27,8 +27,7 @@ int main(int argc, char *argv[])
             QString dataPath;
             if (! searchDataPath(&dataPath)) return -1;
 
-            //settingsFileName = "//icolt-smr/CRITERIA1D/PROJECTS/icolt_CRATER/wg/importCRATER.ini";
-            settingsFileName = "C:/temp/progetto/importEnsembleDailyECMWFSettings.ini";
+            settingsFileName = "//icolt-smr/CRITERIA1D/PROJECTS/icolt_CRATER/wg/importCRATER.ini";
         #else
             usage();
             return ERROR_MISSINGFILE;

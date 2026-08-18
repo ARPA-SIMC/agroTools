@@ -4,7 +4,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           agroTools
-Version:        2.0.3
+Version:        2.0.5
 Release:        %{releaseno}%{?dist}
 Summary:        Agro tools
 
@@ -70,6 +70,9 @@ cp -a deploy/appimage/usr/share/agroTools %{buildroot}/%{_datadir}/
 %{_datadir}/agroTools/*
 
 %changelog
+* Tue Aug 18 2026 Fausto Tomei <ftomei@arpae.it> - 2.0.5-1
+- Release 2.0.5
+
 * Thu Jun 25 2026 Fausto Tomei <ftomei@arpae.it> - 2.0.3-1
 - Fixed library for Rocky 8
 
