@@ -64,6 +64,7 @@ GDAL:{
 CONFIG(debug, debug|release) {
 
     LIBS += -L../../agrolib/criteriaOutput/debug -lcriteriaOutput
+    LIBS += -L../../agrolib/netcdfHandler/debug -lnetcdfHandler
     LIBS += -L../../agrolib/shapeUtilities/debug -lshapeUtilities
     GDAL:{
         LIBS += -L../../agrolib/gdalHandler/debug -lgdalHandler

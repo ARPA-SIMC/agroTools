@@ -55,10 +55,10 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "C:\\SOFTWARE\\AGRO\\CRITERIA\\PROJECT\\RUNOFF\\incolto_runoff.ini";
-            dateComputationStr = "2023-05-16";
+            settingsFileName = "C:\\SOFTWARE\\AGRO\\CRITERIA\\PROJECT\\BOLLAGRO\\bollAgro.ini";
+            dateComputationStr = "2026-08-17";
             // dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operationStr = "AGGREGATION";
+            operationStr = "MAPS";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
