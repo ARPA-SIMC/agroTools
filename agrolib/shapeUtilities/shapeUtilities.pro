@@ -5,8 +5,15 @@
 #
 #--------------------------------------------------------
 
-QT    += sql
-QT    -= gui
+QT    += sql widgets
+
+TEMPLATE = lib
+CONFIG += staticlib
+
+CONFIG += debug_and_release
+CONFIG += c++11 c++14 c++17
+
+DEFINES += _CRT_SECURE_NO_WARNINGS
 
 unix:{
     CONFIG(debug, debug|release) {
@@ -19,13 +26,10 @@ win32:{
     TARGET = shapeUtilities
 }
 
-TEMPLATE = lib
-CONFIG += staticlib
-CONFIG += c++11 c++14 c++17
+# parallel computing settings
+include($$absolute_path(../parallel.pri))
 
-DEFINES += _CRT_SECURE_NO_WARNINGS
-
-INCLUDEPATH =  ../crit3dDate ../mathFunctions ../gis ../shapeHandler  ../utilities
+INCLUDEPATH =  ../crit3dDate ../mathFunctions ../gis ../shapeHandler ../utilities ../commonDialogs
 
 SOURCES += \
     shapeFromCsv.cpp \

@@ -146,6 +146,7 @@
             double waterContentFC;              /*!<  [m3 m-3]*/
             double waterContentWP;              /*!<  [m3 m-3]*/
             double waterContentHH;              /*!<  [m3 m-3]*/
+            double waterContentThetaR;          /*!<  [m3 m-3]*/
 
             double PH;                          /*!<  [-]       */
             double CEC;                         /*!<  [meq/100g]*/
@@ -169,8 +170,10 @@
             double depth;               /*!<   [m] */
             double thickness;           /*!<   [m] */
             double soilFraction;        /*!<   [-] fraction of soil (1 - coarse fragment fraction) */
+
             double waterContent;        /*!<   [mm] */
             double waterPotential;      /*!<   [kPa] water potential (psi) saved after soilFluxes computation (positive: unsaturated) */
+
             double SAT;                 /*!<   [mm] water content at saturation  */
             double FC;                  /*!<   [mm] water content at field capacity */
             double WP;                  /*!<   [mm] water content at wilting point  */
@@ -199,17 +202,20 @@
             int id;
             std::string code;
             std::string name;
-            unsigned int nrHorizons;
-            double totalDepth;                          /*!<   [m]  */
+
+            double totalDepth;          /*!<  [m]  */
 
             std::vector <Crit3DHorizon> horizon;
 
             Crit3DSoil() { this->cleanSoil(); }
 
-            void initialize(const std::string &soilCode, int nrHorizons);
+            void initialize(const std::string &soilCode, int _nrHorizons);
             void cleanSoil();
-            void addHorizon(int nHorizon, const Crit3DHorizon &newHorizon);
-            void deleteHorizon(int nHorizon);
+            bool addHorizon(int nHorizon, const Crit3DHorizon &newHorizon);
+            bool deleteHorizon(int nHorizon);
+
+            int nrHorizons() const { return int(horizon.size()); }
+            int lastHorizon() const { return int(horizon.size()) - 1; }
             int getHorizonIndex(double depth) const;
 
             bool setSoilLayers(double layerThicknessMin, double geometricFactor,
@@ -258,11 +264,10 @@
         double waterConductivity(double Se, const Crit3DHorizon &horizon);
 
         double estimateOrganicMatter(double upperDepth);
-        double estimateSpecificDensity(double organicMatter);
-        double estimateBulkDensity(const Crit3DHorizon &horizon, double totalPorosity, bool increaseWithDepth);
-        double estimateSaturatedConductivity(const Crit3DHorizon &horizon, double bulkDensity);
+        double estimateParticleDensity(double organicMatter);
+        double estimateBulkDensity(const Crit3DHorizon &horizon, double totalPorosity);
+        double estimateSaturatedConductivity(const Crit3DHorizon &horizon, double totalPorosity);
         double estimateTotalPorosity(const Crit3DHorizon &horizon, double bulkDensity);
-        double estimateThetaSat(const Crit3DHorizon &horizon, double bulkDensity);
 
         double getWaterContentFromPsi(double signPsi, const Crit1DLayer &layer);
         double getWaterContentFromAW(double availableWater, const Crit1DLayer &layer);

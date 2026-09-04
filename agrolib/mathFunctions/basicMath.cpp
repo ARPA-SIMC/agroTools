@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <charconv>
 #include <string>
+#include <locale>
+#include <iostream>
 
 #include "commonConstants.h"
 #include "basicMath.h"
@@ -581,33 +583,54 @@
 
     bool parseDouble(const std::string& str, double& value)
     {
-        try
-        {
-            std::string s = trim(str);
+        std::string normalizedStr = trim(str);
 
-            if (s.empty())
-                return false;
-
-            // std::from_chars uses point as decimal separator
-            std::replace(s.begin(), s.end(), ',', '.');
-
-            double parsed = 0.0;
-
-            const char* first = s.data();
-            const char* last = first + s.size();
-
-            const auto result = std::from_chars(first, last, parsed);
-
-            if (result.ec != std::errc() || result.ptr != last)
-                return false;
-
-            value = parsed;
-            return true;
-        }
-        catch (...)
-        {
+        if (normalizedStr.empty())
             return false;
-        }
+
+        std::replace(normalizedStr.begin(), normalizedStr.end(), ',', '.');
+
+        char* end = nullptr;
+        double parsed = 0.0;
+
+        // Use C locale (point as decimal separator).
+        errno = 0;
+
+#ifdef _WIN32
+
+        _locale_t loc = _create_locale(LC_NUMERIC, "C");
+        if (loc == nullptr)
+            return false;
+
+        parsed = _strtod_l(normalizedStr.c_str(), &end, loc);
+        _free_locale(loc);
+
+#else
+
+        locale_t loc = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+        if (loc == nullptr)
+            return false;
+
+        parsed = strtod_l(normalizedStr.c_str(), &end, loc);
+        freelocale(loc);
+
+#endif
+
+        // no number found
+        if (end == normalizedStr.c_str())
+            return false;
+
+        // overflow / underflow
+        if (errno == ERANGE)
+            return false;
+
+        // no other characters after the number
+        if (*end != '\0')
+            return false;
+
+        value = parsed;
+
+        return true;
     }
 
 
