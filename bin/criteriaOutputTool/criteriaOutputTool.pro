@@ -7,8 +7,7 @@
 #
 #-----------------------------------------------------------
 
-QT   -= gui
-QT   += sql
+QT   += sql widgets
 
 CONFIG += console
 CONFIG += c++17
@@ -16,6 +15,12 @@ TEMPLATE = app
 
 VERSION = 2.0.5
 QMAKE_TARGET_COPYRIGHT = "\\251 2026 ARPAE ER - Climate Observatory"
+
+CONFIG += debug_and_release
+CONFIG += c++11 c++14 c++17
+
+# parallel computing settings
+include($$absolute_path(../../agrolib/parallel.pri))
 
 unix:{
     CONFIG(debug, debug|release) {
