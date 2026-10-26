@@ -104,8 +104,8 @@ bool computeResiduals(meteoVariable myVar, std::vector<Crit3DMeteoPoint> &meteoP
                       Crit3DInterpolationSettings &interpolationSettings,
                       Crit3DMeteoSettings* meteoSettings, bool excludeOutsideDem, bool excludeSupplemental)
 {
-
-    if (myVar == noMeteoVar) return false;
+    if (myVar == noMeteoVar)
+        return false;
 
     std::vector <double> myProxyValues;
     bool isValid;
@@ -313,8 +313,11 @@ bool computeResidualsGlocalDetrending(meteoVariable myVar, const Crit3DMacroArea
 
                 for (int k = 0; k < (int)areaCells.size(); k = k + 2)
                 {
-                    if (areaCells[k] == temp)
+                    if (isEqual(float(areaCells[k]), float(temp)))
+                    {
                         weight = areaCells[k+1];
+                        break;
+                    }
                 }
 
                 isValid = (! excludeSupplemental || checkLapseRateCode(myMeteoPoint.lapseRateCode, interpolationSettings.getUseLapseRateCode(), false));

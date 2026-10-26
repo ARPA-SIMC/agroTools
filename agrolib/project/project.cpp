@@ -778,8 +778,8 @@ bool Project::loadParameters(QString parametersFileName)
 
             if (parametersSettings->contains("topographicDistanceMaxMultiplier"))
             {
-                interpolationSettings.setTopoDist_maxKh(parametersSettings->value("topographicDistanceMaxMultiplier").toInt());
-                qualityInterpolationSettings.setTopoDist_maxKh(parametersSettings->value("topographicDistanceMaxMultiplier").toInt());
+                interpolationSettings.setTopoDist_maxKh(parametersSettings->value("topographicDistanceMaxMultiplier").toDouble());
+                qualityInterpolationSettings.setTopoDist_maxKh(parametersSettings->value("topographicDistanceMaxMultiplier").toDouble());
             }
 
             if (parametersSettings->contains("useDewPoint"))
@@ -2564,7 +2564,12 @@ bool Project::loadGlocalStationsAndCells(bool isGrid, QString fileNameStations, 
 
     if (! loadGlocalStationsCsv(fileNameStations, areaPoints)) return false;
 
-    loadGlocalStationsCsv(fileNameStationsCV, areaPointsCV); //mancanza di file CV non pregiudica il proseguimento. controllo presenza fuori da funzione
+    if (! fileNameStationsCV.isEmpty())
+    {
+        loadGlocalStationsCsv(fileNameStationsCV, areaPointsCV); //mancanza di file CV non pregiudica il proseguimento. controllo presenza fuori da funzione
+    }
+    else
+        logInfo("Glocal CV will be run on single points.");
 
     //salva in vettore gli indici dei meteopoints che appartengono a area n, infine salva quel vettore
     std::vector<int> temp;
@@ -6580,7 +6585,10 @@ bool Project::readVmArkimetData(const QList<QString> &vmFileList, frequencyType 
         if (frequency == daily)
         {
             if (! dbMeteoArkimet->readVmDataDaily(vmFileList[i], isPrec0024, errorString))
+            {
+                closeProgressBar();
                 return false;
+            }
         }
         else
         {
