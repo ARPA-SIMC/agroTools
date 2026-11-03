@@ -413,7 +413,7 @@ int Frost::getForecastData(int paramPos)
             myDateIndex = myDateIndex + 1;
             myHour = myHourSunSetInteger - 24;
         }
-        if (myDateIndex > point->nrObsDataDaysH || myDateIndex < 0)
+        if (myDateIndex > point->obsDataH.size() || myDateIndex < 0)
         {
             logger.writeError ("Sunset hour: " + QString::number(myHourSunSetInteger) + " data not available");
             return ERROR_SUNSET;
@@ -455,8 +455,9 @@ int Frost::getForecastData(int paramPos)
                     myDateTmpIndex = myDateTmpIndex + 1;
                     myTmpHour = myTmpHour - 24;
                 }
+
                 // observed values (local time)
-                if (myDateTmpIndex <= point->nrObsDataDaysH && myDateTmpIndex >= 0)
+                if (myDateTmpIndex < point->obsDataH.size() && myDateTmpIndex >= 0)
                 {
                     QDate dateTmp = firstDate.addDays(myDateTmpIndex);
                     dateTimeTmp = QDateTime(dateTmp,QTime(myTmpHour,0,0));
@@ -755,8 +756,6 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
         return false;
     }
 
-    TObsDataH* hourlyData = point->getObsDataH();
-
     const unsigned MIN_DATA = 5;
     Crit3DDate today;
     TsunPosition sunPosition;
@@ -780,9 +779,9 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
     int nrValidData;
 
     //TODO use historyDateStart and historyDateEnd
-    for (int i = 0; i < point->nrObsDataDaysH; i++)
+    for (int i = 0; i < point->obsDataH.size(); i++)
     {
-        today = hourlyData[i].date;
+        today = point->obsDataH[i].date;
 
         if (today.month <= monthFin && today.month >= monthIni)
         {
@@ -831,7 +830,7 @@ bool Frost::getRadiativeCoolingHistory(unsigned pos, std::vector<std::vector<flo
                     }
 
                     T = NODATA;
-                    if (d <= point->nrObsDataDaysH && d >= 0)
+                    if (d <= point->obsDataH.size() && d >= 0)
                     {
                         dateTmp = historyDateStart.addDays(d);
                         T = point->getMeteoPointValueH(getCrit3DDate(dateTmp), h, 0, airTemperature);

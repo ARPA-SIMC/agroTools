@@ -391,7 +391,7 @@ int Bias::readDebiasSettings()
 
         Crit3DMeteoGridStructure structure = outputGrid.meteoGrid()->gridStructure();
 
-        if (! outputGrid.writeCellProperties(structure.nrRow(), structure.nrCol(), errorString))
+        if (! outputGrid.writeCellProperties(structure, errorString))
         {
             return ERROR_DBOUTPUT;
         }
@@ -436,7 +436,7 @@ int Bias::readDebiasSettings()
 
             Crit3DMeteoGridStructure structure = outputGrid.meteoGrid()->gridStructure();
 
-            if (! outputGrid.writeCellProperties(structure.nrRow(), structure.nrCol(), errorString))
+            if (! outputGrid.writeCellProperties(structure, errorString))
             {
                 return ERROR_DBOUTPUT;
             }
