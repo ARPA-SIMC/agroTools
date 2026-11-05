@@ -55,10 +55,10 @@ int main(int argc, char *argv[])
             if (! searchDataPath(&dataPath))
                 return -1;
 
-            settingsFileName = "C:\\SOFTWARE\\AGRO\\CRITERIA\\PROJECT\\BOLLAGRO\\bollAgro.ini";
-            dateComputationStr = "2026-08-17";
+            settingsFileName = "\\\\icolt2-smr.smr.arpa.emr.net\\CRITERIA1D\\PROJECTS\\sub_seasonal\\monthly_C5.ini";
+            dateComputationStr = "2026-11-03";
             // dateComputationStr = QDateTime::currentDateTime().date().toString("yyyy-MM-dd");
-            operationStr = "MAPS";
+            operationStr = "NETCDF";
         #else
             usage();
             return ERROR_MISSINGPARAMETERS;
